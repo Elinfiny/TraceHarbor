@@ -4,7 +4,16 @@ An incident evidence desk for synthetic cases. Inspect a timeline, compare hypot
 follow exact citations, see what remains unknown, and export a verifiable dossier.
 Remediation is always a proposal; this application cannot execute it.
 
-## Current delivery: private documentation correction, 27 September 2026
+## Current delivery: public source, 27 September 2026
+
+Public source is available at https://github.com/Elinfiny/TraceHarbor. The verified
+32-file publication is commit `ebf6843e4bc48316c2652d26820e8c278cf3dd86`:
+https://github.com/Elinfiny/TraceHarbor/tree/ebf6843e4bc48316c2652d26820e8c278cf3dd86.
+GitHub's observed **Code → Download ZIP** control provides downloadable source, not a
+hosted demo; its archive bytes have not been downloaded or verified. The separately
+verified offline test-build ZIP has SHA-256
+`92b740d86b1766547feaa086c956a2ce992d74af5b0248aa9db05dde8300af97`.
+That private build is a distinct artifact, not a verification of GitHub's Download ZIP.
 
 The browser demo is deterministic and makes **no AI calls**. The configurable Nebius
 transport and three-request runner are implemented and tested with explicitly simulated
@@ -15,10 +24,10 @@ JSON-object support, trustworthy pre-inference token bounds and an effective tri
 spending stop remain unverified. Existing model/license/rate evidence is separate from
 run admission; this update does not refresh it. This is **not yet an eligible live competition submission**.
 
-The cloud browser rejected the local URL with `ERR_BLOCKED_BY_CLIENT` and then an
+In the historical local-preview attempt, the cloud browser rejected the local URL with `ERR_BLOCKED_BY_CLIENT` and then an
 explicit URL-policy rejection. Browser visual QA is pending; local HTTP verification
-passed. No physical mobile or fullscreen test is claimed. No repository, hosting,
-video publication or submission was performed.
+passed. No physical mobile or fullscreen test is claimed. Public source publication is
+complete; hosted demo delivery, video publication and contest submission remain pending.
 
 ## Run locally
 
@@ -129,8 +138,9 @@ are unauthenticated data; external execution receipts must substantiate a live c
 MIT covers this project code and synthetic fixtures. No model weights or third-party
 SDK code are bundled. Model/API terms remain separate and must be verified for the actual
 selected model. The clean export excludes the original private envelope and reports.
-It is prepared for review, not published. Preserve the original archive privately as the
-rollback source; discard this isolated candidate to return to that exact accepted base.
+The public source publication is identified above. Preserve the original private archive
+and accepted publication commit as distinct historical baselines; neither is live-runtime
+or visual-QA evidence.
 
 ## Competition materials and outstanding work
 
@@ -138,8 +148,9 @@ rollback source; discard this isolated candidate to return to that exact accepte
 The current official rules require a Nebius runtime call and an NVIDIA open-source
 model, a usable demo/test build, a public repository with an open-source license and a
 video under three minutes. Current submission deadline: 30 October 2026, 17:00 UTC.
-Final review, live evidence, supported visual QA, a recorded video and the approved
-publication/submission route remain open. Do not describe simulated results as live.
+Public source is complete. Final review, live evidence, supported visual QA, a recorded
+video, its publication and final contest submission remain open. Do not describe simulated
+results as live.
 
 Official sources inspected on 23 September 2026:
 
