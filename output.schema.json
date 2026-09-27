@@ -1,0 +1,635 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "mode",
+    "live_api",
+    "remediation_execution",
+    "evidence",
+    "analysis",
+    "verification",
+    "dossier_sha256"
+  ],
+  "properties": {
+    "schema": {
+      "const": "traceharbor.dossier.v1"
+    },
+    "mode": {
+      "const": "DEMO_NO_AI"
+    },
+    "live_api": {
+      "const": "NOT_ACTIVATED"
+    },
+    "remediation_execution": {
+      "const": "NOT_SUPPORTED"
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "case_id",
+        "title",
+        "synthetic",
+        "input_sha256",
+        "analysis_fingerprint",
+        "sources",
+        "timeline",
+        "warnings",
+        "counts"
+      ],
+      "properties": {
+        "schema": {
+          "const": "traceharbor.evidence.v1"
+        },
+        "case_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "\\S"
+        },
+        "synthetic": {
+          "const": true
+        },
+        "input_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "analysis_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "title",
+              "sha256",
+              "raw",
+              "events"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "kind": {
+                "enum": [
+                  "log",
+                  "deployment",
+                  "metric",
+                  "configuration",
+                  "runbook",
+                  "audit"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160,
+                "pattern": "\\S"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "raw": {
+                "$ref": "#/$defs/source"
+              },
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "text",
+                    "timestamp",
+                    "timestamp_state",
+                    "timestamp_candidates"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 8192,
+                      "pattern": "\\S"
+                    },
+                    "timestamp": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 40,
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$"
+                    },
+                    "timestamp_state": {
+                      "enum": [
+                        "known",
+                        "missing",
+                        "conflict"
+                      ]
+                    },
+                    "timestamp_candidates": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 0,
+                      "maxItems": 2
+                    }
+                  }
+                },
+                "minItems": 1,
+                "maxItems": 200
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "timeline": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "text",
+              "timestamp",
+              "timestamp_state",
+              "timestamp_candidates",
+              "event_sha256",
+              "kind",
+              "occurrences"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192,
+                "pattern": "\\S"
+              },
+              "timestamp": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 40,
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$"
+              },
+              "timestamp_state": {
+                "enum": [
+                  "known",
+                  "missing",
+                  "conflict"
+                ]
+              },
+              "timestamp_candidates": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 2
+              },
+              "event_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "kind": {
+                "enum": [
+                  "log",
+                  "deployment",
+                  "metric",
+                  "configuration",
+                  "runbook",
+                  "audit"
+                ]
+              },
+              "occurrences": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "source_id",
+                    "event_id"
+                  ],
+                  "properties": {
+                    "source_id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "event_id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    }
+                  }
+                },
+                "minItems": 1,
+                "maxItems": 200
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "source_id",
+              "event_id",
+              "candidates"
+            ],
+            "properties": {
+              "code": {
+                "enum": [
+                  "TIMESTAMP_MISSING",
+                  "TIMESTAMP_CONFLICT"
+                ]
+              },
+              "source_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "event_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "candidates": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 2
+              }
+            }
+          },
+          "minItems": 0,
+          "maxItems": 200
+        },
+        "counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input_events",
+            "unique_events",
+            "duplicates"
+          ],
+          "properties": {
+            "input_events": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "unique_events": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 200
+            },
+            "duplicates": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 200
+            }
+          }
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "summary",
+        "hypotheses",
+        "missing_evidence",
+        "remediation"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "supported_reference",
+            "uncertain",
+            "conflicted",
+            "unknown"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        },
+        "hypotheses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label",
+              "assessment",
+              "supports",
+              "contradicts"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "\\S"
+              },
+              "assessment": {
+                "enum": [
+                  "supported_reference",
+                  "uncertain",
+                  "conflicted",
+                  "alternative_unresolved"
+                ]
+              },
+              "supports": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "source_id",
+                    "event_id",
+                    "source_sha256",
+                    "quote"
+                  ],
+                  "properties": {
+                    "source_id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "event_id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "source_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "quote": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 8192,
+                      "pattern": "\\S"
+                    }
+                  }
+                },
+                "minItems": 0,
+                "maxItems": 30
+              },
+              "contradicts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "source_id",
+                    "event_id",
+                    "source_sha256",
+                    "quote"
+                  ],
+                  "properties": {
+                    "source_id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "event_id": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                    },
+                    "source_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "quote": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 8192,
+                      "pattern": "\\S"
+                    }
+                  }
+                },
+                "minItems": 0,
+                "maxItems": 30
+              }
+            }
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "missing_evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "pattern": "\\S"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "remediation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "proposal",
+              "preconditions",
+              "risk",
+              "rollback",
+              "verification"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+              },
+              "proposal": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              },
+              "preconditions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                },
+                "minItems": 1,
+                "maxItems": 12
+              },
+              "risk": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              },
+              "rollback": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "\\S"
+              },
+              "verification": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000,
+                  "pattern": "\\S"
+                },
+                "minItems": 1,
+                "maxItems": 12
+              }
+            }
+          },
+          "minItems": 0,
+          "maxItems": 12
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "citation_integrity",
+        "semantic_reference",
+        "limits"
+      ],
+      "properties": {
+        "citation_integrity": {
+          "const": "PASS"
+        },
+        "semantic_reference": {
+          "enum": [
+            "PASS_KNOWN_REFERENCE_ONLY",
+            "NOT_EVALUATED_UNKNOWN_CASE"
+          ]
+        },
+        "limits": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "dossier_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        },
+        "timestamp": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$"
+        },
+        "timestamp_alt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 40,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?(?:Z|[+-]\\d{2}:\\d{2})$"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "events"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+        },
+        "kind": {
+          "enum": [
+            "log",
+            "deployment",
+            "metric",
+            "configuration",
+            "runbook",
+            "audit"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "\\S"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      }
+    }
+  },
+  "description": "Runtime cross-reference/hash/semantic checks are separate from this field schema. Unknown status requires empty hypotheses/remediation."
+}

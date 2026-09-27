@@ -1,0 +1,66 @@
+{
+  "complete": {
+    "status": "supported_reference",
+    "supports": [
+      [
+        "metrics",
+        "m1"
+      ],
+      [
+        "worker",
+        "w1"
+      ],
+      [
+        "config",
+        "c1"
+      ]
+    ],
+    "contradicts": [],
+    "missing_contains": "",
+    "meaning": "Synthetic ground truth: deadline configuration regression.",
+    "main_label": "Runtime task deadline configuration regression"
+  },
+  "missing": {
+    "status": "uncertain",
+    "supports": [
+      [
+        "metrics",
+        "m1"
+      ],
+      [
+        "worker",
+        "w1"
+      ]
+    ],
+    "contradicts": [],
+    "missing_contains": "runtime task_deadline_ms",
+    "meaning": "Evidence is insufficient to select the actual cause.",
+    "main_label": "Runtime task deadline configuration regression"
+  },
+  "contradictory": {
+    "status": "conflicted",
+    "supports": [
+      [
+        "metrics",
+        "m1"
+      ],
+      [
+        "worker",
+        "w1"
+      ],
+      [
+        "config",
+        "c1"
+      ]
+    ],
+    "contradicts": [
+      [
+        "audit",
+        "a1"
+      ]
+    ],
+    "missing_contains": "provenance",
+    "meaning": "Conflicting configurations block causal certainty; hostile text has no authority.",
+    "main_label": "Runtime task deadline configuration regression"
+  }
+}

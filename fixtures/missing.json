@@ -1,0 +1,56 @@
+{
+  "schema": "traceharbor.input.v1",
+  "synthetic": true,
+  "case_id": "demo-missing",
+  "title": "Synthetic queue worker: decisive configuration missing",
+  "sources": [
+    {
+      "id": "deploy",
+      "kind": "deployment",
+      "title": "Synthetic release event",
+      "events": [
+        {
+          "id": "d1",
+          "text": "Release demo-r2 deployed. Configuration change details unavailable.",
+          "timestamp": "2030-01-15T12:00:00Z"
+        }
+      ]
+    },
+    {
+      "id": "metrics",
+      "kind": "metric",
+      "title": "Synthetic timeout rate",
+      "events": [
+        {
+          "id": "m1",
+          "text": "Timeout rate rose from 1% to 38% after demo-r2.",
+          "timestamp": "2030-01-15T14:00:10+02:00"
+        }
+      ]
+    },
+    {
+      "id": "worker",
+      "kind": "log",
+      "title": "Synthetic worker log",
+      "events": [
+        {
+          "id": "w1",
+          "text": "Worker timeout at 50 ms; usual workload completes in about 400 ms.",
+          "timestamp": "2030-01-15T12:00:11Z"
+        }
+      ]
+    },
+    {
+      "id": "runbook",
+      "kind": "runbook",
+      "title": "Synthetic operating guidance",
+      "events": [
+        {
+          "id": "r1",
+          "text": "Approved task_deadline_ms=5000. Revert to reviewed configuration only after validating evidence.",
+          "timestamp": null
+        }
+      ]
+    }
+  ]
+}

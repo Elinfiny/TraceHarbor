@@ -1,0 +1,15 @@
+{
+  "schema": "traceharbor.live-admission.v1",
+  "operation_id": "TRACEHARBOR_THREE_SYNTHETIC_REQUESTS_V1",
+  "model": null,
+  "expires_utc": null,
+  "verified_access_evidence": null,
+  "verified_credit_and_cap_evidence": null,
+  "verified_model_license_evidence": null,
+  "verified_token_bounds_evidence": null,
+  "request_sha256": [],
+  "input_token_upper_bounds": [],
+  "input_usd_per_million": null,
+  "output_usd_per_million": null,
+  "max_cost_usd": null
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TraceHarbor · Evidence before conclusions</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<header><a class="brand" href="/">TraceHarbor<span>Incident evidence desk</span></a><span class="mode">DEMONSTRATION · NO AI CALLS</span></header>
+<main>
+<section class="intro"><p class="eyebrow">TRACEHARBOR / PROTOTYPE 01</p><h1>Follow the evidence.<br>Keep the uncertainty.</h1><p>Explore three versions of one synthetic incident. Every finding stays linked to its source. Remediation is a proposal only.</p></section>
+<div class="workspace">
+<aside class="controls"><h2>Open a case</h2><p class="muted">Same incident. Different evidence.</p>
+<button class="case" data-case="complete"><b>01 / Full evidence</b><span>A decisive runtime sample</span></button>
+<button class="case" data-case="missing"><b>02 / Missing evidence</b><span>The decisive clue removed</span></button>
+<button class="case" data-case="contradictory"><b>03 / Conflicting evidence</b><span>Contradictions + hostile text</span></button>
+<label class="upload" for="upload">Import synthetic JSON<input id="upload" type="file" accept="application/json,.json"></label>
+<label class="upload" for="import-record">Verify imported dossier<input id="import-record" type="file" accept="application/json,.json"></label>
+<p class="muted small">Maximum 256 KiB · synthetic data only. Unknown cases receive no automated diagnosis. Do not import real logs or secrets.</p>
+<button id="export" disabled>Export evidence dossier ↓</button>
+<p class="boundary">No live model, external API, or remediation execution. Source content is untrusted text.</p>
+</aside>
+<section class="desk" aria-label="Case analysis"><div id="notice" role="status" aria-live="polite">Choose a demonstration case to begin.</div><div id="result"></div></section>
+</div>
+<footer>Evidence integrity ≠ proof of causation. Semantic checks cover the three known examples only. NVIDIA / Nebius integration is not activated.</footer>
+</main>
+</body></html>

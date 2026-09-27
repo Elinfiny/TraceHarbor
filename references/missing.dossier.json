@@ -1,0 +1,274 @@
+{
+  "schema": "traceharbor.dossier.v1",
+  "mode": "DEMO_NO_AI",
+  "live_api": "NOT_ACTIVATED",
+  "remediation_execution": "NOT_SUPPORTED",
+  "evidence": {
+    "schema": "traceharbor.evidence.v1",
+    "case_id": "demo-missing",
+    "title": "Synthetic queue worker: decisive configuration missing",
+    "synthetic": true,
+    "input_sha256": "b96afa3a7ce4837771b03f742b09a7582c9e0d86f648e74115ef88b1a31d67f3",
+    "analysis_fingerprint": "3422c2cae5cf3fb2a59a5a07310d907fc936063819c53b02fee51c55f4e98434",
+    "sources": [
+      {
+        "id": "deploy",
+        "kind": "deployment",
+        "title": "Synthetic release event",
+        "sha256": "cf5daa573a47087e617b6f80a8cef25d7b605f4be221975047382e64060ea1d9",
+        "raw": {
+          "id": "deploy",
+          "kind": "deployment",
+          "title": "Synthetic release event",
+          "events": [
+            {
+              "id": "d1",
+              "text": "Release demo-r2 deployed. Configuration change details unavailable.",
+              "timestamp": "2030-01-15T12:00:00Z"
+            }
+          ]
+        },
+        "events": [
+          {
+            "id": "d1",
+            "text": "Release demo-r2 deployed. Configuration change details unavailable.",
+            "timestamp": "2030-01-15T12:00:00Z",
+            "timestamp_state": "known",
+            "timestamp_candidates": [
+              "2030-01-15T12:00:00Z"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "metrics",
+        "kind": "metric",
+        "title": "Synthetic timeout rate",
+        "sha256": "4f6c817805381537b8f452fe55cf17fd5965f4bc59916e38255a030ebb525aea",
+        "raw": {
+          "id": "metrics",
+          "kind": "metric",
+          "title": "Synthetic timeout rate",
+          "events": [
+            {
+              "id": "m1",
+              "text": "Timeout rate rose from 1% to 38% after demo-r2.",
+              "timestamp": "2030-01-15T14:00:10+02:00"
+            }
+          ]
+        },
+        "events": [
+          {
+            "id": "m1",
+            "text": "Timeout rate rose from 1% to 38% after demo-r2.",
+            "timestamp": "2030-01-15T12:00:10Z",
+            "timestamp_state": "known",
+            "timestamp_candidates": [
+              "2030-01-15T12:00:10Z"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "worker",
+        "kind": "log",
+        "title": "Synthetic worker log",
+        "sha256": "4aad8b34f9cdb2f188403d8c0820341e17b9f29bf9885b965974b79cf3065142",
+        "raw": {
+          "id": "worker",
+          "kind": "log",
+          "title": "Synthetic worker log",
+          "events": [
+            {
+              "id": "w1",
+              "text": "Worker timeout at 50 ms; usual workload completes in about 400 ms.",
+              "timestamp": "2030-01-15T12:00:11Z"
+            }
+          ]
+        },
+        "events": [
+          {
+            "id": "w1",
+            "text": "Worker timeout at 50 ms; usual workload completes in about 400 ms.",
+            "timestamp": "2030-01-15T12:00:11Z",
+            "timestamp_state": "known",
+            "timestamp_candidates": [
+              "2030-01-15T12:00:11Z"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "runbook",
+        "kind": "runbook",
+        "title": "Synthetic operating guidance",
+        "sha256": "a95ee39ac3a271a6717f44ff2cdc956e958f536ccdb8d5a9369f06e0793d9a3f",
+        "raw": {
+          "id": "runbook",
+          "kind": "runbook",
+          "title": "Synthetic operating guidance",
+          "events": [
+            {
+              "id": "r1",
+              "text": "Approved task_deadline_ms=5000. Revert to reviewed configuration only after validating evidence.",
+              "timestamp": null
+            }
+          ]
+        },
+        "events": [
+          {
+            "id": "r1",
+            "text": "Approved task_deadline_ms=5000. Revert to reviewed configuration only after validating evidence.",
+            "timestamp": null,
+            "timestamp_state": "missing",
+            "timestamp_candidates": []
+          }
+        ]
+      }
+    ],
+    "timeline": [
+      {
+        "event_sha256": "bbff4e99a225ec63b88888dd5a80e1fd1b60892a3dea6824d20fcfa061aafd37",
+        "text": "Release demo-r2 deployed. Configuration change details unavailable.",
+        "timestamp": "2030-01-15T12:00:00Z",
+        "timestamp_state": "known",
+        "timestamp_candidates": [
+          "2030-01-15T12:00:00Z"
+        ],
+        "kind": "deployment",
+        "occurrences": [
+          {
+            "source_id": "deploy",
+            "event_id": "d1"
+          }
+        ]
+      },
+      {
+        "event_sha256": "927614669c5d06bac8b4b1ff5d929616542c460a9ad8e9d5e12fbecd51be8522",
+        "text": "Timeout rate rose from 1% to 38% after demo-r2.",
+        "timestamp": "2030-01-15T12:00:10Z",
+        "timestamp_state": "known",
+        "timestamp_candidates": [
+          "2030-01-15T12:00:10Z"
+        ],
+        "kind": "metric",
+        "occurrences": [
+          {
+            "source_id": "metrics",
+            "event_id": "m1"
+          }
+        ]
+      },
+      {
+        "event_sha256": "b83e489d6dc3c9fcce40f5a94f66c0cddeb28e62c694f20df4de16cfe07c84fa",
+        "text": "Worker timeout at 50 ms; usual workload completes in about 400 ms.",
+        "timestamp": "2030-01-15T12:00:11Z",
+        "timestamp_state": "known",
+        "timestamp_candidates": [
+          "2030-01-15T12:00:11Z"
+        ],
+        "kind": "log",
+        "occurrences": [
+          {
+            "source_id": "worker",
+            "event_id": "w1"
+          }
+        ]
+      },
+      {
+        "event_sha256": "f0f665fd2efe0837b8124c58120140877b8567d4adf71dfb1cab68f85807ecd8",
+        "text": "Approved task_deadline_ms=5000. Revert to reviewed configuration only after validating evidence.",
+        "timestamp": null,
+        "timestamp_state": "missing",
+        "timestamp_candidates": [],
+        "kind": "runbook",
+        "occurrences": [
+          {
+            "source_id": "runbook",
+            "event_id": "r1"
+          }
+        ]
+      }
+    ],
+    "warnings": [
+      {
+        "code": "TIMESTAMP_MISSING",
+        "source_id": "runbook",
+        "event_id": "r1",
+        "candidates": []
+      }
+    ],
+    "counts": {
+      "input_events": 4,
+      "unique_events": 4,
+      "duplicates": 0
+    }
+  },
+  "analysis": {
+    "status": "uncertain",
+    "summary": "Known demo: timeouts are observed, but the decisive runtime configuration is absent. The cause remains uncertain.",
+    "hypotheses": [
+      {
+        "id": "deadline-regression",
+        "label": "Runtime task deadline configuration regression",
+        "assessment": "uncertain",
+        "supports": [
+          {
+            "source_id": "metrics",
+            "event_id": "m1",
+            "source_sha256": "4f6c817805381537b8f452fe55cf17fd5965f4bc59916e38255a030ebb525aea",
+            "quote": "Timeout rate rose from 1% to 38% after demo-r2."
+          },
+          {
+            "source_id": "worker",
+            "event_id": "w1",
+            "source_sha256": "4aad8b34f9cdb2f188403d8c0820341e17b9f29bf9885b965974b79cf3065142",
+            "quote": "Worker timeout at 50 ms; usual workload completes in about 400 ms."
+          }
+        ],
+        "contradicts": []
+      },
+      {
+        "id": "workload-latency",
+        "label": "Workload latency or dependency delay",
+        "assessment": "alternative_unresolved",
+        "supports": [
+          {
+            "source_id": "metrics",
+            "event_id": "m1",
+            "source_sha256": "4f6c817805381537b8f452fe55cf17fd5965f4bc59916e38255a030ebb525aea",
+            "quote": "Timeout rate rose from 1% to 38% after demo-r2."
+          }
+        ],
+        "contradicts": []
+      }
+    ],
+    "missing_evidence": [
+      "Obtain the runtime task_deadline_ms configuration and approved value for the incident window."
+    ],
+    "remediation": [
+      {
+        "id": "review-deadline",
+        "proposal": "Consider restoring the reviewed task deadline configuration; proposal only.",
+        "preconditions": [
+          "Resolve missing or contradictory evidence first.",
+          "Authorized operator verifies workload requirements and reviews the exact configuration delta.",
+          "Capture the existing configuration and obtain an approved change window."
+        ],
+        "risk": "Longer deadlines may increase queue backlog or conceal a different fault.",
+        "rollback": "An authorized operator restores the captured pre-change configuration if the approved checks fail.",
+        "verification": [
+          "Compare runtime configuration with the reviewed target.",
+          "Observe timeout rate and queue latency against a documented baseline.",
+          "Stop and investigate if the expected improvement is absent."
+        ]
+      }
+    ]
+  },
+  "verification": {
+    "citation_integrity": "PASS",
+    "semantic_reference": "PASS_KNOWN_REFERENCE_ONLY",
+    "limits": "Exact quotes do not prove conclusions. Semantic checks cover three synthetic reference cases only."
+  },
+  "dossier_sha256": "412c86e13789af1c347a028ccec48c57876af394c95cc83bc3b3d5cd5a4a8926"
+}
