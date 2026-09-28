@@ -1,6 +1,6 @@
 # TraceHarbor — offline test build
 
-This private build uses synthetic, handwritten fixtures. It makes no model calls.
+This public source test build uses synthetic, handwritten fixtures. It makes no model calls.
 Fixture results are not real Nebius inference, visual QA or contest submission evidence.
 
 ## Start locally
@@ -44,15 +44,18 @@ Remaining live prerequisites: model-specific JSON-object capability, verified pr
 token/template bounds (proposed maximum 3000 input/1500 output per case), effective credit
 exhaustion/spending-stop evidence, and separately reviewed exact three-case admission.
 
-## Release still pending
+## Release status
 
-This ZIP is a private downloadable test build, not a published project. Supported visual QA,
-actual admitted Nebius runtime evidence, a recorded public video under three minutes,
-public open-source repository/test-build publication and final contest submission remain pending.
+Public source is published at https://github.com/Elinfiny/TraceHarbor, with verified
+commit `18a98b4aa6c9264e56d18e77e107dacc92eb0aed`. The separately verified offline
+build has SHA-256 `92b740d86b1766547feaa086c956a2ce992d74af5b0248aa9db05dde8300af97`.
+The actual public GitHub Download ZIP remains unverified; it is distinct from that offline build.
+Downloadable source is not a hosted demo. Supported visual QA, actual admitted Nebius runtime
+evidence, a recorded public video under three minutes and final contest submission remain pending.
 `VIDEO_SCRIPT.md` is a 160-second script, not a video. `SUBMISSION_DRAFT.md` is a draft.
-Existing release materials do not establish completed publication or submission.
+Existing release materials do not establish completed live inference, visual QA, video publication or contest submission.
 
 Application, fixtures, adapters, probe, tests and LICENSE preserve the accepted offline
 candidate bytes. Only publication documentation and its derived manifest differ.
 This root-level guide uses the source-repository layout. The separately accepted private
-offline ZIP and its original guide remain unchanged. Public links are not yet assigned.
+offline ZIP and its original guide remain unchanged. The existing public source URL is given above.
