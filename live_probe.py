@@ -82,7 +82,7 @@ def execute(permit_path, output):
                 'error': str(exc) if isinstance(exc, ProviderError) else type(exc).__name__}
         write_new(output/f'{index+1}-terminal.json', outcome)
         outcomes.append(outcome)
-        if outcome['status'] == 'TOKEN_BOUND_VIOLATION_STOP': break
+        if outcome['status'] != 'VERIFIED_RECORD': break
     write_new(output/'result.json', {'operation_id': permit['operation_id'], 'outcomes': outcomes,
         'completed_three': len(outcomes) == 3 and all(x['status'] == 'VERIFIED_RECORD' for x in outcomes),
         'live_proof_scope': 'local execution receipts; imported files alone are unauthenticated'})
