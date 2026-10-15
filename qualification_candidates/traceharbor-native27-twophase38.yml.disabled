@@ -1,0 +1,61 @@
+name: TraceHarbor PRIVATE native qualification27
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        type: choice
+        options: [first, second]
+        required: true
+      source_sha:
+        type: string
+        required: true
+      workflow_sha256:
+        type: string
+        required: true
+      driver_sha256:
+        type: string
+        required: true
+      first_run_id:
+        type: string
+        default: ''
+      first_commit:
+        type: string
+        default: ''
+permissions: {}
+jobs:
+  reserve:
+    # PRIVATE38: both phases share one eventual source; separate admissions required.
+    # Publishing removes the inactive guard; no publication or dispatch admitted here.
+    if: >-
+      ${{ ((inputs.phase == 'first' && inputs.first_run_id == '' && inputs.first_commit == '') ||
+          (inputs.phase == 'second' && inputs.first_run_id != '' && inputs.first_commit != '')) &&
+          github.repository == 'Elinfiny/TraceHarbor' &&
+          github.repository_id == '1391430317' && github.repository_owner_id == '273768139' &&
+          github.actor_id == '273768139' && github.event.repository.fork == false &&
+          github.event.repository.private == false && github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' && github.run_attempt == 1 &&
+          github.sha == inputs.source_sha && github.workflow_sha == inputs.source_sha &&
+          inputs.driver_sha256 == '1a99f5814c9b2d34357c8e4f44a36af918cc52945a655a0fe21d1b44575904f8' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: One qualification phase, no model or pilot allowance
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          Q27_ADMITTED: 'REQUIRES_FUTURE_REVIEW'
+          Q27_PHASE: ${{ inputs.phase }}
+          Q27_SOURCE: ${{ inputs.source_sha }}
+          Q27_WORKFLOW_HASH: ${{ inputs.workflow_sha256 }}
+          Q27_DRIVER_HASH: ${{ inputs.driver_sha256 }}
+          Q27_FIRST_RUN: ${{ inputs.first_run_id }}
+          Q27_FIRST_COMMIT: ${{ inputs.first_commit }}
+        run: python3 qualification/native27.py
+      # No upload/cache/install. Two <=16KiB public log receipts proposed.
+      # Effective public log retention NOT_OBSERVED; no account setting change.
+      # Logs/summary are not artifact-storage allowance; actual CI admission remains open.
