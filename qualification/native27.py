@@ -13,6 +13,21 @@ import os
 from pathlib import Path
 import re
 import time
+import sys
+from native27_validator42 import Producer, digest
+
+# PRIVATE42 default: external existing admission hook and bindings UNBOUND.
+EXTERNAL_FIRST_GATE = None
+NATIVE42_BINDING = None
+PUBLIC42 = Producer()
+
+def capture42(method, suffix, status, body):
+    if os.environ.get("Q27_PHASE") != "first":
+        return
+    target = "/git/ref/" + REF[5:]
+    if PUBLIC42.raw or (method == "GET" and suffix == target):
+        PUBLIC42.capture(method, BASE + suffix, status, body)
+
 
 REPO = 'Elinfiny/TraceHarbor'
 RID, OWNER = 1391430317, 273768139
@@ -106,6 +121,7 @@ def request(method, suffix, payload=None, public=False):
         guard('POST_RESPONSE')
         body = response.read(65537)
         ORIGINALS.append(('RETURNED_BYTES', body, response.status))  # Before clock/parse/I/O.
+        capture42(method, suffix, response.status, body)  # bounded public original BEFORE guard/parse
         LAST_STATUS = response.status
         guard('POST_RETURN')
         require(len(body) <= 65536, 'OVERSIZED_OBSERVED_PREFIX_ONLY')
@@ -180,6 +196,9 @@ def ref_readback(commit):
 def main():
     global DEADLINE, VERIFIED_CONTEXT, EFFECT_STATE
     DEADLINE = time.monotonic()+110
+    require(EXTERNAL_FIRST_GATE is not None and NATIVE42_BINDING is not None and
+            EXTERNAL_FIRST_GATE.verify_exact_existing_admission(NATIVE42_BINDING),
+            'NO_AUTHENTIC_EXTERNAL42_BINDING')
     # Future independent review must admit exact source, account usage/retention,
     # first/second once-only dispatch journals and native token permissions.
     # Inputs/context are bindings, NEVER authority or proof that a POST occurred.
@@ -253,10 +272,23 @@ def main():
                'commit': commit, 'tree': tree, 'native_ref_status': status,
                'native_response': obj, 'scope': 'CREATE_REFUSAL_PRIMITIVE_ONLY', 'PLAN': None}
     guard('PRE_FINAL_EXPORT')
-    output = canonical(receipt)
-    require(len(output) <= 16384, 'PUBLIC_RECEIPT_TOO_LARGE')
-    guard('PRE_LOG_WRITE')
-    print(output.decode(), flush=True)
+    if phase == 'first':
+        binding = {**NATIVE42_BINDING, 'commit': commit, 'tree': tree}
+        require(binding['source'] == source and binding['first_run_id'] == int(run_id) and
+                binding['workflow_id'] == current['workflow_id'] and
+                binding['workflow_sha256'] == os.environ['Q27_WORKFLOW_HASH'] and
+                binding['driver_sha256'] == os.environ['Q27_DRIVER_HASH'] and
+                digest(Path(__file__).with_name('native27_validator42.py').read_bytes()) == binding['validator_sha256'] and
+                HTTP_COUNTS == {'GET': 10, 'POST': 2}, 'PUBLIC42_CONTEXT_OR_COUNTS')
+        output = PUBLIC42.frame(binding, guard)
+        guard('PRE_LOG_WRITE')
+        sys.stdout.buffer.write(output)
+        sys.stdout.buffer.flush()
+    else:
+        output = canonical(receipt)
+        require(len(output) <= 16384, 'PUBLIC_RECEIPT_TOO_LARGE')
+        guard('PRE_LOG_WRITE')
+        print(output.decode(), flush=True)
     guard('POST_FINAL_EXPORT')
 
 
