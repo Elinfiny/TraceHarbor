@@ -10,7 +10,7 @@ import json
 import os
 from pathlib import Path
 from core import canonical, digest, import_package, parse_json
-from nebius import request_for, https_once, decode_response, ProviderError
+from nebius import request_for, https_once, decode_response, ProviderError, project_request_path
 from live_service import build_record
 
 CASES = ('complete', 'missing', 'contradictory')
@@ -50,7 +50,8 @@ def write_new(path, data):
     try: os.fsync(directory)
     finally: os.close(directory)
 
-def execute(permit_path, output):
+def execute(permit_path, output, project_id=None):
+    project_request_path(project_id)
     permit_path = permit_path.resolve()
     permit = parse_json(permit_path.read_bytes())
     model = os.environ.get('NEBIUS_MODEL')
@@ -68,7 +69,7 @@ def execute(permit_path, output):
             'state': 'ATTEMPTING', 'retries': 0})
         # Failure after ATTEMPTING is unknown unless a terminal receipt exists. Never replay.
         try:
-            analysis, metadata = decode_response(https_once(request), model)
+            analysis, metadata = decode_response(https_once(request, project_id=project_id), model)
             metadata['request_sha256'] = digest(request)
             record = build_record(raw, analysis, metadata)
             write_new(output/f'{name}-dossier.json', record)
@@ -92,8 +93,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--admission', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--project-id', default=None)
     args = parser.parse_args()
-    try: return execute(args.admission, args.out)
+    try: return execute(args.admission, args.out, project_id=args.project_id)
     except (ValueError, OSError, KeyError, TypeError, InvalidOperation):
         print('Live probe not completed. Check admission, credentials and existing reservation; do not replay.')
         return 2
