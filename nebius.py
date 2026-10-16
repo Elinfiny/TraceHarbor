@@ -33,16 +33,25 @@ def request_for(evidence, model):
     return {'model': model, 'messages': [
         {'role': 'system', 'content': instruction},
         {'role': 'user', 'content': canonical(view).decode()}],
-        'response_format': {'type': 'json_object'}, 'max_tokens': 1500,
+        'response_format': {'type': 'json_object'}, 'max_completion_tokens': 1500,
         'n': 1, 'stream': False, 'store': False}
 
-def https_once(payload):
+EXPECTED_PROJECT_ID = 'aiproject-e00d73xwjm884tnvcs'
+
+def project_request_path(project_id=None):
+    # Routing configuration only; this is not admission or credential ownership.
+    if type(project_id) is not str or project_id != EXPECTED_PROJECT_ID:
+        raise ProviderError('PROJECT_NOT_CONFIGURED')
+    return '/v1/chat/completions?ai_project_id=' + EXPECTED_PROJECT_ID
+
+def https_once(payload, project_id=None):
+    path = project_request_path(project_id)
     key = os.environ.get('NEBIUS_API_KEY')
     if not key or '\n' in key or '\r' in key:
         raise ProviderError('CREDENTIAL_NOT_CONFIGURED')
     connection = http.client.HTTPSConnection('api.tokenfactory.nebius.com', timeout=30)
     try:
-        connection.request('POST', '/v1/chat/completions', canonical(payload),
+        connection.request('POST', path, canonical(payload),
                            {'Content-Type': 'application/json', 'Authorization': 'Bearer '+key})
         response = connection.getresponse()
         # No redirects, retries, SDK hooks, environment endpoint override, or body logging.
@@ -93,8 +102,12 @@ def decode_response(raw, requested_model):
         raise ProviderError('PROVIDER_INVALID_JSON_OR_STRUCTURE') from None
 
 class NebiusAdapter:
+    def __init__(self, project_id=None):
+        self.project_id = project_id
+
     def analyze(self, evidence):
+        project_request_path(self.project_id)
         payload = request_for(evidence, os.environ.get('NEBIUS_MODEL'))
-        analysis, metadata = decode_response(https_once(payload), payload['model'])
+        analysis, metadata = decode_response(https_once(payload, project_id=self.project_id), payload['model'])
         metadata['request_sha256'] = digest(payload)
         return analysis, metadata

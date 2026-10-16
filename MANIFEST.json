@@ -74,8 +74,8 @@
     },
     {
       "path": "live_probe.py",
-      "bytes": 6116,
-      "sha256": "47fcd8f366cb551d86ba7b7a72b0b03da1d7628593e296c68c19477dfb21368c"
+      "bytes": 6286,
+      "sha256": "ffddb42a83b8dfe164bf2d0374f60e9cb7b1c9ee140205cd1c579a4b8af0aff3"
     },
     {
       "path": "live_service.py",
@@ -84,8 +84,8 @@
     },
     {
       "path": "nebius.py",
-      "bytes": 5442,
-      "sha256": "7fee5b6d24e311ab41359b25731a2b73118929ec54484c053d23fcc7c2a2c597"
+      "bytes": 6026,
+      "sha256": "a162f41880dd7621379e93ce932f9b97a7524abf195d70b56b199a51c7fb6fcc"
     },
     {
       "path": "output.schema.json",
@@ -156,6 +156,31 @@
       "path": "web/style.css",
       "bytes": 4100,
       "sha256": "911467e25c63dc9985642d5a613bfdaa1f306b7d04b753863d734dd8b5833144"
+    },
+    {
+      "path": "tests/test_project_request51.py",
+      "bytes": 8669,
+      "sha256": "94e939f5995e4243a30f2d8ee9182455c9f6dfcc136613ab9ea885dcf5983de4"
+    },
+    {
+      "path": "tests/test_project_caller52.py",
+      "bytes": 10344,
+      "sha256": "853ec2d3cfad61b08e2902cf20e19586d95d984e2ad7c7de65cbadb173b77573"
+    },
+    {
+      "path": "tests/test_repository_layout53.py",
+      "bytes": 4974,
+      "sha256": "5df817b06e1d60f992e741e18c05067ad82b20b0e336cb4a58bf48d709585383"
+    },
+    {
+      "path": "docs/nebius_project_request51.md",
+      "bytes": 3821,
+      "sha256": "2eb1aaa485c34feac26e8492d6c283c254123319119890bff287108ed6813ccd"
+    },
+    {
+      "path": "docs/project_caller52.md",
+      "bytes": 3139,
+      "sha256": "cb8c001ea026fffe8725584e498696f1c6b4c45c8de1695f378a45826d054e78"
     }
   ]
 }
