@@ -1,4 +1,4 @@
-"""Inactive fresh-ONE Git backend algorithm. No native issuer/client is bound.
+"""Dormant fresh-ONE Git backend with separately guarded native94 producer.
 
 Synthetic construction is trusted test code, never native authority. Local
 diagnostics and attempt markers are test protection, not cloud escrow or a
@@ -53,15 +53,23 @@ class Refuse(Exception):
 
 def native_binding():
     """No authentic issuer/runtime/client/custody/capture/grant is installed."""
-    return None
+    from one_native94 import peek_context94
+    return peek_context94()
 
 
 class OneBackend:
     def __init__(self):
-        if native_binding() is None:
+        context = native_binding()
+        if context is None:
             raise Refuse('NO_AUTHENTIC_NATIVE_BINDING91')
-        # A caller-supplied object or changed loader cannot create authority.
-        raise Refuse('NATIVE_CLIENT_AND_ISSUER_NOT_BOUND91')
+        from one_native94 import backend_from_context94
+        self._core94 = backend_from_context94(context)
+
+    def reserve(self):
+        return self._core94.reserve()
+
+    def verify(self, receipt):
+        return self._core94.verify(receipt)
 
 
 @dataclass(frozen=True)
@@ -234,21 +242,19 @@ def _private_failure(call):
     return guarded
 
 
-class _SyntheticBackend:
-    classification = 'SYNTHETIC_ALGORITHM_ONLY_NOT_NATIVE'
-
-    def __init__(self, plan, fake_git, capture, clock):
-        self.record = record_for(plan)
-        if type(capture) is not PrivateOriginals:
-            raise Refuse('EXPLICIT_PRIVATE_CAPTURE_REQUIRED91')
+class _GitRecordCore:
+    """Shared exact Git protocol, not an admission or credential factory."""
+    def __init__(self, plan, record, fake_git, capture, clock, *, namespace, message, local_marker):
+        self.record = record
         self.plan, self._git, self.capture, self._clock = plan, fake_git, capture, clock
+        self.message, self.local_marker = message, local_marker
         self.first_primary = None
         self.secondary = []  # Private actual secondary exception objects, ordered.
         self.attempted = False
         self._receipt = None
         self._verified = False
-        self.key = digest(canonical({'operation': OP, 'repository_id': REPO_ID, 'nonce': plan.nonce}))
-        self.ref = NAMESPACE + self.key
+        self.key = digest(canonical({'operation': record['operation'], 'repository_id': REPO_ID, 'nonce': plan.nonce}))
+        self.ref = namespace + self.key
         self.raw = canonical(self.record)
         self.blob = git_oid('blob', self.raw)
         self.tree = git_oid('tree', b'100644 ' + PATH.encode() + b'\0' + bytes.fromhex(self.blob))
@@ -333,7 +339,8 @@ class _SyntheticBackend:
         if self.attempted or self.first_primary is not None:
             self._fail('CONSUMED_OR_UNKNOWN_NO_RETRY91')
         self.attempted = True  # Before marker, client, credential or remote call.
-        self._invoke('LOCAL_ATTEMPT', lambda: self.capture.reserve_attempt(self.key))
+        if self.local_marker:
+            self._invoke('LOCAL_ATTEMPT', lambda: self.capture.reserve_attempt(self.key))
         self._identity()
         blob = self._call('CREATE_BLOB', 'POST', '/git/blobs',
                           {'encoding': 'base64', 'content': base64.b64encode(self.raw).decode()}, 201)
@@ -344,7 +351,7 @@ class _SyntheticBackend:
         if tree.get('sha') != self.tree:
             self._fail('TREE_ID91')
         commit = self._call('CREATE_COMMIT', 'POST', '/git/commits',
-                            {'message': MESSAGE, 'tree': self.tree, 'parents': [self.plan.source_commit]}, 201)
+                            {'message': self.message, 'tree': self.tree, 'parents': [self.plan.source_commit]}, 201)
         if not hexid(commit.get('sha'), 40):
             self._fail('COMMIT_ID91')
         # The single durable atomic transition. No update, delete, adoption,
@@ -374,7 +381,7 @@ class _SyntheticBackend:
         expected = [{'path': PATH, 'mode': '100644', 'type': 'blob', 'sha': r['blob']}]
         if (ref.get('ref') != self.ref or ref.get('object', {}).get('type') != 'commit'
                 or ref['object'].get('sha') != r['commit']
-                or commit.get('sha') != r['commit'] or commit.get('message') != MESSAGE
+                or commit.get('sha') != r['commit'] or commit.get('message') != self.message
                 or commit.get('tree', {}).get('sha') != r['tree']
                 or [x.get('sha') for x in commit.get('parents', [])] != [self.plan.source_commit]
                 or tree.get('sha') != r['tree'] or projection != expected or raw != self.raw
@@ -391,6 +398,16 @@ class _SyntheticBackend:
                 or canonical(receipt) != canonical(self._receipt)):
             self._fail('RECEIPT_INVOCATION_OR_BYTES91')
         return copy.deepcopy(self.record)
+
+
+class _SyntheticBackend(_GitRecordCore):
+    classification = 'SYNTHETIC_ALGORITHM_ONLY_NOT_NATIVE'
+    def __init__(self, plan, fake_git, capture, clock):
+        record = record_for(plan)
+        if type(capture) is not PrivateOriginals:
+            raise Refuse('EXPLICIT_PRIVATE_CAPTURE_REQUIRED91')
+        super().__init__(plan, record, fake_git, capture, clock, namespace=NAMESPACE,
+                         message=MESSAGE, local_marker=True)
 
 
 def synthetic_backend(plan, fake_git, capture, clock):
