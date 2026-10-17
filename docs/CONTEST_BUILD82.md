@@ -46,8 +46,9 @@ and permissions make repeated builds from the same source bytes reproducible.
 The build contains BUILD82.json source pins and an exact MANIFEST.csv covering
 every other payload. The manifest does not hash itself. The original product
 baseline is commit 30caddc4c730d2fef98524f67b431fa56e3daa2c/tree
-639b972e8e590c9dc0faff531b11607e985de394; the builder, this guide and disabled
-workflow are the distinct review overlay, not changes already merged to main.
+639b972e8e590c9dc0faff531b11607e985de394 is the historical product baseline.
+The exact packaged overlay is bound by BUILD82.json source pins; the current
+canonical promotion commit is recorded separately in the release receipt.
 No previous repository MANIFEST.json is copied with stale coverage.
 
 The single new packaging qualification uses the unique unknown fixture embedded
@@ -74,3 +75,7 @@ grant is null and inference remains HOLD. Project routing, credits, the server
 exception and a successful offline build do not authorize a provider request.
 Do not execute live_probe.py or native qualification from this build. Contest
 video, English demonstration and submission proof are still pending.
+
+Unit 83 corrects the manifest interface to relative_path,size_bytes,sha256.
+The original unit-82 CLI receipt remains immutable and is not rerun. A new
+artifact needs its own strict archive verification before distribution.

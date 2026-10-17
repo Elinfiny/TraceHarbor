@@ -91,11 +91,11 @@ def build(root, output):
         'new_paths': [n for n in FILES if n.startswith(('tools/', 'docs/', 'workflow_candidates/'))],
         'source_pins': pins, 'fixture_sha256': sha(canonical(CASE)),
         'excluded': 'credentials/env/admissions/databases/state/logs/cache/native qualification/reference dossier history',
-        'baseline_note': 'Existing product bytes pinned to baseline; three new files are review overlay, not merged main',
+        'baseline_note': 'Historical product baseline above; source_pins bind the packaged overlay; current promotion is recorded separately',
     }) + b'\n'
     manifest = io.StringIO(newline='')
     writer = csv.writer(manifest, lineterminator='\n')
-    writer.writerow(['path', 'bytes', 'sha256'])
+    writer.writerow(['relative_path', 'size_bytes', 'sha256'])
     for name, data in sorted(payload.items()):
         writer.writerow([name, len(data), sha(data)])
     payload['MANIFEST.csv'] = manifest.getvalue().encode()
@@ -152,12 +152,12 @@ def smoke(archive_path, work):
                 if time.monotonic() >= deadline - 10:
                     raise TimeoutError('Parent extraction deadline')
             rows = list(csv.DictReader(io.StringIO(data['MANIFEST.csv'].decode())))
-            if len(rows) != len(data)-1 or len({r['path'] for r in rows}) != len(rows):
+            if len(rows) != len(data)-1 or len({r['relative_path'] for r in rows}) != len(rows):
                 raise ValueError('Manifest coverage')
-            if {r['path'] for r in rows} != set(data)-{'MANIFEST.csv'}:
+            if {r['relative_path'] for r in rows} != set(data)-{'MANIFEST.csv'}:
                 raise ValueError('Manifest members')
             for row in rows:
-                if int(row['bytes']) != len(data[row['path']]) or row['sha256'] != sha(data[row['path']]):
+                if int(row['size_bytes']) != len(data[row['relative_path']]) or row['sha256'] != sha(data[row['relative_path']]):
                     raise ValueError('Manifest hash')
             for name, body in data.items():
                 f = root / name
