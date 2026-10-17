@@ -222,11 +222,102 @@ def qualify_synthetic(provider, target, bindings, clock, deadline, state=None,
         state.fail(str(error) if isinstance(error,v.Refuse) else 'READBACK_EXCEPTION')
 
 
+def _bound_readback65(bound):
+    provider,target,bindings,clock,deadline,state=(bound.provider,bound.target,dict(bound.bindings),bound.monotonic,bound.deadline,bound.state)
+    synthetic_redirect_policy=bound.redirect_policy
+    try:
+        v.need(state.validator.first_unknown is None, 'PREVIOUS_UNKNOWN')
+        preflight(target,bindings)
+        v.need(callable(clock) and type(deadline) in (float,int) and math.isfinite(deadline), 'CLOCK')
+        v.need(0 < deadline-clock() <= 300, 'WINDOW')
+        r=Reader(provider,state,clock,deadline,synthetic_redirect_policy)
+        b=bindings
+        run=r.json('/actions/runs/'+str(target.run_id))
+        v.need(run['id']==target.run_id and type(run['id']) is int
+               and run['run_attempt']==target.attempt and type(run['run_attempt']) is int, 'RUN_BINDING')
+        v.need(run['repository']['id']==v.RID and run['repository']['full_name']==v.REPO
+               and run['repository']['owner']['id']==v.OWNER, 'RUN_REPOSITORY')
+        v.need(run['status']=='completed' and run['conclusion']=='success'
+               and run['head_sha']==b['source'], 'RUN_TERMINAL_SOURCE')
+        # First run UTC is original provider data. Translate ONCE into the SAME
+        # monotonic timeline; all following reads are bounded by that expiry.
+        start=v.timestamp(run['run_started_at']);age=bound.wall_now()-start
+        v.need(0<=age<300,'FIRST_WINDOW65')
+        deadline=min(deadline,bound.mono_anchor+(start+300-bound.wall_anchor))
+        r.deadline=deadline
+        if hasattr(provider,'deadline'):provider.deadline=deadline
+        # Membership in this attempt comes from the attempt-scoped endpoint;
+        # job GET alone need not expose run_attempt in documented responses.
+        jobs=r.json('/actions/runs/'+str(target.run_id)+'/attempts/1/jobs?per_page=100')
+        v.need(type(jobs['total_count']) is int and 0 < jobs['total_count'] <= 100
+               and len(jobs['jobs'])==jobs['total_count'], 'JOBS_COMPLETE')
+        members=[j for j in jobs['jobs'] if type(j.get('id')) is int and j['id']==target.job_id]
+        v.need(len(members)==1, 'JOB_ATTEMPT_MEMBERSHIP')
+        job=r.json('/actions/jobs/'+str(target.job_id))
+        for candidate in (members[0],job):
+            v.need(type(candidate['id']) is int and candidate['id']==target.job_id
+                   and type(candidate['run_id']) is int and candidate['run_id']==target.run_id
+                   and candidate['head_sha']==b['source'] and candidate['status']=='completed'
+                   and candidate['conclusion']=='success', 'JOB_BINDING')
+            steps=candidate['steps']
+            v.need(type(steps) is list and 0<len(steps)<=100
+                   and all(s['status']=='completed' and s['conclusion']=='success' for s in steps), 'STEP_TERMINAL')
+        normalized={**run,'repository_id':run['repository']['id'],
+                    'owner_id':run['repository']['owner']['id'], 'actor_id':run['actor']['id'],
+                    'triggering_actor_id':run['triggering_actor']['id']}
+        writer={**job,'attempt':target.attempt}
+        source=r.json('/git/commits/'+b['source'])
+        v.need(source['sha']==b['source'] and sha40(source['tree']['sha']), 'SOURCE_COMMIT')
+        tree=r.json('/git/trees/'+source['tree']['sha']+'?recursive=1')
+        v.need(tree['sha']==source['tree']['sha'] and tree['truncated'] is False, 'SOURCE_TREE')
+        observed={}
+        for path,key in ((v.WORKFLOW,'workflow_sha256'),('qualification/native27.py','driver_sha256'),
+                         ('qualification/native27_validator42.py','validator_sha256')):
+            entries=[e for e in tree['tree'] if e['path']==path and e['type']=='blob']
+            v.need(len(entries)==1 and sha40(entries[0]['sha']), 'SOURCE_PATH')
+            entry=entries[0];obj=r.json('/git/blobs/'+entry['sha'])
+            v.need(obj['encoding']=='base64' and obj['sha']==entry['sha'], 'BLOB_ENCODING')
+            raw=base64.b64decode(obj['content'].replace('\n',''),validate=True)
+            v.need(len(raw)<=v.RECORD_MAX and type(obj['size']) is int and obj['size']==len(raw)
+                   and blob_sha(raw)==entry['sha'] and v.digest(raw)==b[key], 'SOURCE_PIN')
+            observed[key]=v.digest(raw)
+        main=r.json('/git/ref/heads/main');observed['main']=main['object']['sha']
+        v.need(main['ref']=='refs/heads/main' and main['object']['type']=='commit'
+               and observed['main']==b['source'], 'MAIN_SOURCE')
+        log=r.log(target.job_id)
+        commit=r.json('/git/commits/'+b['commit']);newtree=r.json('/git/trees/'+b['tree'])
+        ref=r.json('/git/ref/'+v.REF[len('refs/'):])
+        v.check_body(2,r.metadata_raw['/git/commits/'+b['commit']],b)
+        v.check_body(3,r.metadata_raw['/git/trees/'+b['tree']],b)
+        v.check_body(5,r.metadata_raw['/git/ref/'+v.REF[len('refs/'):]],b)
+        observed.update(commit=commit['sha'],tree=newtree['sha'],ref_commit=ref['object']['sha'])
+        now=bound.wall_now();remaining=min(deadline-clock(),300-(now-start))
+        v.need(remaining>0, 'WINDOW_EXPIRED')
+        receipt=v.validate(log,normalized,writer,observed,now,remaining,state.validator)
+        return Readback('SYNTHETIC_ONLY_NOT_NATIVE' if bound.synthetic else 'VERIFIER_BOUND_READONLY65',receipt,b['source'],target.run_id,target.job_id,live_authority=False)
+    except Exception as error:
+        state.originals.append(('PRIMARY_EXCEPTION',error))
+        state.fail(str(error) if isinstance(error,v.Refuse) else 'READBACK_EXCEPTION')
+
+
+def readback65(bound):
+    from native27_transport60 import consume_bound65
+    consume_bound65(bound)
+    # No dispatch is implemented; actual redirect authorization stays absent.
+    return _bound_readback65(bound)
+
+
 def native_readback(*args, **kwargs):
-    # Concrete transport60 exists, but its authentic native factory is inactive.
-    # Caller arguments never install authority or trigger credential lookup.
     from native27_transport60 import native_factory
-    return native_factory()
+    v.need(not args,'POSITIONAL_NATIVE_ARGUMENT65')
+    return readback65(native_factory(**kwargs))
+
+def main66():
+    from native27_transport60 import native_cli66
+    return native_cli66()
+
 
 if __name__=='__main__':
-    raise SystemExit('INACTIVE59_NATIVE_HOST_REDIRECT_AND_ADMISSION_UNBOUND')
+    import json
+    try:print(json.dumps(main66(),sort_keys=True))
+    except v.Refuse as error:raise SystemExit(str(error)) from None

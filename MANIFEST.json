@@ -181,6 +181,51 @@
       "path": "docs/project_caller52.md",
       "bytes": 3139,
       "sha256": "cb8c001ea026fffe8725584e498696f1c6b4c45c8de1695f378a45826d054e78"
+    },
+    {
+      "path": "qualification/native27.py",
+      "bytes": 15377,
+      "sha256": "0f06aee5f3c5d43cb4001f134665972304d3b9d6a119462630b73ac0f16ee07e"
+    },
+    {
+      "path": "qualification/native27_controller42.py",
+      "bytes": 3267,
+      "sha256": "e8a907a429fa9ab4b066b9cba45fd9cd7ad531ea75cefe69351febe44114a483"
+    },
+    {
+      "path": "qualification/native27_oidc67.py",
+      "bytes": 16198,
+      "sha256": "5259c37642d23b735f8c4dbc9e9395bb360d362a904b7f58c080811796a7ce76"
+    },
+    {
+      "path": "qualification/native27_readback59.py",
+      "bytes": 17372,
+      "sha256": "afb68bb35828883f8ae3aa4ec3e9a13a31f7be92d7a15f4cda70c26753314fa8"
+    },
+    {
+      "path": "qualification/native27_transport60.py",
+      "bytes": 28740,
+      "sha256": "0c87903d1d8b2180bb8370b0eb8523fe55f3404c07d0ddce92675877e5a02b4c"
+    },
+    {
+      "path": "qualification/native27_validator42.py",
+      "bytes": 18082,
+      "sha256": "91706e88802d099dda686ec0b2366d9693a2789ed8605479a3ab17ccc6477e2d"
+    },
+    {
+      "path": "qualification/verifier65-dependency.json",
+      "bytes": 1648,
+      "sha256": "33ef1106874164cc6c04fb8033833bc04c0700c51380f14ee1bd3468324b35bf"
+    },
+    {
+      "path": "workflow_candidates/traceharbor-native42.yml.disabled",
+      "bytes": 2803,
+      "sha256": "0bb66cf81ca7444a49cbbaaa5e13f21aa0319754283e6166b6df9c0b707e4a19"
+    },
+    {
+      "path": "qualification/native27-installed69.json",
+      "bytes": 4588,
+      "sha256": "e44bb11a86b84ad6fc581bcc7db914ad8a2d99367c6e4bac9c8730ddf4ee74f3"
     }
   ]
 }
