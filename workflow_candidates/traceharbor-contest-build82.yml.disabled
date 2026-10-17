@@ -1,0 +1,47 @@
+# SOURCE CANDIDATE ONLY. Outside .github/workflows; no admitted job or upload.
+name: TraceHarbor independent clean contest build82
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Separately admitted immutable source commit
+        type: string
+        required: true
+      admission_nonce:
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  clean-build:
+    if: >-
+      ${{ false && github.event_name == 'workflow_dispatch' &&
+          github.repository == 'Elinfiny/TraceHarbor' &&
+          github.repository_id == '1391430317' &&
+          github.repository_owner_id == '273768139' &&
+          github.actor_id == '273768139' && github.run_attempt == 1 &&
+          github.sha == inputs.source_sha && github.workflow_sha == inputs.source_sha &&
+          inputs.admission_nonce == 'traceharbor-build82-20261017-c0a2f7' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact admitted source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Produce the same allowlisted stdlib build
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          env -i PATH="$PATH" LANG=C.UTF-8 python3 -B tools/contest_build82.py build --out "$RUNNER_TEMP/TraceHarbor_ContestBuild82.zip"
+      # No secrets/id-token/provider request/install/cache/deploy/artifact upload.
+      # Optional pycparser data acquisition is not implemented/admitted here.
+      # It requires a distinct first alternate-host admission and exact81 URL/hash,
+      # whole bytes retained before guards, no redirects/retry/import/install,
+      # 1MiB/32MiB/2048members/ratio200 plus EOF/CRC/RECORD validation.
+      # Do not replay the consumed unit82 CLI smoke. Review83 may admit new job.
