@@ -39,12 +39,13 @@ jobs:
           Q27_WORKFLOW_HASH: ${{ inputs.workflow_sha256 }}
           Q27_DRIVER_HASH: ${{ inputs.driver_sha256 }}
         run: python3 -B qualification/native27.py
-  validator:
-    needs: [writer]
-    if: ${{ false && needs.writer.result == 'success' && inputs.phase == 'first' }}
+  readback65:
+    name: readback65
+    if: ${{ false && inputs.phase == 'second' }}
     permissions:
       contents: read
       actions: read
+      id-token: write
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
@@ -52,9 +53,21 @@ jobs:
         with:
           ref: ${{ inputs.source_sha }}
           persist-credentials: false
-      - name: INACTIVE mechanical validator; native transport unbound
-        run: python3 -B qualification/native27_validator42.py
-# No SECOND job, active path, outputs-as-authority or dispatch here.
-# Job-scoped read permissions are for future checkout/authenticated read adapters.
-# No token is passed between jobs. Both CLIs refuse by default. Future same-source
-# admission must bind real source/hash/workflowID externally before either phase.
+      - id: traceharbor_readback66
+        name: INACTIVE67 same-process OIDC producer and readback
+        env:
+          TRACEHARBOR_READONLY_JOB_TOKEN: ${{ github.token }}
+        run: python3 -B qualification/native27_readback59.py
+# PRIVATE65 only: both literal-false guards remain. No deployment/dispatch.
+# Future readback65 identity: provider-signed OIDC + exact REST job membership;
+# only this job has id-token:write; writer cannot mint its identity here.
+# No job token is accessed by default; custody is lazy after real verification. Future admission66 must bind exact final source,
+# dependency integrity, read-only job-token custody and genuine redirect authority.
+# Both current CLIs refuse BEFORE any token lookup or connection.
+# PRIVATE67: native_cli66 now invokes same-process GitHub OIDC acquisition.
+# URL is an input checked against one independently reviewed exact provider
+# origin/path/query policy BEFORE request bearer access. JWT verification and
+# original public run/job/source context precede readonly job-token access.
+# No stdin pipe, extra action, service, broker or token output is used.
+# Request policy, reviewed selectors/admission/redirect remainNone; both guards
+# stay literalfalse. No job dispatch, new dependency or native effect here.
