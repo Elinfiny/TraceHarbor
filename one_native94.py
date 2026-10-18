@@ -30,6 +30,31 @@ OPERATION = 'TRACEHARBOR_NATIVE_ONE94_V1'
 NAMESPACE = 'refs/tags/traceharbor-native-one94-consumed/'
 MESSAGE = 'TraceHarbor native ONE94 ATTEMPTING_CONSUMED'
 API_VERSION = '2022-11-28'
+GIT_USER_AGENT95 = 'TraceHarbor/one94'
+# Internal capture routing only; neither value confers native authority.
+_CREDENTIAL_RESPONSE95 = object()
+_CREDENTIAL_STAGES95 = frozenset(('TLS_CONSTRUCT','SOCKET_TIMEOUT','HTTP_REQUEST',
+    'HTTP_RESPONSE','HTTP_STATUS','HTTP_MEDIA','HTTP_BODY','RESPONSE_CLOSE',
+    'CONNECTION_CLOSE','PARSE_OIDC_ACQUISITION'))
+
+
+def _capture_scope95(scope):
+    if scope is not None and scope is not _CREDENTIAL_RESPONSE95:
+        raise ProviderError('UNKNOWN_CAPTURE_SCOPE95')
+
+
+def _credential_metadata95(stage, kind, value):
+    # Closed typed projection, never redaction, repr, body/hash or error text.
+    error_type = None
+    if isinstance(value, BaseException):
+        error_type = 'INCOMPLETE_READ' if isinstance(value,http.client.IncompleteRead) else (
+            'TIMEOUT' if isinstance(value,TimeoutError) else 'PRIVATE_ERROR')
+    return {'classification':'PROCESS_PRIVATE_CREDENTIAL95',
+        'stage':stage if type(stage) is str and stage in _CREDENTIAL_STAGES95 else 'PRIVATE_STAGE95',
+        'kind':kind if type(kind) is str and kind in ('OBJECT','BYTES','PARTIAL','EXCEPTION') else 'PRIVATE_KIND95',
+        'byte_count':len(value) if type(value) is bytes else None,
+        'status':value if stage=='HTTP_STATUS' and type(value) is int and 100<=value<=599 else None,
+        'error_type':error_type}
 DEPENDENCIES = {'PyJWT': '2.15.1', 'cryptography': '50.0.2', 'cffi': '2.1.1', 'pycparser': '3.11'}
 
 # Each is a separately reviewed PROTECTED runtime input, not a JSON/env switch.
@@ -73,11 +98,15 @@ class Window94:
         if self.primary is None: self.primary = code
         else: self.secondary.append(('CODE', code))
 
-    def retain(self, stage, kind, value):
+    def retain(self, stage, kind, value, *, _scope95=None):
         self.originals.append((stage, kind, value))
         try:
+            _capture_scope95(_scope95)
             if self.capture is None: raise ProviderError('PROTECTED_CAPTURE_UNBOUND94')
-            self.capture.retain(stage, kind, value)
+            if _scope95 is _CREDENTIAL_RESPONSE95:
+                self.capture.retain_credential_metadata95(_credential_metadata95(stage,kind,value))
+            else:
+                self.capture.retain(stage, kind, value)
             return True
         except Exception as error:
             self.originals.append((stage, 'CAPTURE_EXCEPTION', error))
@@ -100,16 +129,20 @@ class Window94:
         self.check('WALL_ANCHOR94')
         return self.wall_anchor + self.clock()-self.started
 
-    def invoke(self, stage, call, kind='OBJECT'):
+    def invoke(self, stage, call, kind='OBJECT', *, _scope95=None):
+        try:_capture_scope95(_scope95)
+        except ProviderError:
+            self.fail('UNKNOWN_CAPTURE_SCOPE95')
+            raise ProviderError(self.primary) from None
         self.check('PRE_INVOKE_'+stage)
         try: value = call()
         except Exception as original:
             if isinstance(original, http.client.IncompleteRead):
-                self.retain(stage, 'PARTIAL', original.partial[:MAX_RESPONSE+1])
-            self.retain(stage, 'EXCEPTION', original)
+                self.retain(stage, 'PARTIAL', original.partial[:MAX_RESPONSE+1],_scope95=_scope95)
+            self.retain(stage, 'EXCEPTION', original,_scope95=_scope95)
             self.fail('CALL_UNKNOWN94_'+stage)
             raise ProviderError(self.primary) from None
-        if not self.retain(stage, kind, value):
+        if not self.retain(stage, kind, value,_scope95=_scope95):
             self.fail('PRIVATE_CAPTURE_UNKNOWN94')
             raise ProviderError(self.primary) from None
         self.check('POST_RETURN_'+stage)
@@ -128,6 +161,20 @@ class ProtectedCapture94:
     def __init__(self, channel, window):
         self.channel, self.window = channel, window
         self.originals, self.count, self.total = [], 0, 0
+        self.durable_unknown95 = False
+
+    def retain_credential_metadata95(self, metadata):
+        # Only the internal closed projection is accepted, no raw original.
+        if (type(metadata) is not dict or set(metadata)!={'classification','stage','kind','byte_count','status','error_type'}
+                or metadata['classification']!='PROCESS_PRIVATE_CREDENTIAL95'
+                or metadata['stage'] not in _CREDENTIAL_STAGES95|{'PRIVATE_STAGE95'}
+                or metadata['kind'] not in ('OBJECT','BYTES','PARTIAL','EXCEPTION','PRIVATE_KIND95')
+                or metadata['error_type'] not in (None,'INCOMPLETE_READ','TIMEOUT','PRIVATE_ERROR')
+                or (metadata['byte_count'] is not None and (type(metadata['byte_count']) is not int or not 0<=metadata['byte_count']<=MAX_RESPONSE+1))
+                or (metadata['status'] is not None and (type(metadata['status']) is not int or not 100<=metadata['status']<=599))):
+            raise ProviderError('CREDENTIAL_METADATA_SHAPE95')
+        self.originals.append(('CREDENTIAL_RESPONSE95','SAFE_METADATA',metadata))
+        self._write95(git.canonical(metadata))
 
     def retain(self, stage, kind, original):
         self.originals.append((stage, kind, original))
@@ -140,15 +187,31 @@ class ProtectedCapture94:
             # Object identity is retained in memory; no repr of tokens/clients.
             value = {'object_type':type(original).__name__}
         raw = git.canonical({'stage':stage,'kind':kind,'value':value})
+        self._write95(raw)
+
+    def _write95(self, raw):
+        if self.durable_unknown95:
+            raise ProviderError('PRIVATE_DURABLE_CAPTURE_LATCHED95')
         if len(raw)>524288 or self.count>=256 or self.total+len(raw)>8388608:
             raise ProviderError('CAPTURE_BOUND94')
         if self.window.clock()>=self.window.deadline:
             raise ProviderError('CAPTURE_WINDOW94')
-        receipt = self.channel.put_once(self.count, raw, self.window.deadline)
-        readback = self.channel.readback(receipt, self.window.deadline)
-        if readback != raw or self.window.clock()>=self.window.deadline:
-            raise ProviderError('PRIVATE_DURABLE_CAPTURE_UNKNOWN94')
-        self.count += 1; self.total += len(raw)
+        # Consume the attempt/byte budget BEFORE the first durable effect.
+        sequence=self.count;self.count+=1;self.total+=len(raw)
+        try:
+            receipt=self.channel.put_once(sequence,raw,self.window.deadline)
+            self.originals.append(('DURABLE_PUT95','RETURN',receipt))
+            if self.window.clock()>=self.window.deadline:
+                raise TimeoutError('DURABLE_PUT_LATE95')
+            readback=self.channel.readback(receipt,self.window.deadline)
+            self.originals.append(('DURABLE_READBACK95','RETURN',readback))
+            if readback!=raw or self.window.clock()>=self.window.deadline:
+                raise ProviderError('PRIVATE_DURABLE_CAPTURE_UNKNOWN95')
+        except Exception as original:
+            self.originals.append(('DURABLE_ATTEMPT95','EXCEPTION',original))
+            self.durable_unknown95=True
+            self.window.fail('PRIVATE_DURABLE_CAPTURE_UNKNOWN95')
+            raise ProviderError(self.window.primary) from None
 
 
 def validate_configuration94(cfg):
@@ -212,31 +275,34 @@ def _secret(name):
     return value
 
 
-def _https(window, host, method, path, body, headers, limit):
+def _https(window, host, method, path, body, headers, limit, *, _scope95=None):
     """Fixed-host caller; validated TLS, bounded EOF, no redirects/retry."""
     connection=response=None
+    _capture_scope95(_scope95)
+    def invoke(stage,call,kind='OBJECT'):
+        return window.invoke(stage,call,kind,_scope95=_scope95)
     try:
         def construct():
             nonlocal connection
             connection=http.client.HTTPSConnection(host,timeout=window.check('PRE_TLS94'),context=ssl.create_default_context())
             return connection
-        window.invoke('TLS_CONSTRUCT',construct)
+        invoke('TLS_CONSTRUCT',construct)
         def timeout():
             remaining=window.check('PRE_SOCKET_TIMEOUT94')
             connection.timeout=remaining
             if connection.sock is not None:connection.sock.settimeout(remaining)
-        window.invoke('SOCKET_TIMEOUT',timeout)
-        window.invoke('HTTP_REQUEST',lambda:connection.request(method,path,body,headers))
-        window.invoke('SOCKET_TIMEOUT',timeout)
+        invoke('SOCKET_TIMEOUT',timeout)
+        invoke('HTTP_REQUEST',lambda:connection.request(method,path,body,headers))
+        invoke('SOCKET_TIMEOUT',timeout)
         def receive():
             nonlocal response
             response=connection.getresponse()
             return response
-        window.invoke('HTTP_RESPONSE',receive)
-        status=window.invoke('HTTP_STATUS',lambda:response.status)
-        media=window.invoke('HTTP_MEDIA',lambda:response.getheader('Content-Type'))
-        window.invoke('SOCKET_TIMEOUT',timeout)
-        raw=window.invoke('HTTP_BODY',lambda:response.read(limit+1),'BYTES')
+        invoke('HTTP_RESPONSE',receive)
+        status=invoke('HTTP_STATUS',lambda:response.status)
+        media=invoke('HTTP_MEDIA',lambda:response.getheader('Content-Type'))
+        invoke('SOCKET_TIMEOUT',timeout)
+        raw=invoke('HTTP_BODY',lambda:response.read(limit+1),'BYTES')
         if (type(raw) is not bytes or len(raw)>limit or type(status) is not int
                 or not 100<=status<=599 or 300<=status<400 or type(media) is not str
                 or len(media)>256 or media.split(';')[0].strip() not in ('application/json',git.JSON_MEDIA)):
@@ -249,7 +315,7 @@ def _https(window, host, method, path, body, headers, limit):
             if resource is None:continue
             try:resource.close()
             except Exception as original:
-                window.retain(stage,'EXCEPTION',original);window.fail('CLEANUP_UNKNOWN94')
+                window.retain(stage,'EXCEPTION',original,_scope95=_scope95);window.fail('CLEANUP_UNKNOWN94')
             if window.clock()>=window.deadline:window.fail('CLEANUP_LATE94')
     window.check('POST_HTTP_CLEANUP94')
     return status,raw
@@ -272,7 +338,7 @@ class GitClient94:
         token=self._token()  # Never retained/serialized. Called only after signature checks.
         data=None if body is None else git.canonical(body)
         status,raw=_https(self.window,'api.github.com',method,'/repos/'+REPO+path,data,
-            {'Accept':git.JSON_MEDIA,'X-GitHub-Api-Version':API_VERSION,
+            {'Accept':git.JSON_MEDIA,'X-GitHub-Api-Version':API_VERSION,'User-Agent':GIT_USER_AGENT95,
              'Authorization':'Bearer '+token,'Content-Type':'application/json'},git.MAX_WIRE)
         token=None
         return git.Reply(status,raw,git.JSON_MEDIA,True)
@@ -290,10 +356,11 @@ def _oidc94(cfg, window):
     policy=RequestPolicy67(cfg.oidc_hostname,cfg.oidc_path,cfg.oidc_api_version,cfg.audience)
     host,path=request_target67(os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'],policy)
     bearer=_secret('ACTIONS_ID_TOKEN_REQUEST_TOKEN')
-    status,raw=_https(window,host,'GET',path,None,{'Accept':'application/json','Authorization':'Bearer '+bearer},16384)
+    status,raw=_https(window,host,'GET',path,None,{'Accept':'application/json','Authorization':'Bearer '+bearer},16384,
+                      _scope95=_CREDENTIAL_RESPONSE95)
     bearer=None
     if status!=200:raise ProviderError('OIDC_ACQUISITION_HTTP94')
-    value=window.invoke('PARSE_OIDC_ACQUISITION',lambda:git.strict_json(raw))
+    value=window.invoke('PARSE_OIDC_ACQUISITION',lambda:git.strict_json(raw),_scope95=_CREDENTIAL_RESPONSE95)
     token=value.get('value')
     if type(token) is not str or not 1<=len(token)<=16384 or token.count('.')!=2:
         raise ProviderError('OIDC_TOKEN_SHAPE94')

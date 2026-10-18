@@ -93,3 +93,54 @@ with no PR, merge, workflow activation, dispatch, model call or deployment94.
 Primary interfaces: https://docs.github.com/en/actions/reference/security/oidc ;
 https://docs.github.com/en/rest/git/refs ;
 https://docs.github.com/en/rest/actions/workflow-jobs#list-jobs-for-a-workflow-run-attempt .
+
+## Focused correction95 (source and inert evidence only)
+
+F95-1: Only internal OIDC acquisition and its JSON parse select the private
+credential-response scope. Original bodies, partials and exceptions enter
+process memory before guards; durable capture receives a closed typed metadata
+projection, never bytes/base64, token/hash, header, repr, message, traceback or
+cause. This is routing by scope, not text redaction. Unknown scopes refuse before
+transport. Public JWKS and ordinary protected Git/model evidence keep their
+existing bounded exact-byte capture. Memory retention does not promise erasure.
+
+F95-2: The actual GitClient94 header construction now supplies fixed nonsecret
+`User-Agent: TraceHarbor/one94`. Other endpoint/body/media/version/TLS and window
+constraints remain unchanged. GitHub requires this header:
+https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api#user-agent .
+
+F95-3: Each durable attempt consumes its sequence/byte budget before put_once.
+An ambiguous put/readback or late returned write/readback latches capture UNKNOWN
+and prevents every later durable write, including cleanup. Actual originals and
+ordered cleanup errors remain in process memory; the first UNKNOWN is sticky.
+This local latch does not prove provider atomicity or cancellation.
+
+The sole NEW95 six-scenario group instruments these real implementations with
+explicitly synthetic HTTPS resources and a channel labelled INERT, not authentic.
+Its scope is success/non200/partial+cleanup/late/put-or-readback ambiguity and
+ordinary exact capture plus actual User-Agent construction. It does not verify
+real OIDC, credentials, a durable sink, dependency installation or native
+execution. All four protected inputs remain None. Existing94 tests and workflow
+are unchanged and not rerun; independent review and all native/financial gates
+remain required before any promotion or activation.
+
+## Direction96: assertion correction and remaining coverage
+
+Historical NEW95 ran once: cases1-4 passed, case5 aborted with an opaque receipt,
+and case6 did not run. No exact old exception/stack trace is reconstructed.
+There was no per-mode95 receipt: READ_UNKNOWN95 is NOT_PROVED; the deterministic
+assertion occurs in the first PUT iteration before another iteration.
+
+The corrected test filters original errors by kind==EXCEPTION and separately
+requires both ordered CAPTURE_EXCEPTION originals, actual ProviderError/latch
+classification, unchanged primary/count1/put1 and no further durable write.
+Native source is byte-identical to prepared95. NEW96 selects only A PUT_UNKNOWN,
+B READ_UNKNOWN and C ordinary exact capture / actual Git User-Agent / unknown
+scope refusal, with defaults() before each. Historical95 cases1-4 are not rerun.
+Immediate receipts safely allowlist an unexpected actual exception class and
+function/line; no message, repr, locals, source text, header or body is emitted.
+Results below are finalized only from the one actual NEW96 terminal receipt.
+No native authority or live qualification is inferred; four protected inputs
+remain None. Main, active workflows and financial/activation gates stay held.
+
+Actual terminal NEW96: PASS for exactly A PUT_UNKNOWN, B READ_UNKNOWN and C ordinary exact capture / actual User-Agent / unknown-scope refusal; one launch, exit0, 0.137611199s, empty stderr. Accepted historical95 cases1-4 plus these three96 entries provide the limited combined matrix. Historical95 case5 remains ABORT; READ_UNKNOWN95 remains NOT_PROVED and case6-95 remains NOT_RUN. This is not six-case95 PASS or native security qualification. Native/test source pins were frozen before NEW96 and remain unchanged. All four protected inputs remain None; actual OIDC, credential acquisition, native claims, model calls and spend remain0. Independent source review is still required before promotion or activation.
