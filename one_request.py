@@ -1,4 +1,4 @@
-"""Inactive ONE-request consumer. No native loader/issuer/ledger is installed.
+"""Dormant ONE consumer. Native protected admission remains uninstalled.
 
 The explicit synthetic route qualifies algorithms only. Python callbacks,
 dataclasses, booleans, JSON, UID/PID and private names are never native authority.
@@ -29,16 +29,22 @@ def native_binding():
     producer, invocation, nonce, absolute window and protected backend CAS.
     No env/JSON switch or caller-provided callback can implement this loader.
     """
-    return None
+    from one_native94 import load_context94
+    return load_context94()
 
 class OneRequest:
     def __init__(self):
         # Default constructor/CLI fail before credential/backend/network lookup.
-        if native_binding() is None:
+        context = native_binding()
+        if context is None:
             raise ProviderError('NO_NATIVE_ADMISSION')
-        # Even a changed loader is insufficient without separately reviewed
-        # producer implementation; no witness-shaped object is accepted here.
-        raise ProviderError('NATIVE_PRODUCER_NOT_IMPLEMENTED')
+        from one_native94 import validate_context94
+        validate_context94(context)
+        self._context94 = context
+
+    def execute(self, raw, input_raw=None):
+        from one_native94 import execute_native94
+        return execute_native94(self._context94, raw, input_raw)
 
 @dataclass(frozen=True)
 class SyntheticPlan:
@@ -64,6 +70,10 @@ def frozen_request(raw, plan):
         raise ProviderError('SYNTHETIC_BOUND_REFUSED')
     if type(plan.deadline) not in (int, float) or not math.isfinite(plan.deadline):
         raise ProviderError('ABSOLUTE_DEADLINE_INVALID')
+    return validate_frozen_payload(raw)
+
+def validate_frozen_payload(raw):
+    """Shared pure byte/shape validator; this function never grants authority."""
     if (type(raw) is not bytes or len(raw) != PAYLOAD_BYTES
             or hashlib.sha256(raw).hexdigest() != PAYLOAD_SHA256):
         raise ProviderError('FROZEN_REQUEST_REFUSED')
