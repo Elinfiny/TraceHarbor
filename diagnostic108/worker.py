@@ -82,7 +82,7 @@ def safe_fault(operation, exc, fd=None):
 
 def cache_only_child(stem, output_fds=()):
     """Trusted pre-exec only. Exact syscall failures and close faults stay separate."""
-    if stem not in ('venv','install'):
+    if stem not in ('venv','install','counter'):
         raise ValueError('Fixed child scope')
     receipt = {'schema':'CACHE_ONLY_CHILD_V112','abi':None,'restricted':False,
                'cache_soft_limit_raised':False,'primary':None,'cleanup':[],
@@ -187,9 +187,9 @@ def child_preexec(stem, report_fd, output_fds):
 
 def run(argv, stem, deadline):
     """Fixed work/cleanup deadlines, observed return retained, once-only closes."""
-    if stem not in ('venv','install'):
+    if stem not in ('venv','install','counter'):
         raise ValueError('Fixed subprocess only')
-    stage = 'BEFORE_VENV' if stem == 'venv' else 'BEFORE_INSTALL'
+    stage = {'venv':'BEFORE_VENV','install':'BEFORE_INSTALL','counter':'BEFORE_COUNTER'}[stem]
     work_deadline = deadline-2.0
     t = {'returncode':None,'original_returncode':None,'terminal_observed':False,
          'exception_class':None,'timed_out':False,'primary':None,'capture_failures':[],
@@ -373,7 +373,7 @@ def run(argv, stem, deadline):
     return t
 
 
-def finish_worker(primary, captures, stage):
+def finish_worker(primary, captures, stage, counter_complete=False):
     """Return the first result even when no durable capture remains possible."""
     if primary is None and captures:
         primary = worker_primary(stage,'CAPTURE_FAILURE',captures[0]['exception_class'])
@@ -382,7 +382,7 @@ def finish_worker(primary, captures, stage):
             emit('worker-primary.json',{'primary':primary,'capture_failure':bool(captures)})
         except BaseException as exc:
             capture_error(captures,'PRIMARY_SAVE','terminal',exc)
-    completion = 'DIAGNOSTIC_ONLY_NO_COUNTER' if primary is None and not captures else 'STOP_UNKNOWN_NO_RETRY'
+    completion = ('COUNTER115_PENDING_HOST_REVIEW' if counter_complete else 'DIAGNOSTIC_ONLY_NO_COUNTER') if primary is None and not captures else 'STOP_UNKNOWN_NO_RETRY'
     terminal = {'primary':primary,'capture_failure':bool(captures),'completion':completion,'exit_code':0 if primary is None and not captures else 1}
     try:
         emit('worker-terminal.json',terminal)
@@ -398,6 +398,7 @@ def main():
     primary = None
     cleanup = []
     stage = 'ENVIRONMENT'
+    counter_complete = False
     try:
         restrict()
         go = wait('GO.json', min(deadline, start + 30))
@@ -405,8 +406,10 @@ def main():
         raw = (I / 'manifest.json').read_bytes()
         assert sha(raw) == go['manifest_sha256']
         m = json.loads(raw)
+        counter_mode = go.get('counter115') is not None
         assert m['mode'] == 'PUBLIC_INPUTS_ONLY_PRECOUNTER_DIAGNOSTIC'
-        assert all(m[k] is False for k in ('counter_allowed','model_allowed','private_vendor_allowed'))
+        assert all(m[k] is False for k in ('counter_allowed','private_vendor_allowed','model_allowed'))
+        if counter_mode:assert m['counter116']['activation']=='TYPED_CURRENT_NATIVE_PRODUCER_ONLY'
         req = (I / 'request.json').read_bytes()
         assert len(req) == 4935 and sha(req) == m['request_sha256']
         assert sha((I / 'requirements.lock').read_bytes()) == m['lock_sha256']
@@ -440,13 +443,28 @@ def main():
         stage = 'AFTER_INSTALL'
         emit('afterinstall.json', {'stage':stage,'closed':True})
         assert time.monotonic() <= deadline and time.time() <= go['absolute_deadline_utc']
-        emit('complete.json', {'type':'DIAGNOSTIC_ONLY_NO_COUNTER','intent_sha256':approval['intent_sha256']})
+        if counter_mode:
+            import importlib.util
+            spec=importlib.util.spec_from_file_location('private_counter115','/driver/counter115.py')
+            bridge=importlib.util.module_from_spec(spec);spec.loader.exec_module(bridge)
+            stage='BEFORE_COUNTER'
+            bridge.worker_ready_and_count(sys.modules[__name__],go,m,deadline)
+            counter_complete=True;stage='AFTER_COUNTER'
+        emit('complete.json', {'type':'COUNTER115_PENDING_HOST_REVIEW' if counter_complete else 'DIAGNOSTIC_ONLY_NO_COUNTER','intent_sha256':approval['intent_sha256']})
     except StageFailure as exc:
         primary = exc.outcome['primary']
         cleanup.extend(exc.outcome['capture_failures'])
     except BaseException as exc:
-        primary = worker_primary(stage,'WORKER_FAILURE',exception_class(exc))
-    return finish_worker(primary,cleanup,stage)
+        if hasattr(exc,'read_custody'):
+            # Original read/pin primary and uncertain close survive separately.
+            try:emit('counter116.read-custody.json',exc.read_custody)
+            except BaseException as ce:capture_error(cleanup,'READ_CUSTODY_SAVE','terminal',ce)
+            p=exc.read_custody['primary']
+            primary=worker_primary(stage,'WORKER_FAILURE',p['exception_class'] if p is not None else 'OSError')
+            for c in exc.read_custody['cleanup']:capture_error(cleanup,'CLOSE','terminal',OSError(c.get('errno') or 5,'Counter read close'))
+        else:
+            primary = worker_primary(stage,'WORKER_FAILURE',exception_class(exc))
+    return finish_worker(primary,cleanup,stage,counter_complete)
 
 if __name__ == '__main__':
     outcome = main()
