@@ -82,12 +82,14 @@ def bind_mounts(producer,g,custody,evidence,bindings,q):
 # authority; NativeConsumedProof is allocated only by the live producer below.
 from dataclasses import dataclass
 import datetime
-PHASES117={'checkout':20,'run_capture':10,'admit':90,'recipient_crypto':20,
+PHASES117={'checkout':20,'run_capture':10,'admit':150,'recipient_crypto':20,
  'recipient_io':5,'recipient_upload':60,'main_capture':10,'main_admit':45,
- 'prequalification':290,'receive':70,'consumed':45,'mounts':10,
+ 'prequalification':200,'receive':70,'consumed':45,'mounts':10,
  'worker':170,'cleanup':10,'proof':15}
-MAIN_REMAINDER117=665
+MAIN_REMAINDER117=575
 AFTER_PREQUAL117=320
+RECIPIENT_REMAINDER120=680
+HOST_BEGIN_REMAINDER120=610
 
 @dataclass(frozen=True)
 class ParentClock:
@@ -399,7 +401,7 @@ class NativeProducer:
         run=phase_read(ingress.api,'/repos/Elinfiny/TraceHarbor/actions/runs/'+e['GITHUB_RUN_ID'],Bootstrap(),deadline,save_initial)
         if run['id']!=int(e['GITHUB_RUN_ID']) or run['run_attempt']!=1 or run['head_sha']!=x.source_sha or run['event']!='workflow_dispatch' or run['actor']['id']!=OWNER or run['repository']['id']!=REPO or run['status']!='in_progress':raise ValueError('Current provider run readback')
         clock=ParentClock.from_run(run,x.once_expires_utc,x.coordinator_cutoff_utc)
-        clock.require(865 if initializing else 655)
+        clock.require(865 if initializing else 565)
         binding={'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'once_receipt_sha256':x.once_receipt_sha,'run_id':e['GITHUB_RUN_ID'],'request_sha256':manifest['request_sha256']}
         caller=NativeCaller(_NATIVE,run,binding,ingress,repo)
         root=pathlib.Path(e['RUNNER_TEMP'])/('traceharbor-counter117-intake-'+x.once_receipt_sha)
@@ -408,7 +410,7 @@ class NativeProducer:
         obj.observation_root=pathlib.Path(e['RUNNER_TEMP'])/('trace118-public-admit-'+x.once_receipt_sha+('-init' if initializing else '-main'))
         obj.observation_root.mkdir(mode=0o700)
         try:
-            receipt=obj.provider_once('admit',maximum=90 if initializing else 45,reserve=775 if initializing else 610,admit_wait=initializing)
+            receipt=obj.provider_once('admit',maximum=150 if initializing else 45,reserve=685 if initializing else 520,admit_wait=initializing)
             caller.receipt=receipt;caller.expires=receipt['expires_utc']
             obj.owner=OwnedIntake(root,binding,pins,create=initializing)
             if not initializing:obj.main_end=min(clock.end_mono,tick+720)
@@ -427,14 +429,14 @@ class NativeProducer:
     def initialize_recipient(self):
         def operation():
             i=self.caller.ingress;b=self.caller.binding
-            deadline=self.clock.phase(25,750)
+            deadline=self.clock.phase(25,RECIPIENT_REMAINDER120)
             c={'repository':'Elinfiny/TraceHarbor','repository_id':REPO,'actor_id':OWNER,'run_id':int(b['run_id']),'attempt':1,'source_sha':b['source_sha'],'nonce':os.urandom(16).hex(),'expires_utc':int(self.clock.end_utc)}
-            self.clock.check(deadline,750)
+            self.clock.check(deadline,RECIPIENT_REMAINDER120)
             c,pem=owned_creation(self.owner,['fresh-recipient','fresh-recipient/recipient.key','fresh-recipient/recipient.pem'],lambda:i.recipient(self.root/'fresh-recipient',c))
-            self.clock.check(deadline,750)
+            self.clock.check(deadline,RECIPIENT_REMAINDER120)
             i.put(self.root/'recipient-public.json',i.can({'context':c,'certificate_pem':pem.decode('ascii')}))
             i.put(self.root/'fresh-binding.json',i.can({'binding':b,'context':c,'admit_sha256':sha(can(self.caller.receipt)),'parent_clock':self.clock.descriptor()}))
-            self.clock.check(deadline,725)
+            self.clock.check(deadline,RECIPIENT_REMAINDER120)
             return self.root/'recipient-public.json'
         try:return operation()
         except BaseException as exc:exc.intake_cleanup=self.owner.cleanup('init_failure',exc);raise
@@ -547,8 +549,8 @@ class ExternalCoordinator117:
         self.clock.check(self.phase_end,reserve);return original
     def stage(self,phase,descriptor,current_own_version,custody=None):
         if phase not in ('admit','consumed'):raise ValueError('Exact phase')
-        reserve=775 if phase=='admit' else 330
-        self.phase_end=self.clock.phase(75 if phase=='admit' else 110,reserve)
+        reserve=685 if phase=='admit' else 330
+        self.phase_end=self.clock.phase(135 if phase=='admit' else 110,reserve)
         self.transport.bind_phase(self.phase_end)
         # CAS reservation/readback precedes immutable consumed-ref publication.
         # A timeout is UNKNOWN, and the original reservation is never refunded.
@@ -569,7 +571,7 @@ class ExternalCoordinator117:
         never claimed available from a public Git fetch or invented live ACK.
         Private arguments and trace stay inside the exact admitted host scope.
         """
-        self.clock.require(610)
+        self.clock.require(HOST_BEGIN_REMAINDER120)
         artifact_end=self.clock.phase(60,550)
         self.transport.bind_phase(artifact_end)
         original=self.transport.authenticated_artifact_zip(run['id'],'traceharbor-recipient104-'+str(run['id'])+'-1',artifact_end,8192)
@@ -615,7 +617,7 @@ class ExternalCoordinator117:
         return [
           'Exact independent source/budget/private custody admission; originalwriter once CAS+pinned fullbyte readback before dispatch',
           'Actual supported dispatch ONCE; preserve response; read actual run/source/actor/attempt/run_started_at under frozen onceexpiry/cutoff',
-          'Build ParentClock from same actual run; stage(admit) CAS/readback -> blob/tree/source-parent commit/create-only admit ref -> whole readback within initial host75s / runner90s',
+          'Build ParentClock from same actual run; stage(admit) CAS/readback -> blob/tree/source-parent commit/create-only admit ref -> whole readback within initial host135s / runner150s',
           'Authenticated current recipient artifact by actualrun/attempt/Owner/source; whole context/certificate hash and parent clock readback; no old105key',
           'Existing reviewed105 encrypt with exact3privatepins and current recipient; private crypto originals retained; blob/tree/source-parent commit/create-only encrypted104 ref; whole ciphertext readback',
           'stage(consumed) originalwriter CAS + pinned readback -> immutable consumed descriptor bound to ciphertext/context/admit -> create-only ref + whole readback BEFORE worker; no refund on later failure',
