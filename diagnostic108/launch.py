@@ -2,14 +2,18 @@
 import argparse, base64, errno, hashlib, json, os, pathlib, re, selectors, stat, subprocess, sys, time, uuid, importlib.util
 _QUAL113 = None
 _HOST113 = None
+_COUNTER115_RESULT = None
+_COUNTER115_RELEASED = False
+_COUNTER115_NAMES = frozenset(('counter.stdout','counter.stderr','counter.terminal.json','counter115.intent.json','counter115.ready','counter115.verified.json','beforecounter115.json','aftercounter115.json','counter116.inputs.json','counter116.read-custody.json'))
 
 MODE = 'PUBLIC_INPUTS_ONLY_PRECOUNTER_DIAGNOSTIC'
 CAP = 65536
 TOTAL = 8388608
 STREAMS = tuple(s+'.'+c for s in ('venv','install') for c in ('stdout','stderr'))
 ALLOWED = frozenset(('permitted.synthetic','qualification.json','qualification.ready','intent.json','beforevenv.json','beforeinstall.json','afterinstall.json','complete.json','worker-primary.json','worker-terminal.json') + STREAMS + ('venv.terminal.json','install.terminal.json'))
+ALLOWED = ALLOWED | _COUNTER115_NAMES
 DESTINATIONS = frozenset(('/driver/worker.py','/inputs/request.json','/inputs/requirements.lock','/inputs/manifest.json','/wheels','/control','/output'))
-STAGES = frozenset(('INITIALIZATION','ENVIRONMENT','QUALIFICATION','BEFORE_VENV','BEFORE_INSTALL','AFTER_INSTALL','TERMINAL','CLEANUP','EXPORT'))
+STAGES = frozenset(('INITIALIZATION','ENVIRONMENT','QUALIFICATION','BEFORE_VENV','BEFORE_INSTALL','AFTER_INSTALL','BEFORE_COUNTER','AFTER_COUNTER','TERMINAL','CLEANUP','EXPORT'))
 CODES = frozenset(('TERMINAL_MISSING','OOM','WORKER_NONZERO','QUALIFICATION_NOT_APPROVED','DEADLINE','INTENT','OUTPUT_SCHEMA','INITIALIZATION','CLEANUP','EXPORT'))
 EXCEPTIONS = frozenset(('AssertionError','ValueError','TypeError','KeyError','FileNotFoundError','PermissionError','OSError','TimeoutError','TimeoutExpired','CalledProcessError','RuntimeError','KeyboardInterrupt','SystemExit','GateFailure','StageFailure','SignalFailure','FileExistsError'))
 _HOST_KEY = object()
@@ -50,7 +54,7 @@ def publish_signal(control, name, value, _observer=None):
     Final name is absent until a complete closed fsynced0444 inode is linked.
     An existing final is never adopted, overwritten or removed.
     """
-    if name not in ('GO.json','INSTALL_GO.json'):
+    if name not in ('GO.json','INSTALL_GO.json','COUNTER_GO116.json'):
         raise ValueError('Fixed control name')
     raw = encoded(value)
     if len(raw)>8192:
@@ -158,6 +162,8 @@ class Output:
             raise ValueError('Output name')
         fd = os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC,dir_fd=self.fd)
         s = os.fstat(fd)
+        if name in _COUNTER115_NAMES and s.st_uid!=65532:
+            os.close(fd);raise ValueError('Fixed counter receipt owner')
         if not stat.S_ISREG(s.st_mode) or s.st_nlink != 1 or s.st_dev != self.dev or s.st_size > TOTAL:
             os.close(fd)
             raise ValueError('Output object')
@@ -235,17 +241,18 @@ class HostEvidence:
             raise TypeError('Host provenance only')
         self.key,self.source,self.mounts = key,source,mounts
 
-def prove_mounts(bindings, expected, source):
+def prove_mounts(bindings, expected, source, extra=None):
     """Called only with trusted-host fixed bindings and externally pinned inputs."""
-    if set(bindings)!=DESTINATIONS or set(expected)!=DESTINATIONS-{'/control','/output','/wheels'}:
+    destinations=DESTINATIONS|frozenset(extra or ())
+    if set(bindings)!=destinations or set(expected)!=destinations-{'/control','/output','/wheels'}:
         raise ValueError('Mount set')
     checked = {}
-    for dest in sorted(DESTINATIONS):
+    for dest in sorted(destinations):
         path,readonly = bindings[dest]
         if readonly is not (dest != '/output'):
             raise ValueError('Mount mode')
         if dest in expected:
-            raw = regular(path,262144)
+            raw = regular(path,max(262144,expected[dest][0]))
             if (len(raw),sha(raw)) != tuple(expected[dest]):
                 raise ValueError('Mount hash')
         else:
@@ -285,7 +292,7 @@ def fixed_stage(output):
     if output is None:
         return stage
     output.census()
-    for name,value in [('beforevenv.json','BEFORE_VENV'),('beforeinstall.json','BEFORE_INSTALL'),('afterinstall.json','AFTER_INSTALL')]:
+    for name,value in [('beforevenv.json','BEFORE_VENV'),('beforeinstall.json','BEFORE_INSTALL'),('afterinstall.json','AFTER_INSTALL'),('beforecounter115.json','BEFORE_COUNTER'),('aftercounter115.json','AFTER_COUNTER')]:
         raw = output.read(name,optional=True)
         if raw is not None:
             if strict(raw) != {'stage':value,'closed':True}:
@@ -385,7 +392,7 @@ def project_worker(output, safe):
                         raise ValueError('Worker terminal schema')
                     projection = {'primary':project_primary(value.get('primary')),'capture_failure':value['capture_failure']}
                     if name == 'worker-terminal.json':
-                        if value.get('completion') not in ('DIAGNOSTIC_ONLY_NO_COUNTER','STOP_UNKNOWN_NO_RETRY') or type(value.get('exit_code')) is not int or value['exit_code'] not in (0,1):
+                        if value.get('completion') not in ('DIAGNOSTIC_ONLY_NO_COUNTER','COUNTER115_PENDING_HOST_REVIEW','STOP_UNKNOWN_NO_RETRY') or type(value.get('exit_code')) is not int or value['exit_code'] not in (0,1):
                             raise ValueError('Worker completion schema')
                         projection.update(completion=value['completion'],exit_code=value['exit_code'])
                     entry.update(available=True,value=projection,refusal=None)
@@ -398,6 +405,7 @@ def project_worker(output, safe):
 
 def export_proof(proof, output, evidence, binding, first, terminal, approved, cleanup, stopped):
     """The only public exporter. Never consumes paths/provenance from worker JSON."""
+    # _COUNTER115_RESULT can be set only after fixed host custody validation.
     trusted = isinstance(evidence,HostEvidence) and evidence.key is _HOST_KEY and evidence.source==binding['source_sha']
     safe = trusted and stopped is True and output is not None
     refusal = None
@@ -427,6 +435,12 @@ def export_proof(proof, output, evidence, binding, first, terminal, approved, cl
         channels[name] = r
     result = {'schema':'TRACEHARBOR_DIAGNOSTIC108_SAFE_V1','mode':MODE,'binding':binding,'primary':first,'terminal':terminal_projection(terminal),'qualification_approved':approved is True,'cleanup':cleanup,'mount_provenance_observed':trusted,'container_stopped_observed':stopped is True,'raw_exposure_permitted':safe,'census_refusal':refusal,'channels':channels,'counter107':'UNKNOWN','counter108_invoked':False,'completion_authority':'DIAGNOSTIC_ONLY_NO_COUNTER'}
     result['worker_evidence'] = project_worker(output,safe)
+    result['counter115_attempted'] = _COUNTER115_RELEASED
+    result['counter115'] = _COUNTER115_RESULT if safe and first is None and not cleanup and _COUNTER115_RESULT is not None and _COUNTER115_RESULT.get('source_sha')==binding['source_sha'] else None
+    if _COUNTER115_RELEASED:
+        result['mode']='PROTECTED_OFFLINE_COUNTER115'
+        result['completion_authority']='HOST_CHECKED_CANDIDATE_ONLY_T_NULL_NO_FINANCIAL_AUTHORITY'
+    # No raw counter stdout, stderr, tokens, rendering input or worker paths.
     projection_failed = False
     try:
         result['qualification113'] = _HOST113.project_state(sys.modules[__name__],_QUAL113,binding) if _HOST113 is not None else {'schema':'TRACE113_PREQUALIFICATION_V1','binding':binding,'native':'NOT_RUN','inventory':'NOT_RUN','diagnostic_admitted':False}
@@ -588,7 +602,7 @@ def cleanup_once(private, name, terminal, deadline):
             failures.append(primary('CLEANUP','CLEANUP',exc))
     return failures,stopped
 
-def validate(x, repo):
+def validate(x, repo, counter=False):
     if not re.fullmatch('[0-9a-f]{40}',x.source_sha) or not re.fullmatch('[0-9a-f]{64}',x.manifest_sha) or not re.fullmatch('[0-9a-f]{64}',x.once_receipt_sha):
         raise GateFailure('INTENT')
     expected_env = {'GITHUB_REPOSITORY':'Elinfiny/TraceHarbor','GITHUB_REPOSITORY_ID':'1391430317','GITHUB_ACTOR_ID':'273768139','GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_RUN_ATTEMPT':'1','GITHUB_SHA':x.source_sha,'GITHUB_WORKFLOW_SHA':x.source_sha}
@@ -601,7 +615,7 @@ def validate(x, repo):
     if sha(raw)!=x.manifest_sha:
         raise GateFailure('INTENT')
     m = strict(raw)
-    if m['mode']!=MODE or any(m[k] is not False for k in ('counter_allowed','model_allowed','private_vendor_allowed')):
+    if m['mode']!=MODE or any(m[k] is not False for k in ('counter_allowed','private_vendor_allowed','model_allowed')) or counter and (m['counter116']['mode']!='PROTECTED_OFFLINE_COUNTER115' or m['counter116']['activation']!='TYPED_CURRENT_NATIVE_PRODUCER_ONLY'):
         raise GateFailure('INTENT')
     for name,pin in m['source_files'].items():
         if name.startswith('/') or '..' in pathlib.PurePosixPath(name).parts:
@@ -613,9 +627,11 @@ def validate(x, repo):
         raise GateFailure('INTENT')
     return m,mf
 
-def execute(x, private, binding):
-    global _HOST113
-    overall = time.monotonic()+540
+def execute(x, private, binding, counter_requested=False):
+    global _HOST113, _COUNTER115_RESULT, _COUNTER115_RELEASED
+    _COUNTER115_RESULT = None
+    _COUNTER115_RELEASED = False
+    overall = time.monotonic()+(720 if counter_requested else 540)
     repo = directory(pathlib.Path(__file__).absolute().parent.parent)
     output = evidence = terminal = None
     approved = False
@@ -627,7 +643,12 @@ def execute(x, private, binding):
     count = 0
     end = time.monotonic()+180
     try:
-        m,mf = validate(x,repo)
+        m,mf = validate(x,repo,counter=counter_requested)
+        counter_plan = bridge = None
+        if counter_requested:
+            spec115=importlib.util.spec_from_file_location('private_counter115',repo/'diagnostic108/counter115.py')
+            bridge=importlib.util.module_from_spec(spec115);spec115.loader.exec_module(bridge)
+            counter_plan=bridge.prepare_host(sys.modules[__name__],x,repo,m,private)
         temp = directory(os.environ['RUNNER_TEMP'])
         # External once receipt must be reserved against this exact source/hash in
         # the solewriter's admission BEFORE dispatch; local create-only is no substitute.
@@ -642,6 +663,8 @@ def execute(x, private, binding):
         _HOST113.prequalify(sys.modules[__name__],x,repo,m,private,binding,overall)
         if _QUAL113 is None or _QUAL113['diagnostic_admitted'] is not True or overall-time.monotonic()<225:
             raise GateFailure('QUALIFICATION_NOT_APPROVED')
+        if counter_plan is not None:
+            bridge.complete_intake(sys.modules[__name__],counter_plan,binding,repo,m)
         public = directory(temp/'traceharbor-offline103')
         public_receipt = strict(regular(public/'control/PUBLIC_DATA_ONLY.json',8192))
         if public_receipt.get('worker_ready') is not False:
@@ -667,7 +690,11 @@ def execute(x, private, binding):
         bindings = {'/driver/worker.py':(repo/'diagnostic108/worker.py',True),'/inputs/request.json':(repo/'offline103/request.json',True),'/inputs/requirements.lock':(repo/'offline103/requirements.lock',True),'/inputs/manifest.json':(mf,True),'/wheels':(wheels,True),'/control':(control,True),'/output':(out,False)}
         expected = {dest:(m['source_files'][str(path.relative_to(repo))]['bytes'],m['source_files'][str(path.relative_to(repo))]['sha256']) for dest,(path,_) in bindings.items() if dest in ('/driver/worker.py','/inputs/request.json','/inputs/requirements.lock')}
         expected['/inputs/manifest.json'] = (len(regular(mf,262144)),x.manifest_sha)
-        evidence = prove_mounts(bindings,expected,x.source_sha)
+        if counter_plan is not None:
+            bindings.update(counter_plan['mounts']);expected.update(counter_plan['expected'])
+        evidence = prove_mounts(bindings,expected,x.source_sha,extra=None if counter_plan is None else counter_plan['mounts'])
+        if counter_plan is not None:
+            bridge.bind_current_mounts(sys.modules[__name__],counter_plan,evidence,bindings,_QUAL113)
         sentinel = temp/('outside-synthetic108-'+x.once_receipt_sha)
         with sentinel.open('xb') as f:
             f.write(b'SYNTHETIC_NOT_SECRET')
@@ -699,6 +726,8 @@ def execute(x, private, binding):
         if usage()>120000000:
             raise GateFailure('DEADLINE')
         go = {'absolute_deadline_utc':absolute,'host_sentinel':str(sentinel),'once_receipt_sha256':x.once_receipt_sha,'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'output_absent':True}
+        if counter_plan is not None:
+            go['counter115']=bridge.make_worker_binding(sys.modules[__name__],counter_plan,binding,m,absolute)
         send_signal(control,'GO.json',go,private)
         stage = 'QUALIFICATION'
         while time.monotonic()<deadline:
@@ -717,13 +746,15 @@ def execute(x, private, binding):
                     raise GateFailure('QUALIFICATION_NOT_APPROVED')
                 intent_raw = output.read('intent.json')
                 intent = strict(intent_raw)
-                wanted = {'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'once_receipt_sha256':x.once_receipt_sha,'runtime':image,'request_sha256':m['request_sha256'],'lock_sha256':m['lock_sha256'],'absolute_deadline_utc':absolute,'output_absent':True,'mode':MODE}
+                wanted = {'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'once_receipt_sha256':x.once_receipt_sha,'runtime':image,'request_sha256':m['request_sha256'],'lock_sha256':m['lock_sha256'],'absolute_deadline_utc':absolute,'output_absent':True,'mode':m['mode']}
                 if intent!=wanted or type(intent['output_absent']) is not bool:
                     raise GateFailure('INTENT')
                 with (control/'FROZEN_INTENT.json').open('xb') as f:
                     f.write(intent_raw);f.flush();os.fsync(f.fileno())
                 send_signal(control,'INSTALL_GO.json',{'intent_sha256':sha(intent_raw)},private)
                 approved = True
+            if approved and counter_plan is not None:
+                bridge.release_if_ready(sys.modules[__name__],counter_plan,output,control,private,evidence,state)
             time.sleep(.2)
         stage = fixed_stage(output)
         failure_code = classify_terminal(terminal,approved)
@@ -733,15 +764,19 @@ def execute(x, private, binding):
             raise GateFailure('DEADLINE')
         output.census()
         complete = strict(output.read('complete.json'))
-        if complete!={'type':'DIAGNOSTIC_ONLY_NO_COUNTER','intent_sha256':sha(intent_raw)} or stage!='AFTER_INSTALL':
+        expected_type='COUNTER115_PENDING_HOST_REVIEW' if counter_plan is not None else 'DIAGNOSTIC_ONLY_NO_COUNTER'
+        expected_stage='AFTER_COUNTER' if counter_plan is not None else 'AFTER_INSTALL'
+        if complete!={'type':expected_type,'intent_sha256':sha(intent_raw)} or stage!=expected_stage:
             raise GateFailure('OUTPUT_SCHEMA')
         for stem in ('venv','install'):
             t = strict(output.read(stem+'.terminal.json'))
             if t['returncode']!=0 or t['exception_class'] is not None or t['timed_out'] is not False or t['capture_failures'] or t['primary'] is not None:
                 raise GateFailure('OUTPUT_SCHEMA')
         wt = strict(output.read('worker-terminal.json'))
-        if wt!={'primary':None,'capture_failure':False,'completion':'DIAGNOSTIC_ONLY_NO_COUNTER','exit_code':0}:
+        if wt!={'primary':None,'capture_failure':False,'completion':expected_type,'exit_code':0}:
             raise GateFailure('OUTPUT_SCHEMA')
+        if counter_plan is not None:
+            _COUNTER115_RESULT=bridge.verify_host_completion(sys.modules[__name__],counter_plan,output,terminal,approved)
     except BaseException as exc:
         try:
             if output is not None:
@@ -766,6 +801,9 @@ def execute(x, private, binding):
                 failures.append(primary('CLEANUP','CLEANUP',exc))
         return failures,stopped
     result = finish(private,pathlib.Path(os.environ['RUNNER_TEMP'])/'traceharbor-diagnostic108-proof',output,evidence,binding,first,terminal,approved,cleanup)
+    if counter_requested:
+        result['counter115_private_projection']=_COUNTER115_RESULT
+        result['counter115_public_export']='NOT_ADMITTED; no raw counter channels or worker paths exported'
     if output is not None:
         try:
             output.close()
@@ -780,12 +818,24 @@ def main():
     parser.add_argument('--source-sha',required=True)
     parser.add_argument('--manifest-sha',required=True)
     parser.add_argument('--once-receipt-sha',required=True)
+    parser.add_argument('--counter116',action='store_true')
+    parser.add_argument('--counter116-init',action='store_true')
     x = parser.parse_args()
     temp = directory(os.environ['RUNNER_TEMP'])
     private = temp/'traceharbor-diagnostic108-private'
-    private.mkdir(mode=0o700)
+    if not x.counter116_init:private.mkdir(mode=0o700)
     binding = {'source_sha':x.source_sha if re.fullmatch('[0-9a-f]{40}',x.source_sha) else None,'manifest_sha256':x.manifest_sha if re.fullmatch('[0-9a-f]{64}',x.manifest_sha) else None,'once_receipt_sha256':x.once_receipt_sha if re.fullmatch('[0-9a-f]{64}',x.once_receipt_sha) else None,'run_id':os.environ.get('GITHUB_RUN_ID') if re.fullmatch('[0-9]+',os.environ.get('GITHUB_RUN_ID','')) else None,'request_sha256':'e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2'}
-    result = execute(x,private,binding)
+    if x.counter116_init:
+        # Actual future native init step precedes the existing recipient artifact
+        # upload. Main later recaptures its caller and exact fresh context.
+        repo=directory(pathlib.Path(__file__).absolute().parent.parent)
+        m,mf=validate(x,repo,counter=True)
+        sp=importlib.util.spec_from_file_location('same_counter_bridge116',repo/'diagnostic108/counter115.py')
+        bridge=importlib.util.module_from_spec(sp);sp.loader.exec_module(bridge)
+        path=bridge.prepare_host(sys.modules[__name__],x,repo,m,private,initializing=True)
+        print(encoded({'recipient_public_path':str(path),'source_sha':x.source_sha,'once_receipt_sha256':x.once_receipt_sha}).decode())
+        return 0
+    result = execute(x,private,binding,counter_requested=x.counter116)
     print(encoded({'exit_code':result['exit_code'],'primary':result['primary'],'proof_saved':result['proof_saved']}).decode())
     return result['exit_code']
 
