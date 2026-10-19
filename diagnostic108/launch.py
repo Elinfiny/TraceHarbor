@@ -1,5 +1,7 @@
 """Trusted host candidate108. No private ingress and no downloaded imports."""
-import argparse, base64, errno, hashlib, json, os, pathlib, re, selectors, stat, subprocess, sys, time, uuid
+import argparse, base64, errno, hashlib, json, os, pathlib, re, selectors, stat, subprocess, sys, time, uuid, importlib.util
+_QUAL113 = None
+_HOST113 = None
 
 MODE = 'PUBLIC_INPUTS_ONLY_PRECOUNTER_DIAGNOSTIC'
 CAP = 65536
@@ -291,7 +293,7 @@ def fixed_stage(output):
             stage = value
     return stage
 
-WORKER_CODES = frozenset(('WORKER_NONZERO','DEADLINE','SPAWN_FAILURE','CAPTURE_FAILURE','WORKER_FAILURE'))
+WORKER_CODES = frozenset(('WORKER_NONZERO','DEADLINE','SPAWN_FAILURE','CAPTURE_FAILURE','WORKER_FAILURE','ISOLATION_FAILURE','TERMINAL_UNKNOWN'))
 def project_primary(value):
     if value is None:
         return None
@@ -299,15 +301,86 @@ def project_primary(value):
         raise ValueError('Worker primary schema')
     return {k:value[k] for k in ('stage','code','exception_class','returncode','timed_out','unknown','retry')}
 
+def project_process(value):
+    """Fixed public process custody only; worker declarations are never authority."""
+    if type(value) is not dict:
+        raise ValueError('Process receipt')
+    out = {}
+    for k in ('returncode','original_returncode'):
+        v = value.get(k)
+        if v is not None and (type(v) is not int or abs(v)>2147483647):
+            raise ValueError('Process return')
+        out[k] = v
+    for k in ('terminal_observed','timed_out'):
+        if type(value.get(k)) is not bool:
+            raise ValueError('Process flag')
+        out[k] = value[k]
+    for k in ('kill_attempts','wait_attempts'):
+        if type(value.get(k)) is not int or not 0<=value[k]<=2:
+            raise ValueError('Process attempts')
+        out[k] = value[k]
+    out['primary'] = project_primary(value.get('primary'))
+    operations = frozenset(('OUTPUT_FD_CLOSE','LIBC_LOAD','LANDLOCK_ABI_QUERY',
+        'LANDLOCK_ABI_BELOW_3','LANDLOCK_CREATE','CACHE_OPEN','CACHE_OWNER',
+        'LANDLOCK_ADD_RULE','NO_NEW_PRIVS','LANDLOCK_RESTRICT','CACHE_LIMIT_RAISE',
+        'LANDLOCK_FD_CLOSE','PREEXEC','FD_CLOSE','CUSTODY_READ_AFTER_SPAWN',
+        'POLL','KILL','WAIT_REAP','SELECTOR_CLOSE','PIPE_CLOSE','CHANNEL_SAVE',
+        'FLUSH','FSYNC','CLOSE','READBACK','TERMINAL_SAVE'))
+    def fault(v):
+        if type(v) is not dict or v.get('operation') not in operations or v.get('exception_class') not in EXCEPTIONS|{'OTHER'}:
+            raise ValueError('Process fault')
+        n = v.get('errno')
+        if n is not None and (type(n) is not int or not 0<=n<=4095):
+            raise ValueError('Process errno')
+        return {'operation':v['operation'],'exception_class':v['exception_class'],'errno':n}
+    cleanup = value.get('cleanup')
+    if type(cleanup) is not list or len(cleanup)>24:
+        raise ValueError('Process cleanup cap')
+    out['cleanup'] = [fault(x) for x in cleanup]
+    labels = value.get('close_attempts')
+    allowed = frozenset(('custody_write_parent','custody_read_parent','pipe_stdout','pipe_stderr','capture_stdout','capture_stderr'))
+    if type(labels) is not list or len(labels)>6 or len(set(labels))!=len(labels) or any(x not in allowed for x in labels):
+        raise ValueError('Process close custody')
+    out['close_attempts'] = labels
+    c = value.get('isolation')
+    if c is None:
+        out['isolation'] = None
+    else:
+        if type(c) is not dict or c.get('schema')!='CACHE_ONLY_CHILD_V112':
+            raise ValueError('Isolation receipt')
+        abi = c.get('abi')
+        if abi is not None and (type(abi) is not int or not 0<=abi<=65535):
+            raise ValueError('Public ABI')
+        for k in ('restricted','cache_soft_limit_raised'):
+            if type(c.get(k)) is not bool:
+                raise ValueError('Isolation flag')
+        for k in ('close_attempts','output_fds_closed'):
+            if type(c.get(k)) is not list or len(c[k])>4 or any(type(x) is not int or not 3<=x<1048576 for x in c[k]) or (k=='output_fds_closed' and len(set(c[k]))!=len(c[k])):
+                raise ValueError('Isolation FD custody')
+        if type(c.get('cleanup')) is not list or len(c['cleanup'])>4:
+            raise ValueError('Isolation cleanup')
+        out['isolation'] = {'abi':abi,'restricted':c['restricted'],
+            'cache_soft_limit_raised':c['cache_soft_limit_raised'],
+            'primary':None if c.get('primary') is None else fault(c['primary']),
+            'cleanup':[fault(x) for x in c['cleanup']],
+            'close_attempt_count':len(c['close_attempts']),
+            'output_fds_closed_count':len(c['output_fds_closed'])}
+    return out
+
+
 def project_worker(output, safe):
     result = {}
-    for name in ('worker-primary.json','worker-terminal.json'):
+    for name in ('worker-primary.json','worker-terminal.json','venv.terminal.json','install.terminal.json'):
         entry = {'available':False,'value':None,'refusal':{'reason':'UNAVAILABLE_OR_UNPROVEN'},'declared_evidence_only':True,'authority':False}
         if safe:
             try:
                 raw = output.read(name,8192,optional=True)
                 if raw is not None:
                     value = strict(raw)
+                    if name in ('venv.terminal.json','install.terminal.json'):
+                        entry.update(available=True,value=project_process(value),refusal=None)
+                        result[name] = entry
+                        continue
                     if type(value) is not dict or 'primary' not in value or type(value.get('capture_failure')) is not bool:
                         raise ValueError('Worker terminal schema')
                     projection = {'primary':project_primary(value.get('primary')),'capture_failure':value['capture_failure']}
@@ -354,11 +427,21 @@ def export_proof(proof, output, evidence, binding, first, terminal, approved, cl
         channels[name] = r
     result = {'schema':'TRACEHARBOR_DIAGNOSTIC108_SAFE_V1','mode':MODE,'binding':binding,'primary':first,'terminal':terminal_projection(terminal),'qualification_approved':approved is True,'cleanup':cleanup,'mount_provenance_observed':trusted,'container_stopped_observed':stopped is True,'raw_exposure_permitted':safe,'census_refusal':refusal,'channels':channels,'counter107':'UNKNOWN','counter108_invoked':False,'completion_authority':'DIAGNOSTIC_ONLY_NO_COUNTER'}
     result['worker_evidence'] = project_worker(output,safe)
+    projection_failed = False
+    try:
+        result['qualification113'] = _HOST113.project_state(sys.modules[__name__],_QUAL113,binding) if _HOST113 is not None else {'schema':'TRACE113_PREQUALIFICATION_V1','binding':binding,'native':'NOT_RUN','inventory':'NOT_RUN','diagnostic_admitted':False}
+    except BaseException as exc:
+        projection_failed = True
+        result['qualification113'] = {'schema':'TRACE113_PREQUALIFICATION_V1','binding':binding,'native':'UNKNOWN','inventory':'UNKNOWN','diagnostic_admitted':False,'projection_failure':safe_class(exc)}
+        if result['primary'] is None:
+            result['primary'] = primary('EXPORT','OUTPUT_SCHEMA',exc)
     raw = encoded(result)
     if len(raw)>1048576:
         raise ValueError('Proof total cap')
     proof.mkdir(mode=0o700)
     record(proof,'proof.json',result)
+    if projection_failed:
+        raise GateFailure('OUTPUT_SCHEMA')
     return result
 
 def finish(private, proof, output, evidence, binding, first, terminal, approved, cleanup_fn):
@@ -531,6 +614,8 @@ def validate(x, repo):
     return m,mf
 
 def execute(x, private, binding):
+    global _HOST113
+    overall = time.monotonic()+540
     repo = directory(pathlib.Path(__file__).absolute().parent.parent)
     output = evidence = terminal = None
     approved = False
@@ -549,8 +634,14 @@ def execute(x, private, binding):
         once = temp/('traceharbor-diagnostic108-once-'+x.once_receipt_sha)
         with once.open('xb') as f:
             f.write(encoded(binding));f.flush();os.fsync(f.fileno())
-        # Original canonical acquisition is unchanged and uses public-only branch.
-        checked([sys.executable,'-I',str(repo/'offline103/acquire.py'),'--manifest',str(repo/'offline103/transfer.json'),'--manifest-sha',m['canonical_transfer_sha256'],'--source-sha',x.source_sha,'--public-only'],private,'public-acquire',time.monotonic()+180)
+        # Whole113 prequalification/inventory gates; no downloaded module imported.
+        stage = 'QUALIFICATION'
+        spec = importlib.util.spec_from_file_location('trace113_host',repo/'qualification113/host.py')
+        host_module = importlib.util.module_from_spec(spec);spec.loader.exec_module(host_module)
+        _HOST113 = host_module
+        _HOST113.prequalify(sys.modules[__name__],x,repo,m,private,binding,overall)
+        if _QUAL113 is None or _QUAL113['diagnostic_admitted'] is not True or overall-time.monotonic()<225:
+            raise GateFailure('QUALIFICATION_NOT_APPROVED')
         public = directory(temp/'traceharbor-offline103')
         public_receipt = strict(regular(public/'control/PUBLIC_DATA_ONLY.json',8192))
         if public_receipt.get('worker_ready') is not False:
@@ -584,8 +675,8 @@ def execute(x, private, binding):
         start = time.monotonic();deadline = start+170;end=start+180;absolute=time.time()+170
         name = 'traceharbor-diagnostic108-'+os.environ['GITHUB_RUN_ID']+'-'+x.once_receipt_sha[:12]
         image = m['runtime']['immutable_image']
-        checked(['docker','pull','--platform=linux/amd64',image],private,'image-pull',deadline)
-        args = ['docker','create','--name',name,'--platform=linux/amd64','--network=none','--read-only','--user=65532:65532','--cap-drop=ALL','--security-opt=no-new-privileges:true','--pids-limit=64','--memory=1g','--memory-swap=1g','--cpus=1','--ulimit=cpu=120:120','--ulimit=nofile=1024:1024','--ulimit=fsize=8388608:8388608','--ipc=private','--workdir=/cache','--tmpfs=/cache:rw,exec,nosuid,nodev,size=512m,uid=65532,gid=65532,mode=700']
+        # Immutable image already verified/pulled at most once by prequalification.
+        args = ['docker','create','--name',name,'--label=trace113.source='+x.source_sha,'--label=trace113.once='+x.once_receipt_sha,'--platform=linux/amd64','--network=none','--read-only','--user=65532:65532','--cap-drop=ALL','--security-opt=no-new-privileges:true','--pids-limit=64','--memory=1g','--memory-swap=1g','--cpus=1','--ulimit=cpu=120:120','--ulimit=nofile=1024:1024','--ulimit=fsize=8388608:67108864','--ipc=private','--workdir=/cache','--tmpfs=/cache:rw,exec,nosuid,nodev,size=512m,uid=65532,gid=65532,mode=700']
         for dest,(path,readonly) in bindings.items():
             args += ['--mount','type=bind,src='+str(path.absolute())+',dst='+dest+(',readonly' if readonly else '')]
         args += [image,'python','-I','/driver/worker.py']
@@ -667,7 +758,7 @@ def execute(x, private, binding):
             first['signal_original'] = {'published':exc.signal_receipt['published'],'readback_verified':exc.signal_receipt['readback_verified'],'primary':exc.signal_receipt['primary'],'capture_failure':bool(exc.signal_receipt['capture_failures']) or exc.signal_capture_failure is not None}
 
     def cleanup():
-        failures,stopped = cleanup_once(private,name,terminal,end) if attempted else ([],False)
+        failures,stopped = _HOST113.cleanup(sys.modules[__name__],private,name,binding,end,_QUAL113) if attempted else ([],False)
         if sentinel is not None:
             try:
                 sentinel.unlink(missing_ok=True)
