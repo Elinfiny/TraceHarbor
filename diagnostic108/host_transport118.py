@@ -131,26 +131,60 @@ def check_checkpoint(path,library_id,version,expected_sha=None):
  if library_id!=OWN or os.getxattr(p,'user.library-file-id').decode()!=OWN or int(os.getxattr(p,'user.library-file-version').decode())!=version or selfhash(d)!=d['self_sha256'] or expected_sha is not None and sha(raw)!=expected_sha or d['ownership']['owner']!='TraceHarbor V1' or d['ownership']['duplicate_trace_route_owners']!=0:raise ValueError('Actual current owned preimage/self/allattrs required')
  return d,raw
 ORIGINAL_WRITER_SHA256='008f194ac2d4cd93e946949bb2a926acb58690adb1815734601cd9808e73550f'
-def writer_sources(config):
- original=pathlib.Path(config['original_writer_path']);current=pathlib.Path(config['writer_path'])
- if sha(original.read_bytes())!=ORIGINAL_WRITER_SHA256 or sha(current.read_bytes())!=config['writer_sha256']:raise ValueError('Authentic original and explicit reviewed scope adaptation required')
- expected=original.read_text().replace('118','119').replace("a['state']=='NATIVE117_TERMINAL'","a['state']=='NATIVE118_TERMINAL'").replace('CURRENT Auditor858 direction119','CURRENT Auditor861 direction119')
- if current.read_text()!=expected:raise ValueError('Only exact CURRENT119 binding adaptation of original producer')
- return original,current
-def validate_writer_output(base,target,version,payload,receipt,writer_pin):
- a,raw=check_checkpoint(base,OWN,version);c=strict(pathlib.Path(target).read_bytes())
- if sha(pathlib.Path(target).read_bytes())!=receipt['raw_sha256'] or selfhash(c)!=c['self_sha256'] or receipt['self_sha256']!=c['self_sha256'] or c['native119']['writer_sha256']!=writer_pin or c['native119']['records']!=a['native119']['records']+[{'phase':'PUBLISH_INTENT','payload':payload}]:raise ValueError('Actual writer output/wholebytes/exact scoped record')
- for k in a:
-  if k not in ('native119','guard','state','events','self_sha256') and c[k]!=a[k]:raise ValueError('Original history/branch mutation')
- if c['events'][:-1]!=a['events'] or len(c['events'])!=len(a['events'])+1:raise ValueError('Preserve original event history')
- if set(c)!=set(a) or c['state']!='NATIVE119_PUBLISH_INTENT':raise ValueError('Exact root set/state')
- expected_guard=dict(a['guard'],operation_id=a['native119']['direction']['id'],operation_state='PUBLISH_INTENT',epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK')
- if c['guard']!=expected_guard:raise ValueError('Exact existing guard delta')
- event=c['events'][-1]
- if set(event)!={'phase','utc','delivery_id','own_version','source','scope'} or event['phase']!='PUBLISH_INTENT' or event['delivery_id']!=a['native119']['direction']['id'] or event['own_version']!=version+1 or event['source']!='CURRENT Auditor861 direction119' or event['scope']!='SAME_HOST_PRODUCER_COUNTER_CONTRACT_REVIEW_SOURCE':raise ValueError('Exact current event delta')
- for k in a['native119']:
-  if k not in ('records','phase','phase_history','previous_checkpoint','writer_sha256') and c['native119'][k]!=a['native119'][k]:raise ValueError('Unscoped native119 mutation')
- if c['native119']['phase_history'][:-1]!=a['native119']['phase_history'] or c['native119']['previous_checkpoint']!={'version':version,'raw_sha256':sha(raw),'self_sha256':a['self_sha256']}:raise ValueError('Actual preimage chain')
+def private_regular(path):
+ p=pathlib.Path(path);st=p.lstat()
+ if p.is_symlink() or not stat.S_ISREG(st.st_mode) or st.st_uid!=os.getuid() or st.st_mode&0o077:raise ValueError('Exact owned private regular source/reference')
+ return p
+def validate_transfer_layout(binding,holder=None):
+ layout=binding['transfer_layout'];roots={}
+ if set(layout)!={'private','transfer','holder_parent'}:raise ValueError('Exact reviewed disjoint layout')
+ for role,expected in layout.items():
+  path=pathlib.Path(expected['path']);st=path.lstat()
+  if not path.is_absolute() or path.resolve()!=path or path.is_symlink() or not stat.S_ISDIR(st.st_mode) or (st.st_dev,st.st_ino,st.st_uid)!=(expected['dev'],expected['ino'],expected['uid']) or st.st_uid!=os.getuid() or expected['type']!='directory':raise ValueError('Same positively identified owned directory, no aliases/adoption')
+  if role!='transfer' and st.st_mode&0o077:raise ValueError('Protected binding/holder roots remain0700')
+  roots[role]=path
+ for role,path in roots.items():
+  for other,another in roots.items():
+   if role!=other and (path==another or path.is_relative_to(another)):raise ValueError('Transfer and protected roots must be disjoint, never ancestors/descendants')
+ if str(roots['private'])!=binding['binding_root']:raise ValueError('Actual CURRENT private binding root')
+ if holder is not None and pathlib.Path(holder)!=roots['holder_parent']/'holder':raise ValueError('Exact reviewed holder locator')
+ return roots
+def current_binding(base,version,config,require_plan=False,payload=None):
+ doc,raw=check_checkpoint(base,OWN,version)
+ match=re.fullmatch(r'NATIVE([1-9][0-9]{0,3})_([A-Z_]+)',doc['state'])
+ if match is None or match[2]=='TERMINAL':raise ValueError('No mutation of sealed historical direction')
+ number=int(match[1]);key='native'+str(number);n=doc[key];direction=n['direction']
+ if type(config.get('direction_number')) is not int or config['direction_number']!=number or not direction['id'].startswith('V28-TRACEHARBOR-'+str(number)+'-') or len(direction['body'].encode())!=direction['bytes'] or sha(direction['body'].encode())!=direction['sha256']:raise ValueError('Exact strict current direction/body pin')
+ if not n['records'] or n['records'][0]['phase']!='RX_START':raise ValueError('Actual current owned intake required')
+ binding=n['records'][0]['payload']['writer_binding']
+ validate_transfer_layout(binding)
+ if config.get('writer_binding')!=binding or binding['direction_number']!=number or binding['direction_id']!=direction['id'] or binding['direction_sha256']!=direction['sha256'] or binding['direction_bytes']!=direction['bytes']:raise ValueError('Config is not authority; accepted CURRENT intake binding required')
+ root=pathlib.Path(binding['binding_root']);rs=root.lstat()
+ if root.is_symlink() or not stat.S_ISDIR(rs.st_mode) or rs.st_uid!=os.getuid() or rs.st_mode&0o077:raise ValueError('Actual sole owned private binding root')
+ original=private_regular(binding['original_writer_path']);writer=private_regular(root/('admin'+str(number)+'.py'));auditor=pathlib.Path(binding['auditor_path'])
+ if binding['writer_path']!=str(writer) or not auditor.is_relative_to(root) or auditor.is_symlink():raise ValueError('Derived CURRENT writer and intake locator only')
+ source=n['source_verification']['Auditor_V28_checkpoint.json'];araw=auditor.read_bytes();audit=strict(araw);copy_a=copy.deepcopy(audit);copy_a['integrity']['canonical_json_sha256']=None
+ if type(binding['auditor_version']) is not int or binding['auditor_version']!=source['version'] or sha(araw)!=source['sha256'] or len(araw)!=source['bytes'] or sha(can(copy_a))!=source['self_sha256'] or audit['integrity']['canonical_json_sha256']!=source['self_sha256'] or os.getxattr(auditor,'user.library-file-id').decode()!=source['library_file_id'] or int(os.getxattr(auditor,'user.library-file-version').decode())!=source['version']:raise ValueError('Actual accepted current Auditor snapshot/fullbytes/self/identity/version')
+ boundary=audit['operation']['effect_replay_boundary'];boundary=strict(boundary) if isinstance(boundary,str) else boundary;addressed=boundary['recipient_outboxes']['TraceHarbor V1']
+ if addressed!=direction or doc['guard']['operation_id']!=direction['id']:raise ValueError('Current addressed direction/source route differs')
+ if sha(original.read_bytes())!=ORIGINAL_WRITER_SHA256 or binding['original_writer_sha256']!=ORIGINAL_WRITER_SHA256:raise ValueError('Authentic008f original preimage')
+ expected=original.read_text().replace('118',str(number)).replace("a['state']=='NATIVE117_TERMINAL'","a['state']=='NATIVE"+str(number-1)+"_TERMINAL'").replace('CURRENT Auditor858 direction'+str(number),'CURRENT Auditor'+str(binding['auditor_version'])+' direction'+str(number))
+ if writer.read_text()!=expected or sha(writer.read_bytes())!=binding['writer_sha256']:raise ValueError('Only exact limited original label/predecessor/event binding adaptation; no arbitrary patch/module')
+ if require_plan:
+  if n['records'][-1]['phase']!='PUBLISH_INTENT' or n['records'][-1]['payload'].get('phase')!='SOURCE_FREEZE':raise ValueError('Current durable exact prepared operation required')
+  plan=n['records'][-1]['payload']['prepared_operation']
+  if config.get('prepared_operation')!=plan or plan['expected_current_version']!=version or plan['phase']!='PUBLISH_INTENT' or sha(can(payload))!=plan['payload_sha256'] or payload.get('source_sha')!=plan['source_sha'] or config['source_sha']!=plan['source_sha'] or config['host_source_sha256']!=plan['host_source_sha256'] or config['deadline_utc_ms']!=plan['deadline_utc_ms'] or config['context']!=plan['context'] or plan['direction_id']!=direction['id'] or plan['writer_sha256']!=binding['writer_sha256']:raise ValueError('Exact current phase/plan/payload/source/clock/version/path provenance before effect')
+  if type(plan['phase_s']) is not int or not 0<plan['phase_s']<=plan['maximum_phase_s'] or config['phase_s']!=plan['phase_s']:raise ValueError('Immutable bounded planned phase')
+ return {'number':number,'key':key,'binding':binding,'direction':direction,'original':original,'writer':writer,'doc':doc,'raw':raw}
+def validate_writer_output(base,target,version,payload,receipt,config):
+ binding=current_binding(base,version,config,require_plan=True,payload=payload);a=binding['doc'];raw=pathlib.Path(target).read_bytes();c=strict(raw);key=binding['key'];b=binding['binding']
+ expected_path=pathlib.Path(b['binding_root'])/('candidate'+str(version+1))/'TraceHarbor_V1_checkpoint.json'
+ if pathlib.Path(target)!=expected_path or receipt['candidate']!=str(expected_path) or receipt['version']!=version+1 or receipt['preservation']!='PASS' or sha(raw)!=receipt['raw_sha256'] or selfhash(c)!=c['self_sha256'] or receipt['self_sha256']!=c['self_sha256']:raise ValueError('Exact current prepared final path/wholebytes/self/version')
+ utc=c['events'][-1]['utc'];__import__('datetime').datetime.fromisoformat(utc)
+ wanted=copy.deepcopy(a);n=wanted[key];n['records'].append({'phase':'PUBLISH_INTENT','payload':payload});n['phase']='PUBLISH_INTENT';n['previous_checkpoint']={'version':version,'raw_sha256':sha(binding['raw']),'self_sha256':a['self_sha256']};n['writer_sha256']=b['writer_sha256'];n['phase_history'].append({'phase':'PUBLISH_INTENT','utc':utc,'actual_own_version':version+1})
+ wanted['events'].append({'phase':'PUBLISH_INTENT','utc':utc,'delivery_id':binding['direction']['id'],'own_version':version+1,'source':'CURRENT Auditor'+str(b['auditor_version'])+' direction'+str(binding['number']),'scope':'SAME_HOST_PRODUCER_COUNTER_CONTRACT_REVIEW_SOURCE'})
+ wanted['guard'].update(operation_id=binding['direction']['id'],operation_state='PUBLISH_INTENT',epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK');wanted['state']='NATIVE'+str(binding['number'])+'_PUBLISH_INTENT';wanted['self_sha256']=selfhash(wanted)
+ if c!=wanted:raise ValueError('Any unrelated root/nested/history/guard/output delta is forbidden')
  return c
 class HostTransport:
  def __init__(self,bridge,root,config):
@@ -160,6 +194,7 @@ class HostTransport:
   if sha(pathlib.Path(__file__).read_bytes())!=config['host_source_sha256']:raise ValueError('Actual source-pinned host transport')
   helper=pathlib.Path(config['library_helper'])
   if sha(helper.read_bytes())!=config['library_helper_sha256']:raise ValueError('Current helper source pin')
+  self.layout=validate_transfer_layout(config['writer_binding'],self.root)
   self.helper=helper;self.parent_mono=time.monotonic()+max(0,config['deadline_utc_ms']/1000-time.time());self.phase_mono=self.parent_mono
   if config.get('current_checkpoint') is not None:
    d,raw=check_checkpoint(config['current_checkpoint'],OWN,config['current_version'],config['current_sha256']);self._checkpoint=pathlib.Path(config['current_checkpoint']);self._version=config['current_version']
@@ -194,12 +229,12 @@ class HostTransport:
  def cas_checkpoint(self,expected_version,payload):
   self.deadline()
   if self.config.get('domain')=='READONLY_QUALIFICATION118' or expected_version!=self.current_checkpoint_version:raise ValueError('CAS currentversion/read-only guard before any effect')
-  original_writer,writer_path=writer_sources(self.config)
+  current=current_binding(self._checkpoint,expected_version,self.config,require_plan=True,payload=payload);original_writer=current['original'];writer_path=current['writer'];namespace=current['key']
   original=strict(self._checkpoint.read_bytes())
-  if any(r.get('phase')=='PUBLISH_INTENT' and r.get('payload')==payload for r in original['native119']['records']):raise HostUnknown('Existing exact attempt consumed; no retry')
+  if any(r.get('phase')=='PUBLISH_INTENT' and r.get('payload')==payload for r in original[namespace]['records']):raise HostUnknown('Existing exact attempt consumed; no retry')
   if payload.get('source_sha')!=self.source:raise ValueError('Current source-bound payload')
   if payload.get('phase')=='PUBLISH_INTENT':
-   if sha(can(payload))!=self.config.get('planned_publication_payload_sha256'):raise ValueError('Preplanned current publication payload')
+   if sha(can(payload))!=self.config['prepared_operation']['payload_sha256']:raise ValueError('Preplanned current publication payload')
   elif payload.get('phase') not in ('admit','consumed','GIT_WRITE_ATTEMPT') or set(payload)-{'phase','source_sha','descriptor_sha256','parent_clock','custody','operation','tool','args_sha256','status'}:raise ValueError('Exact scoped external host journal payload')
   request=self.root/('writer-'+str(expected_version)+'.payload.json');put(request,can(payload))
   target=writer_path.parent/('candidate'+str(expected_version+1))/'TraceHarbor_V1_checkpoint.json'
@@ -221,13 +256,23 @@ class HostTransport:
   if result.returncode!=0:raise HostUnknown('Actual producer terminal not0')
   writer=strict(result.stdout)
   if writer['candidate']!=str(target) or writer['version']!=expected_version+1 or writer['preservation']!='PASS':raise ValueError('Exact original producer output locator')
-  candidate=validate_writer_output(self._checkpoint,target,expected_version,payload,writer,self.config['writer_sha256'])
-  put(self.root/('writer-'+str(expected_version)+'.provenance.json'),can({'original_source_sha256':sha(original_writer.read_bytes()),'actual_invoked_source_sha256':sha(writer_path.read_bytes()),'command':command,'binding_adaptation':'EXACT119_LABELS_PREDECESSOR_AUDITOR_ONLY','terminal_sha256':sha(can(terminal)),'candidate_sha256':writer['raw_sha256'],'preimage_sha256':sha(self._checkpoint.read_bytes()),'preservation':'PASS','protocol_marker':WRITER,'protocol_marker_is_process_pin':False}))
-  pub=self.bridge('library_replace',{'library_file_id':OWN,'file':str(target),'expected_current_version':expected_version,'version_reason':'CURRENT119 source-pinned original producer binding; necessary PUBLISH_INTENT; no UNKNOWN retry'})
+  candidate=validate_writer_output(self._checkpoint,target,expected_version,payload,writer,self.config)
+  put(self.root/('writer-'+str(expected_version)+'.provenance.json'),can({'original_source_sha256':sha(original_writer.read_bytes()),'actual_invoked_source_sha256':sha(writer_path.read_bytes()),'direction_number':current['number'],'direction_id':current['direction']['id'],'current_namespace':namespace,'body_sha256':current['direction']['sha256'],'Auditor_version':current['binding']['auditor_version'],'command':command,'binding_adaptation':'EXACT_CURRENT_LABELS_PREDECESSOR_AUDITOR_ONLY','terminal_sha256':sha(can(terminal)),'candidate_sha256':writer['raw_sha256'],'preimage_sha256':sha(self._checkpoint.read_bytes()),'preservation':'PASS','protocol_marker':WRITER,'protocol_marker_is_process_pin':False}))
+  # Never expose protected binding/holder ancestry to Library preparation.
+  # Upload a fresh authenticated byte-identical staging copy in the disjoint
+  # transfer area; the actual private producer output remains immutable.
+  self.layout=validate_transfer_layout(current['binding'],self.root)
+  upload_dir=self.layout['transfer']/('own-upload-'+str(expected_version));upload_dir.mkdir(mode=0o700,exist_ok=False)
+  upload=upload_dir/'TraceHarbor_V1_checkpoint.json';put(upload,target.read_bytes())
+  for name in os.listxattr(target):os.setxattr(upload,name,os.getxattr(target,name))
+  if upload.read_bytes()!=target.read_bytes():raise ValueError('Exact actual producer output transfercopy')
+  put(self.root/('transfer-'+str(expected_version)+'.provenance.json'),can({'private_candidate':str(target),'upload_copy':str(upload),'bytes':len(upload.read_bytes()),'sha256':sha(upload.read_bytes()),'layout':current['binding']['transfer_layout'],'expected_current_version':expected_version,'native_authority':False}))
+  pub=self.bridge('library_replace',{'library_file_id':OWN,'file':str(upload),'expected_current_version':expected_version,'version_reason':'CURRENT scoped source-pinned original producer binding; necessary planned PUBLISH_INTENT; no UNKNOWN retry'})
   self.counts['CAS']+=1
   if pub.get('status')!='succeeded' or pub.get('library_file_id')!=OWN or type(pub.get('current_version_number')) is not int:raise HostUnknown('Actual Library CAS result required')
-  self.apply_attrs(target,pub)
-  receipt=dict(pub,sha256=writer['raw_sha256'],self_sha256=writer['self_sha256']);return self.pinned_checkpoint_readback(receipt)
+  self.apply_attrs(target,pub);self.apply_attrs(upload,pub)
+  validate_transfer_layout(current['binding'],self.root)
+  receipt=dict(pub,private_candidate_path=str(target),upload_copy_path=str(upload),sha256=writer['raw_sha256'],self_sha256=writer['self_sha256']);return self.pinned_checkpoint_readback(receipt)
  def apply_attrs(self,path,metadata):
   helper_record=self.root/('attrs-'+sha(str(path).encode())[:16]+'.original.json')
   process=subprocess.Popen([sys.executable,str(self.helper),'apply-xattrs',str(path),metadata['library_file_id']],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
@@ -247,9 +292,13 @@ class HostTransport:
    if os.getxattr(path,a['name']).decode()!=a['value']:raise ValueError('Complete Library attrs')
  def pinned_checkpoint_readback(self,receipt):
   if receipt is self._last_verified_receipt and self._checkpoint is not None and receipt.get('version')==self._version and receipt.get('sha256')==sha(self._checkpoint.read_bytes()):return receipt
-  self.deadline();t=self.bridge('library_materialize',{'items':[{'library_file_id':OWN,'file_id':receipt['file_id'],'file_name':receipt['file_name']}],'destination':{'directory':str(self.root/('own-readback-'+str(receipt['current_version_number'])))}});self.counts['materialize']+=1
+  self.deadline();t=self.bridge('library_materialize',{'items':[{'library_file_id':OWN,'file_id':receipt['file_id'],'file_name':receipt['file_name']}],'destination':{'directory':str(self.layout['transfer']/('own-readback-'+str(receipt['current_version_number'])))}});self.counts['materialize']+=1
   if t.get('file_id')!=receipt['file_id'] or t.get('library_file_id')!=OWN or t.get('current_version_number')!=receipt['current_version_number'] or t.get('xattrs')!=receipt.get('xattrs'):raise HostUnknown('Pinned whole actual own readback required')
-  p=pathlib.Path(t['workspace_path']);self.apply_attrs(p,t);d,raw=check_checkpoint(p,OWN,t['current_version_number'],receipt['sha256'])
+  p=pathlib.Path(t['workspace_path'])
+  expected_readback=self.layout['transfer']/('own-readback-'+str(receipt['current_version_number']))/receipt['file_name']
+  if p!=expected_readback or p.is_symlink():raise HostUnknown('Only actual pinned disjoint transfer destination')
+  validate_transfer_layout(self.config['writer_binding'],self.root)
+  self.apply_attrs(p,t);d,raw=check_checkpoint(p,OWN,t['current_version_number'],receipt['sha256'])
   if d['self_sha256']!=receipt['self_sha256']:raise ValueError('Pinned self closure')
   self.deadline();self._checkpoint=p;self._version=t['current_version_number']
   actual=dict(receipt,version=self._version,verified_same_holder=True,readback_path=str(p));self._last_verified_receipt=actual;return actual
@@ -323,12 +372,16 @@ def main():
  if len(sys.argv)!=3 or sys.argv[1]!='--qualify-publish-intent':raise ValueError('Only current necessary publication qualification')
  cfg=strict(pathlib.Path(sys.argv[2]).read_bytes());ledger=FrameLedger(cfg['output'],cfg['context'],cfg['deadline_utc_ms']);bridge=StdioBridge(ledger)
  try:
+  fd0=os.fstat(0)
+  startup={'schema':'TRACE_HOST_STARTUP','argv':sys.argv,'source_sha256':sha(pathlib.Path(__file__).read_bytes()),'config_sha256':sha(pathlib.Path(sys.argv[2]).read_bytes()),'isatty0':os.isatty(0),'isolated':sys.flags.isolated,'dont_write_bytecode':sys.flags.dont_write_bytecode,'fd0_dev':fd0.st_dev,'fd0_ino':fd0.st_ino,'fd0_mode':fd0.st_mode,'blocking0':os.get_blocking(0),'native_authority':False}
+  put(ledger.root/'startup.original.json',can(startup))
+  if startup['isatty0'] is not True or not stat.S_ISCHR(fd0.st_mode):raise HostUnknown('Explicit actual livePTY required BEFORE writer preparation')
   transport=HostTransport(bridge,ledger.root,cfg);transport.bind_phase(min(transport.parent_mono,ledger.parent_mono,time.monotonic()+cfg['phase_s']))
   payload=strict(pathlib.Path(cfg['payload_path']).read_bytes())
   if sha(can(payload))!=cfg['payload_sha256']:raise ValueError('Preplanned exact necessary intent')
   receipt=transport.cas_checkpoint(cfg['current_version'],payload)
-  proof={'schema':'TRACE119_GENUINE_NECESSARY_PUBLISH_INTENT','holder_pid':os.getpid(),'context':cfg['context'],'seq':ledger.seq,'receipt':receipt,'transport_counts':transport.counts,'native_authority':False,'result':'PASS'}
-  put(ledger.root/'genuine-proof.json',can(proof));print(can({'schema':'TRACE119_HOLDER_TERMINAL','result':'PASS','exit_code':0,'proof_sha256':sha(can(proof))}).decode());return 0
+  proof={'schema':'TRACE120_GENUINE_NECESSARY_PUBLISH_INTENT','holder_pid':os.getpid(),'context':cfg['context'],'seq':ledger.seq,'receipt':receipt,'transport_counts':transport.counts,'native_authority':False,'result':'PASS'}
+  put(ledger.root/'genuine-proof.json',can(proof));print(can({'schema':'TRACE120_HOLDER_TERMINAL','result':'PASS','exit_code':0,'proof_sha256':sha(can(proof))}).decode());return 0
  except BaseException as exc:
-  ledger.failed=True;put(ledger.root/'genuine-error.json',can({'exception_class':type(exc).__name__,'message':str(exc),'status':'UNKNOWN_NO_RETRY'}));print(can({'schema':'TRACE119_HOLDER_TERMINAL','result':'UNKNOWN','exit_code':1}).decode());return 1
+  ledger.failed=True;put(ledger.root/'genuine-error.json',can({'exception_class':type(exc).__name__,'message':str(exc),'status':'UNKNOWN_NO_RETRY'}));print(can({'schema':'TRACE120_HOLDER_TERMINAL','result':'UNKNOWN','exit_code':1}).decode());return 1
 if __name__=='__main__':sys.exit(main())

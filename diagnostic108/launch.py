@@ -18,6 +18,11 @@ CODES = frozenset(('TERMINAL_MISSING','OOM','WORKER_NONZERO','QUALIFICATION_NOT_
 EXCEPTIONS = frozenset(('AssertionError','ValueError','TypeError','KeyError','FileNotFoundError','PermissionError','OSError','TimeoutError','TimeoutExpired','CalledProcessError','RuntimeError','KeyboardInterrupt','SystemExit','GateFailure','StageFailure','SignalFailure','FileExistsError'))
 _HOST_KEY = object()
 
+def prequalification_deadline120(overall,producer=None):
+    if producer is None:return overall
+    clock=producer.clock;clock.require(520)
+    return min(overall,clock.phase(200,320))
+
 def sha(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -664,8 +669,9 @@ def execute(x, private, binding, counter_requested=False):
         if counter_plan is not None:
             pclock=counter_plan['producer'].clock
             overall=min(overall,counter_plan['producer'].main_end,pclock.end_mono)
-            pclock.require(610)
-        _HOST113.prequalify(sys.modules[__name__],x,repo,m,private,binding,overall-(95 if counter_plan is not None else 0))
+        prequal_end=overall-(95 if counter_plan is not None else 0)
+        prequal_end=prequalification_deadline120(prequal_end,counter_plan['producer'] if counter_plan is not None else None)
+        _HOST113.prequalify(sys.modules[__name__],x,repo,m,private,binding,prequal_end)
         if _QUAL113 is None or _QUAL113['diagnostic_admitted'] is not True or overall-time.monotonic()<(320 if counter_plan is not None else 225):
             raise GateFailure('QUALIFICATION_NOT_APPROVED')
         if counter_plan is not None:
