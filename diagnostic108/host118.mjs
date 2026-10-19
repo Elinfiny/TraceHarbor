@@ -7,8 +7,8 @@ export async function bridge118(frame, state, tools) {
     const path = state.capture_directory + '/' + frame.seq + '.' + name + '.json';
     return await tools.apply_patch('*** Begin Patch\n*** Add File: ' + path + '\n+' + raw.split('\n').join('\n+') + '\n*** End Patch');
   };
-  if (state.failed || state.pending || frame.schema !== 'TRACE118_HOST_REQUEST' || frame.seq !== state.next_seq || !same(frame.context, state.context) || frame.deadline_utc_ms !== state.deadline_utc_ms || frame.request_digest !== state.expected_request_digest || !same({op:frame.op,args:frame.args},state.expected_operation)) throw Error('Exact holder/source/sequence/planned operation required');
-  if (Date.now() >= state.deadline_utc_ms) throw Error('Request expired before tool');
+  if (state.failed || state.pending || frame.schema !== 'TRACE118_HOST_REQUEST' || frame.seq !== state.next_seq || !same(frame.context, state.context) || frame.deadline_utc_ms > state.deadline_utc_ms || frame.deadline_utc_ms !== state.actual_phase_deadline_utc_ms || frame.request_digest !== state.expected_request_digest || !same({op:frame.op,args:frame.args},state.expected_operation)) throw Error('Exact holder/source/sequence/planned operation required');
+  if (Date.now() >= Math.min(state.deadline_utc_ms,frame.deadline_utc_ms)) throw Error('Request expired before tool');
   if (!/^\/workspace\/[A-Za-z0-9_\-/]+$/.test(state.capture_directory) || state.capture_directory.includes('..')) throw Error('Trusted private capture root required');
   await capture('request-before-tool', frame);
   state.pending = true;
@@ -53,7 +53,7 @@ export async function bridge118(frame, state, tools) {
   } catch (error) {transport_error = {exception_class:error?.name || 'Error',status:'UNKNOWN_NO_RETRY'};}
   // Native tool result/exception is persisted BEFORE parsing or deadline guards.
   await capture('native-tool-original', {original_result:original,transport_error});
-  const late = Date.now() >= state.deadline_utc_ms;
+  const late = Date.now() >= Math.min(state.deadline_utc_ms,frame.deadline_utc_ms);
   if (!late && !transport_error && !original?.isError) {
     const returned = original?.structuredContent;
     if (frame.op === 'github_create_blob') state.last_blob_sha = returned?.sha;
