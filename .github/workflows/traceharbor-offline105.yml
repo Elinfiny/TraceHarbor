@@ -1,0 +1,107 @@
+{
+  "name": "TraceHarbor one admitted offline counter105",
+  "on": {
+    "workflow_dispatch": {
+      "inputs": {
+        "source_sha": {
+          "required": true,
+          "type": "string"
+        },
+        "kit_manifest_sha256": {
+          "required": true,
+          "type": "string"
+        },
+        "once_receipt_sha256": {
+          "required": true,
+          "type": "string"
+        }
+      }
+    }
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "traceharbor-offline-counter-one",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "offline": {
+      "if": "${{ github.event_name == 'workflow_dispatch' && github.actor_id == '273768139' && github.run_attempt == 1 && inputs.source_sha == github.sha }}",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 15,
+      "permissions": {
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "Create ephemeral VM-only recipient before downloaded imports",
+          "env": {
+            "EXPECTED_SOURCE": "${{ inputs.source_sha }}",
+            "EXPECTED_MANIFEST": "${{ inputs.kit_manifest_sha256 }}"
+          },
+          "run": "python3 offline103/ingress.py init --source-sha \"$EXPECTED_SOURCE\" --manifest-sha \"$EXPECTED_MANIFEST\""
+        },
+        {
+          "name": "Publish public recipient only",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "traceharbor-recipient104-${{ github.run_id }}-1",
+            "path": "${{ runner.temp }}/traceharbor-private104/recipient-public.json",
+            "retention-days": 1,
+            "if-no-files-found": "error",
+            "overwrite": false,
+            "include-hidden-files": false,
+            "compression-level": 0
+          }
+        },
+        {
+          "name": "One fixed ingress window; no counter on expiry",
+          "env": {
+            "EXPECTED_SOURCE": "${{ inputs.source_sha }}",
+            "EXPECTED_MANIFEST": "${{ inputs.kit_manifest_sha256 }}"
+          },
+          "run": "python3 offline103/ingress.py receive --source-sha \"$EXPECTED_SOURCE\" --manifest-sha \"$EXPECTED_MANIFEST\""
+        },
+        {
+          "name": "Bounded public data acquisition after authenticated private receipt",
+          "env": {
+            "EXPECTED_SOURCE": "${{ inputs.source_sha }}",
+            "EXPECTED_MANIFEST": "${{ inputs.kit_manifest_sha256 }}"
+          },
+          "run": "python3 offline103/acquire.py --manifest offline103/transfer.json --manifest-sha \"$EXPECTED_MANIFEST\" --source-sha \"$EXPECTED_SOURCE\""
+        },
+        {
+          "name": "Contained qualification and one counter after frozen intent",
+          "env": {
+            "EXPECTED_SOURCE": "${{ inputs.source_sha }}",
+            "EXPECTED_MANIFEST": "${{ inputs.kit_manifest_sha256 }}",
+            "ONCE_RECEIPT": "${{ inputs.once_receipt_sha256 }}"
+          },
+          "run": "python3 offline103/launch.py --manifest offline103/transfer.json --manifest-sha \"$EXPECTED_MANIFEST\" --source-sha \"$EXPECTED_SOURCE\" --once-receipt-sha \"$ONCE_RECEIPT\""
+        },
+        {
+          "name": "Publish verified synthetic count proof only",
+          "if": "${{ success() }}",
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "traceharbor-offline105-proof-${{ github.run_id }}-1",
+            "path": "${{ runner.temp }}/traceharbor-offline105-public-proof/",
+            "retention-days": 1,
+            "if-no-files-found": "error",
+            "overwrite": false,
+            "include-hidden-files": false,
+            "compression-level": 0
+          }
+        }
+      ]
+    }
+  }
+}
