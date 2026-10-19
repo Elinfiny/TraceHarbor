@@ -30,8 +30,9 @@ def inspect_config(v,binding):
     return v['State']
 def cleanup(g,private,name,binding,deadline,q,native=False):
     """Fresh ownership+state before one kill; never blind rm-f or create/start replay."""
+    receipt_scope = "native-cleanup" if native else "diagnostic-cleanup"
     try:
-        ok,data,t=command(g,private,q,'cleanup-inspect',['docker','inspect',name],min(deadline,time.monotonic()+5),False)
+        ok,data,t=command(g,private,q,receipt_scope+'-inspect',['docker','inspect',name],min(deadline,time.monotonic()+5),False)
         if not ok:
             # Exact Docker absence is useful reconciliation, never permission to replay.
             text=data['stderr'].decode('utf-8','replace').strip()
@@ -41,12 +42,12 @@ def cleanup(g,private,name,binding,deadline,q,native=False):
             return [],True
         v=g.strict(data['stdout'])[0];state=inspect_config(v,binding)
         if state.get('Running') is True:
-            command(g,private,q,'cleanup-kill',['docker','kill',name],min(deadline,time.monotonic()+5))
-            command(g,private,q,'cleanup-wait',['docker','wait',name],min(deadline,time.monotonic()+8))
-        ok,data,t=command(g,private,q,'cleanup-postterminal',['docker','inspect',name],min(deadline,time.monotonic()+5))
+            command(g,private,q,receipt_scope+'-kill',['docker','kill',name],min(deadline,time.monotonic()+5))
+            command(g,private,q,receipt_scope+'-wait',['docker','wait',name],min(deadline,time.monotonic()+8))
+        ok,data,t=command(g,private,q,receipt_scope+'-postterminal',['docker','inspect',name],min(deadline,time.monotonic()+5))
         state=inspect_config(g.strict(data['stdout'])[0],binding)
         require(state.get('Running') is False,'cleanup-not-stopped',q)
-        command(g,private,q,'cleanup-remove',['docker','rm',name],min(deadline,time.monotonic()+5))
+        command(g,private,q,receipt_scope+'-remove',['docker','rm',name],min(deadline,time.monotonic()+5))
         q['cleanup']='PASS'
         return [],True
     except BaseException as exc:
