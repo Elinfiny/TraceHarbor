@@ -1,0 +1,54 @@
+name: TraceHarbor public-input pre-counter diagnostic108
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Independently admitted immutable source commit
+        required: true
+        type: string
+      manifest_sha256:
+        description: Independently pinned diagnostic manifest hash
+        required: true
+        type: string
+      once_receipt_sha256:
+        description: New solewriter reservation bound to this source and manifest
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: traceharbor-diagnostic108-${{ inputs.once_receipt_sha256 }}
+  cancel-in-progress: false
+jobs:
+  diagnostic:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor_id == '273768139' && github.repository == 'Elinfiny/TraceHarbor' && github.repository_id == '1391430317' && github.run_attempt == 1 && inputs.source_sha == github.sha }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Exact immutable source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Canonical public-only acquisition then trusted diagnostic
+        env:
+          DIAGNOSTIC_SOURCE: ${{ inputs.source_sha }}
+          DIAGNOSTIC_MANIFEST: ${{ inputs.manifest_sha256 }}
+          DIAGNOSTIC_ONCE: ${{ inputs.once_receipt_sha256 }}
+        shell: bash
+        run: |
+          python3 -I diagnostic108/launch.py \
+            --source-sha "$DIAGNOSTIC_SOURCE" \
+            --manifest-sha "$DIAGNOSTIC_MANIFEST" \
+            --once-receipt-sha "$DIAGNOSTIC_ONCE"
+      - name: Safe proof on success and failure
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: traceharbor-diagnostic108-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/traceharbor-diagnostic108-proof/proof.json
+          if-no-files-found: error
+          retention-days: 1
+          include-hidden-files: false
+          overwrite: false
+          compression-level: 9
