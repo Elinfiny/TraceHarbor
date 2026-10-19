@@ -82,7 +82,7 @@ def bind_mounts(producer,g,custody,evidence,bindings,q):
 # authority; NativeConsumedProof is allocated only by the live producer below.
 from dataclasses import dataclass
 import datetime
-PHASES117={'checkout':20,'run_capture':10,'admit':45,'recipient_crypto':20,
+PHASES117={'checkout':20,'run_capture':10,'admit':90,'recipient_crypto':20,
  'recipient_io':5,'recipient_upload':60,'main_capture':10,'main_admit':45,
  'prequalification':290,'receive':70,'consumed':45,'mounts':10,
  'worker':170,'cleanup':10,'proof':15}
@@ -154,21 +154,28 @@ def read_external(api,strict,phase,b,pins,clock,deadline,save,custody=None,admit
     prefix='/repos/Elinfiny/TraceHarbor/';ref='heads/traceharbor-counter116-'+phase+'-'+b['once_receipt_sha256']
     read=lambda path,missing=False:phase_read(api,prefix+path,clock,deadline,save,missing)
     # Only initial admit may observe actual404/None. All observations and times
-    # are saved by phase_read before guards; original45s/parent never reset.
+    # are saved by phase_read before guards; fixed initial90s/parent never reset.
     if wait_for_admit and phase!='admit':raise ValueError('No consumed-ref readiness retry')
     pause=time.sleep if pause is None else pause
+    # Fixed initial availability window: nine scheduled intervals, five
+    # immutable GETs and complete validation retain an explicit15s reserve.
+    started=clock.mono();validation_reserve=15 if wait_for_admit else 2;available_end=deadline-validation_reserve
+    if wait_for_admit and available_end<=started:raise TimeoutError('No initial availability/validation reserve')
     observations=0
     while True:
         clock.check(deadline)
-        if deadline-clock.mono()<2:raise TimeoutError('Ref read plus immutable validation phase reserve')
+        if wait_for_admit and observations:
+            target=started+(available_end-started)*observations/9
+            while clock.mono()<target:
+                delay=min(target-clock.mono(),deadline-clock.mono()-validation_reserve)
+                if delay<=0:raise TimeoutError('Fixed availability window exhausted')
+                before_pause=clock.mono();pause(delay)
+                if clock.mono()<=before_pause:raise TimeoutError('Availability pause made no progress')
+                clock.check(deadline)
+        if deadline-clock.mono()<validation_reserve:raise TimeoutError('Five immutable reads/fullvalidation reserve')
         actual=read('git/ref/'+ref,missing=wait_for_admit and phase=='admit');observations+=1
         if actual is not None:break
         if not wait_for_admit or phase!='admit' or observations>=10:raise TimeoutError('Initial admit bounded10observations exhausted')
-        clock.check(deadline)
-        delay=min(.25,max(0,deadline-clock.mono()-2))
-        if delay<=0:raise TimeoutError('No phase reserve before another read')
-        pause(delay)
-        clock.check(deadline)
     if actual is None:raise ValueError('Consumed/admit immutable record absent')
     if actual['ref']!='refs/'+ref or actual['object']['type']!='commit':raise ValueError('Immutable original once ref')
     commit=read('commits/'+actual['object']['sha'])
@@ -392,7 +399,7 @@ class NativeProducer:
         run=phase_read(ingress.api,'/repos/Elinfiny/TraceHarbor/actions/runs/'+e['GITHUB_RUN_ID'],Bootstrap(),deadline,save_initial)
         if run['id']!=int(e['GITHUB_RUN_ID']) or run['run_attempt']!=1 or run['head_sha']!=x.source_sha or run['event']!='workflow_dispatch' or run['actor']['id']!=OWNER or run['repository']['id']!=REPO or run['status']!='in_progress':raise ValueError('Current provider run readback')
         clock=ParentClock.from_run(run,x.once_expires_utc,x.coordinator_cutoff_utc)
-        clock.require(820 if initializing else 655)
+        clock.require(865 if initializing else 655)
         binding={'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'once_receipt_sha256':x.once_receipt_sha,'run_id':e['GITHUB_RUN_ID'],'request_sha256':manifest['request_sha256']}
         caller=NativeCaller(_NATIVE,run,binding,ingress,repo)
         root=pathlib.Path(e['RUNNER_TEMP'])/('traceharbor-counter117-intake-'+x.once_receipt_sha)
@@ -401,7 +408,7 @@ class NativeProducer:
         obj.observation_root=pathlib.Path(e['RUNNER_TEMP'])/('trace118-public-admit-'+x.once_receipt_sha+('-init' if initializing else '-main'))
         obj.observation_root.mkdir(mode=0o700)
         try:
-            receipt=obj.provider_once('admit',maximum=45,reserve=775 if initializing else 610,admit_wait=initializing)
+            receipt=obj.provider_once('admit',maximum=90 if initializing else 45,reserve=775 if initializing else 610,admit_wait=initializing)
             caller.receipt=receipt;caller.expires=receipt['expires_utc']
             obj.owner=OwnedIntake(root,binding,pins,create=initializing)
             if not initializing:obj.main_end=min(clock.end_mono,tick+720)
@@ -509,6 +516,7 @@ class ExternalCoordinator117:
     def call(self,key,tool,args,write=False,reserve=0):
         if key in self.attempted:raise ValueError('No retry of attempted/UNKNOWN coordinator operation')
         self.clock.check(self.phase_end,reserve+10);self.attempted.add(key)
+        self.transport.bind_phase(self.phase_end)
         before={'utc':self.clock.wall(),'mono':self.clock.mono()}
         if write:
             # Existing105 transport policy: one originalwriter expected-version
@@ -540,7 +548,8 @@ class ExternalCoordinator117:
     def stage(self,phase,descriptor,current_own_version,custody=None):
         if phase not in ('admit','consumed'):raise ValueError('Exact phase')
         reserve=775 if phase=='admit' else 330
-        self.phase_end=self.clock.phase(45 if phase=='admit' else 110,reserve)
+        self.phase_end=self.clock.phase(75 if phase=='admit' else 110,reserve)
+        self.transport.bind_phase(self.phase_end)
         # CAS reservation/readback precedes immutable consumed-ref publication.
         # A timeout is UNKNOWN, and the original reservation is never refunded.
         receipt=self.transport.cas_checkpoint(current_own_version,{'phase':phase,'source_sha':self.source,'descriptor_sha256':sha(can(descriptor)),'parent_clock':self.clock.descriptor(),'custody':custody})
@@ -562,6 +571,7 @@ class ExternalCoordinator117:
         """
         self.clock.require(610)
         artifact_end=self.clock.phase(60,550)
+        self.transport.bind_phase(artifact_end)
         original=self.transport.authenticated_artifact_zip(run['id'],'traceharbor-recipient104-'+str(run['id'])+'-1',artifact_end,8192)
         self.save({'key':'recipient-authenticated-original','original':original['receipt']})
         self.clock.check(artifact_end,550)
@@ -605,7 +615,7 @@ class ExternalCoordinator117:
         return [
           'Exact independent source/budget/private custody admission; originalwriter once CAS+pinned fullbyte readback before dispatch',
           'Actual supported dispatch ONCE; preserve response; read actual run/source/actor/attempt/run_started_at under frozen onceexpiry/cutoff',
-          'Build ParentClock from same actual run; stage(admit) CAS/readback -> blob/tree/source-parent commit/create-only admit ref -> whole readback within init45s',
+          'Build ParentClock from same actual run; stage(admit) CAS/readback -> blob/tree/source-parent commit/create-only admit ref -> whole readback within initial host75s / runner90s',
           'Authenticated current recipient artifact by actualrun/attempt/Owner/source; whole context/certificate hash and parent clock readback; no old105key',
           'Existing reviewed105 encrypt with exact3privatepins and current recipient; private crypto originals retained; blob/tree/source-parent commit/create-only encrypted104 ref; whole ciphertext readback',
           'stage(consumed) originalwriter CAS + pinned readback -> immutable consumed descriptor bound to ciphertext/context/admit -> create-only ref + whole readback BEFORE worker; no refund on later failure',

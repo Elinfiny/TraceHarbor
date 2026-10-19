@@ -4,7 +4,7 @@ Import is inert. The code-mode bridge invokes actual enabled tools. This holder
 accepts planned data/original returns only; no eval, arbitrary command, PAT,
 cookie, HTTP or native capability transfer. Read-only qualification never CASes.
 """
-import os,sys,pathlib,json,hashlib,time,subprocess,copy,zipfile,io,stat,re,base64
+import os,sys,pathlib,json,hashlib,time,subprocess,copy,zipfile,io,stat,re,base64,selectors,termios
 OWN='libfile_3ee8270f03d8819188e1de1f75c3d824';OWNER=273768139;REPO='Elinfiny/TraceHarbor'
 MAX_FRAME=1048576;WRITER='e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436'
 READ_PR='https://api.github.com/repos/Elinfiny/TraceHarbor/pulls/18'
@@ -45,12 +45,16 @@ def validate_zip(raw,digest):
  return strict(data)
 class FrameLedger:
  def __init__(self,root,context,deadline_ms):
-  self.root=pathlib.Path(root);self.root.mkdir(mode=0o700,exist_ok=False);self.context=copy.deepcopy(context);self.deadline_ms=deadline_ms;self.seq=0;self.pending=None;self.failed=False
+  self.root=pathlib.Path(root);self.root.mkdir(mode=0o700,exist_ok=False);self.context=copy.deepcopy(context);self.deadline_ms=deadline_ms;self.parent_mono=time.monotonic()+max(0,(deadline_ms/1000-time.time()));self.phase_mono=self.parent_mono;self.seq=0;self.pending=None;self.failed=False
+ def bind_phase(self,end):
+  if self.failed or self.pending is not None or not time.monotonic()<end<=self.parent_mono:raise HostUnknown('Actual earlier phase required')
+  self.phase_mono=end
+ def remaining(self):return min(self.phase_mono-time.monotonic(),self.parent_mono-time.monotonic(),self.deadline_ms/1000-time.time())
  def request(self,op,args):
-  if self.failed or self.pending is not None or op not in OPS or int(time.time()*1000)>=self.deadline_ms:raise HostUnknown('Holder phase/sequence/op unavailable')
+  if self.failed or self.pending is not None or op not in OPS or self.remaining()<=0:raise HostUnknown('Holder phase/sequence/op unavailable')
   if self.context['domain']=='READONLY_QUALIFICATION118' and (op!='github_fetch' or args!={'url':READ_PR}):raise ValueError('Read-only exact PR18 route')
   self.seq+=1
-  frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':self.deadline_ms}
+  frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'phase_deadline_mono':self.phase_mono}
   frame['request_digest']=sha(can(frame));raw=can(frame)
   if len(raw)>MAX_FRAME:raise ValueError('Bounded request frame')
   put(self.root/f'{self.seq}.request.original.json',raw);self.pending=frame
@@ -67,44 +71,87 @@ class FrameLedger:
    if len(raw)>MAX_FRAME:raise HostUnknown('Oversized/partial IPC frame')
    value=strict(raw);p=self.pending
    if p is None or self.failed or value.get('schema')!='TRACE118_HOST_RETURN' or value.get('seq')!=p['seq'] or value.get('context')!=self.context or value.get('op')!=p['op'] or value.get('request_digest')!=p['request_digest']:raise HostUnknown('Out of order/duplicate/source/op IPC')
-   if int(time.time()*1000)>=self.deadline_ms or value.get('late') is True:raise HostUnknown('Late original remains UNKNOWN')
+   if self.remaining()<=0 or int(time.time()*1000)>=p['deadline_utc_ms'] or value.get('late') is True:raise HostUnknown('Late original remains UNKNOWN')
    if value.get('transport_error') is not None:raise HostUnknown('Tool transport exception preserved')
    result=normalizer(value['original_result'],p['op']);self.pending=None
    put(self.root/f'{seq}.accepted.json',can({'seq':seq,'request_sha256':p['request_digest'],'original_frame_sha256':sha(raw),'original_result_sha256':sha(can(value['original_result'])),'domain':self.context['domain'],'normalized_kind':p['op'],'native_authority':False}))
    return result
   except BaseException:
    self.failed=True;raise
- def eof(self):
-  self.failed=True;put(self.root/'EOF_UNKNOWN.json',can({'seq':self.seq,'pending':self.pending is not None,'status':'UNKNOWN_NO_RETRY'}));raise HostUnknown('Partial EOF; no effect retry')
+ def unknown_stream(self,raw,event,error=None):
+  self.failed=True
+  put(self.root/f'{self.seq}.partial.original.bin',raw)
+  put(self.root/f'{self.seq}.stream-UNKNOWN.json',can({'seq':self.seq,'event':event,'exception_class':error,'raw_bytes':len(raw),'raw_sha256':sha(raw),'status':'UNKNOWN_NO_RETRY'}))
+  raise HostUnknown('Bounded original IPC remains UNKNOWN; no retry')
 class StdioBridge:
- def __init__(self,ledger):self.ledger=ledger
+ def __init__(self,ledger,input_fd=None,output=None):self.ledger=ledger;self.input_fd=sys.stdin.fileno() if input_fd is None else input_fd;self.output=sys.stdout.buffer if output is None else output
+ def bind_phase(self,end):self.ledger.bind_phase(end)
  def __call__(self,op,args):
-  frame=self.ledger.request(op,args);sys.stdout.buffer.write(can(frame)+b'\n');sys.stdout.buffer.flush()
-  raw=sys.stdin.buffer.readline(MAX_FRAME+2)
-  if not raw or not raw.endswith(b'\n'):self.ledger.eof()
-  return self.ledger.accept(raw.rstrip(b'\n'))
+  frame=self.ledger.request(op,args);raw=bytearray();chunks=0;fd=self.input_fd;blocking=os.get_blocking(fd);attrs=termios.tcgetattr(fd) if os.isatty(fd) else None;primary=None;cleanup=[]
+  try:
+   if attrs is not None:
+    temporary=copy.deepcopy(attrs);temporary[3]&=~(termios.ICANON|termios.ECHO);termios.tcsetattr(fd,termios.TCSANOW,temporary)
+   os.set_blocking(fd,False)
+   self.output.write(can(frame)+b'\n');self.output.flush()
+   with selectors.DefaultSelector() as selector:
+    selector.register(fd,selectors.EVENT_READ)
+    while True:
+     remaining=min(self.ledger.remaining(),frame['deadline_utc_ms']/1000-time.time())
+     if remaining<=0:self.ledger.unknown_stream(bytes(raw),'DEADLINE')
+     if not selector.select(remaining):self.ledger.unknown_stream(bytes(raw),'DEADLINE')
+     try:chunk=os.read(fd,min(65536,MAX_FRAME+2-len(raw)))
+     except BlockingIOError:continue
+     except BaseException as exc:
+      put(self.ledger.root/f'{frame["seq"]}.read-exception.original.json',can({'exception_class':type(exc).__name__,'errno':getattr(exc,'errno',None)}))
+      self.ledger.unknown_stream(bytes(raw),'READ_EXCEPTION',type(exc).__name__)
+     chunks+=1;put(self.ledger.root/f'{frame["seq"]}.chunk{chunks}.original.bin',chunk)
+     # Every chunk, including EOF, is durable before parse or late guard.
+     if not chunk:self.ledger.unknown_stream(bytes(raw),'EOF')
+     raw.extend(chunk)
+     if len(raw)>MAX_FRAME+1:self.ledger.unknown_stream(bytes(raw),'OVERSIZE')
+     if b'\n' in raw:
+      if not raw.endswith(b'\n') or raw.count(b'\n')!=1:self.ledger.unknown_stream(bytes(raw),'MULTIPLE_OR_PARTIAL_FRAME')
+      return self.ledger.accept(bytes(raw[:-1]))
+  except BaseException as exc:primary=exc;self.ledger.failed=True;raise
+  finally:
+   # Borrowed descriptors are restored exactly once; never closed or killed.
+   try:os.set_blocking(fd,blocking)
+   except BaseException as exc:cleanup.append({'blocking_restore':type(exc).__name__})
+   if attrs is not None:
+    try:termios.tcsetattr(fd,termios.TCSANOW,attrs)
+    except BaseException as exc:cleanup.append({'termios_restore':type(exc).__name__})
+   put(self.ledger.root/f'{frame["seq"]}.fd-restoration.json',can({'blocking':blocking,'termios_borrowed':attrs is not None,'primary_exception':type(primary).__name__ if primary else None,'cleanup_errors':cleanup,'restore_attempts':1}))
+   if cleanup:
+    self.ledger.failed=True
+    if primary is None:raise HostUnknown('FD cleanup UNKNOWN; no next operation')
 def selfhash(doc):
  c=copy.deepcopy(doc);c['self_sha256']=None;return sha(can(c))
 def check_checkpoint(path,library_id,version,expected_sha=None):
  p=pathlib.Path(path);raw=p.read_bytes();d=strict(raw)
  if library_id!=OWN or os.getxattr(p,'user.library-file-id').decode()!=OWN or int(os.getxattr(p,'user.library-file-version').decode())!=version or selfhash(d)!=d['self_sha256'] or expected_sha is not None and sha(raw)!=expected_sha or d['ownership']['owner']!='TraceHarbor V1' or d['ownership']['duplicate_trace_route_owners']!=0:raise ValueError('Actual current owned preimage/self/allattrs required')
  return d,raw
-def candidate_checkpoint(base,version,payload,out,source_pin):
- d,raw=check_checkpoint(base,OWN,version);c=copy.deepcopy(d)
- # This is the existing solewriter's scoped adapter journal, not a parallel
- # state/transaction/lease. No arbitrary checkpoint patch is accepted.
- allowed={'phase','source_sha','descriptor_sha256','parent_clock','custody','operation','tool','args_sha256','status'}
- if type(payload) is not dict or set(payload)-allowed or payload.get('source_sha')!=source_pin or payload.get('phase') not in ('admit','consumed','GIT_WRITE_ATTEMPT'):raise ValueError('Exact permitted own journal delta')
- if 'native118' not in d:raise ValueError('Current original118 writer scope absent')
- history=d['native118'].get('host_transport118_journal',[])
- if any(r['payload'].get('phase')==payload['phase'] and r['payload'].get('source_sha')==source_pin and (r['payload'].get('args_sha256')==payload.get('args_sha256') if payload['phase']=='GIT_WRITE_ATTEMPT' else r['payload'].get('descriptor_sha256')==payload.get('descriptor_sha256')) for r in history):raise HostUnknown('Canonical attempt already consumed; no replay')
- c['native118'].setdefault('host_transport118_journal',[]).append({'original_writer':WRITER,'payload':payload,'preimage_sha256':sha(raw),'actual_preimage_version':version,'native_authority':False})
- c['guard']['epoch_checkpoint_counter']=version+1;c['self_sha256']=selfhash(c)
- for k in d:
-  if k not in ('native118','guard','self_sha256'):assert c[k]==d[k],k
- p=pathlib.Path(out);p.parent.mkdir(mode=0o700,parents=True,exist_ok=True);put(p,can(c))
- for name in os.listxattr(base):os.setxattr(p,name,os.getxattr(base,name))
- return {'candidate':str(p),'sha256':sha(p.read_bytes()),'self_sha256':c['self_sha256'],'expected_current_version':version,'writer_scope':'SAME_TRACE118_ORIGINALWRITER','preservation':'PASS'}
+ORIGINAL_WRITER_SHA256='008f194ac2d4cd93e946949bb2a926acb58690adb1815734601cd9808e73550f'
+def writer_sources(config):
+ original=pathlib.Path(config['original_writer_path']);current=pathlib.Path(config['writer_path'])
+ if sha(original.read_bytes())!=ORIGINAL_WRITER_SHA256 or sha(current.read_bytes())!=config['writer_sha256']:raise ValueError('Authentic original and explicit reviewed scope adaptation required')
+ expected=original.read_text().replace('118','119').replace("a['state']=='NATIVE117_TERMINAL'","a['state']=='NATIVE118_TERMINAL'").replace('CURRENT Auditor858 direction119','CURRENT Auditor861 direction119')
+ if current.read_text()!=expected:raise ValueError('Only exact CURRENT119 binding adaptation of original producer')
+ return original,current
+def validate_writer_output(base,target,version,payload,receipt,writer_pin):
+ a,raw=check_checkpoint(base,OWN,version);c=strict(pathlib.Path(target).read_bytes())
+ if sha(pathlib.Path(target).read_bytes())!=receipt['raw_sha256'] or selfhash(c)!=c['self_sha256'] or receipt['self_sha256']!=c['self_sha256'] or c['native119']['writer_sha256']!=writer_pin or c['native119']['records']!=a['native119']['records']+[{'phase':'PUBLISH_INTENT','payload':payload}]:raise ValueError('Actual writer output/wholebytes/exact scoped record')
+ for k in a:
+  if k not in ('native119','guard','state','events','self_sha256') and c[k]!=a[k]:raise ValueError('Original history/branch mutation')
+ if c['events'][:-1]!=a['events'] or len(c['events'])!=len(a['events'])+1:raise ValueError('Preserve original event history')
+ if set(c)!=set(a) or c['state']!='NATIVE119_PUBLISH_INTENT':raise ValueError('Exact root set/state')
+ expected_guard=dict(a['guard'],operation_id=a['native119']['direction']['id'],operation_state='PUBLISH_INTENT',epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK')
+ if c['guard']!=expected_guard:raise ValueError('Exact existing guard delta')
+ event=c['events'][-1]
+ if set(event)!={'phase','utc','delivery_id','own_version','source','scope'} or event['phase']!='PUBLISH_INTENT' or event['delivery_id']!=a['native119']['direction']['id'] or event['own_version']!=version+1 or event['source']!='CURRENT Auditor861 direction119' or event['scope']!='SAME_HOST_PRODUCER_COUNTER_CONTRACT_REVIEW_SOURCE':raise ValueError('Exact current event delta')
+ for k in a['native119']:
+  if k not in ('records','phase','phase_history','previous_checkpoint','writer_sha256') and c['native119'][k]!=a['native119'][k]:raise ValueError('Unscoped native119 mutation')
+ if c['native119']['phase_history'][:-1]!=a['native119']['phase_history'] or c['native119']['previous_checkpoint']!={'version':version,'raw_sha256':sha(raw),'self_sha256':a['self_sha256']}:raise ValueError('Actual preimage chain')
+ return c
 class HostTransport:
  def __init__(self,bridge,root,config):
   self.bridge=bridge;self.root=pathlib.Path(root);self.config=config;self.source=config['source_sha'];self._version=None;self._checkpoint=None;self._last_verified_receipt=None;self.reserved=set();self.counts={'GitGET':0,'Gitwrites':0,'CAS':0,'materialize':0}
@@ -113,11 +160,15 @@ class HostTransport:
   if sha(pathlib.Path(__file__).read_bytes())!=config['host_source_sha256']:raise ValueError('Actual source-pinned host transport')
   helper=pathlib.Path(config['library_helper'])
   if sha(helper.read_bytes())!=config['library_helper_sha256']:raise ValueError('Current helper source pin')
-  self.helper=helper
+  self.helper=helper;self.parent_mono=time.monotonic()+max(0,config['deadline_utc_ms']/1000-time.time());self.phase_mono=self.parent_mono
   if config.get('current_checkpoint') is not None:
    d,raw=check_checkpoint(config['current_checkpoint'],OWN,config['current_version'],config['current_sha256']);self._checkpoint=pathlib.Path(config['current_checkpoint']);self._version=config['current_version']
+ def bind_phase(self,end):
+  if not time.monotonic()<end<=self.parent_mono:raise HostUnknown('Actual phase bounded by original host parent')
+  self.phase_mono=end;self.bridge.bind_phase(end)
+ def remaining(self):return min(self.phase_mono-time.monotonic(),self.parent_mono-time.monotonic(),self.config['deadline_utc_ms']/1000-time.time())
  def deadline(self):
-  if int(time.time()*1000)>=self.config['deadline_utc_ms']:raise HostUnknown('Fixed host parent end; no reset')
+  if self.remaining()<=0:raise HostUnknown('Fixed actual host phase/parent end; no reset')
  @property
  def current_checkpoint_version(self):
   if self._version is None:raise HostUnknown('No actual own readback bound')
@@ -143,22 +194,53 @@ class HostTransport:
  def cas_checkpoint(self,expected_version,payload):
   self.deadline()
   if self.config.get('domain')=='READONLY_QUALIFICATION118' or expected_version!=self.current_checkpoint_version:raise ValueError('CAS currentversion/read-only guard before any effect')
-  target=self.root/('own-candidate-'+str(expected_version))/'TraceHarbor_V1_checkpoint.json';request=self.root/('writer-'+str(expected_version)+'.json')
-  put(request,can({'base':str(self._checkpoint),'version':expected_version,'payload':payload,'out':str(target),'source_pin':self.source}))
-  result=subprocess.run([sys.executable,str(pathlib.Path(__file__).resolve()),'--writer',str(request)],capture_output=True,timeout=min(10,max(.1,(self.config['deadline_utc_ms']-int(time.time()*1000))/1000)))
-  put(self.root/('writer-'+str(expected_version)+'.original.json'),can({'returncode':result.returncode,'stdout_hex':result.stdout.hex(),'stderr_hex':result.stderr.hex()}))
-  if result.returncode!=0:raise HostUnknown('Actual originalwriter terminal not0')
-  writer=strict(result.stdout);original=strict(self._checkpoint.read_bytes());candidate=strict(target.read_bytes())
-  if sha(target.read_bytes())!=writer['sha256'] or selfhash(candidate)!=candidate['self_sha256'] or candidate['native118']['host_transport118_journal'][-1]['payload']!=payload:raise ValueError('Writer bytes/journal/self independently required')
-  for k in original:
-   if k not in ('native118','guard','self_sha256') and candidate[k]!=original[k]:raise ValueError('Unscoped writer change')
-  pub=self.bridge('library_replace',{'library_file_id':OWN,'file':str(target),'expected_current_version':expected_version,'version_reason':'Source-pinned same originalwriter bounded host118 attempt; no retry of UNKNOWN'})
+  original_writer,writer_path=writer_sources(self.config)
+  original=strict(self._checkpoint.read_bytes())
+  if any(r.get('phase')=='PUBLISH_INTENT' and r.get('payload')==payload for r in original['native119']['records']):raise HostUnknown('Existing exact attempt consumed; no retry')
+  if payload.get('source_sha')!=self.source:raise ValueError('Current source-bound payload')
+  if payload.get('phase')=='PUBLISH_INTENT':
+   if sha(can(payload))!=self.config.get('planned_publication_payload_sha256'):raise ValueError('Preplanned current publication payload')
+  elif payload.get('phase') not in ('admit','consumed','GIT_WRITE_ATTEMPT') or set(payload)-{'phase','source_sha','descriptor_sha256','parent_clock','custody','operation','tool','args_sha256','status'}:raise ValueError('Exact scoped external host journal payload')
+  request=self.root/('writer-'+str(expected_version)+'.payload.json');put(request,can(payload))
+  target=writer_path.parent/('candidate'+str(expected_version+1))/'TraceHarbor_V1_checkpoint.json'
+  if target.exists():raise HostUnknown('Writer destination exists; no adoption/retry')
+  command=[sys.executable,str(writer_path),'build',str(self._checkpoint),str(expected_version),'PUBLISH_INTENT',str(request)]
+  before=time.monotonic()
+  try:
+   process=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+   stdout,stderr=process.communicate(timeout=min(10,max(.001,self.remaining())))
+   result=subprocess.CompletedProcess(command,process.returncode,stdout,stderr)
+   terminal={'returncode':result.returncode,'stdout_hex':result.stdout.hex(),'stderr_hex':result.stderr.hex(),'status':'TERMINAL','elapsed_s':time.monotonic()-before}
+  except subprocess.TimeoutExpired as exc:
+   put(self.root/('writer-'+str(expected_version)+'.original.json'),can({'status':'TIMEOUT_UNKNOWN','returncode':process.poll(),'pid':process.pid,'hidden_kill':False,'stdout_hex':(exc.stdout or b'').hex(),'stderr_hex':(exc.stderr or b'').hex(),'elapsed_s':time.monotonic()-before,'exception_class':type(exc).__name__}))
+   raise HostUnknown('Writer timeout originals retained; no retry') from exc
+  except BaseException as exc:
+   put(self.root/('writer-'+str(expected_version)+'.original.json'),can({'status':'EXCEPTION_UNKNOWN','returncode':None,'exception_class':type(exc).__name__,'errno':getattr(exc,'errno',None),'elapsed_s':time.monotonic()-before}))
+   raise HostUnknown('Writer exception preserved; no fabricated terminal') from exc
+  put(self.root/('writer-'+str(expected_version)+'.original.json'),can(terminal));self.deadline()
+  if result.returncode!=0:raise HostUnknown('Actual producer terminal not0')
+  writer=strict(result.stdout)
+  if writer['candidate']!=str(target) or writer['version']!=expected_version+1 or writer['preservation']!='PASS':raise ValueError('Exact original producer output locator')
+  candidate=validate_writer_output(self._checkpoint,target,expected_version,payload,writer,self.config['writer_sha256'])
+  put(self.root/('writer-'+str(expected_version)+'.provenance.json'),can({'original_source_sha256':sha(original_writer.read_bytes()),'actual_invoked_source_sha256':sha(writer_path.read_bytes()),'command':command,'binding_adaptation':'EXACT119_LABELS_PREDECESSOR_AUDITOR_ONLY','terminal_sha256':sha(can(terminal)),'candidate_sha256':writer['raw_sha256'],'preimage_sha256':sha(self._checkpoint.read_bytes()),'preservation':'PASS','protocol_marker':WRITER,'protocol_marker_is_process_pin':False}))
+  pub=self.bridge('library_replace',{'library_file_id':OWN,'file':str(target),'expected_current_version':expected_version,'version_reason':'CURRENT119 source-pinned original producer binding; necessary PUBLISH_INTENT; no UNKNOWN retry'})
   self.counts['CAS']+=1
   if pub.get('status')!='succeeded' or pub.get('library_file_id')!=OWN or type(pub.get('current_version_number')) is not int:raise HostUnknown('Actual Library CAS result required')
   self.apply_attrs(target,pub)
-  receipt=dict(pub,sha256=writer['sha256'],self_sha256=writer['self_sha256']);return self.pinned_checkpoint_readback(receipt)
+  receipt=dict(pub,sha256=writer['raw_sha256'],self_sha256=writer['self_sha256']);return self.pinned_checkpoint_readback(receipt)
  def apply_attrs(self,path,metadata):
-  q=subprocess.run([sys.executable,str(self.helper),'apply-xattrs',str(path),metadata['library_file_id']],input=json.dumps(metadata.get('xattrs',[])),capture_output=True,text=True,timeout=5)
+  helper_record=self.root/('attrs-'+sha(str(path).encode())[:16]+'.original.json')
+  process=subprocess.Popen([sys.executable,str(self.helper),'apply-xattrs',str(path),metadata['library_file_id']],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+  try:
+   out,err=process.communicate(input=json.dumps(metadata.get('xattrs',[])).encode(),timeout=min(5,max(.001,self.remaining())))
+   q=subprocess.CompletedProcess(process.args,process.returncode,out,err)
+   put(helper_record,can({'returncode':q.returncode,'stdout_hex':out.hex(),'stderr_hex':err.hex(),'status':'TERMINAL'}))
+  except subprocess.TimeoutExpired as exc:
+   put(helper_record,can({'status':'TIMEOUT_UNKNOWN','returncode':process.poll(),'pid':process.pid,'stdout_hex':(exc.stdout or b'').hex(),'stderr_hex':(exc.stderr or b'').hex(),'hidden_kill':False}))
+   raise HostUnknown('Metadata helper timeout; original prefixes retained') from exc
+  except BaseException as exc:
+   put(helper_record,can({'status':'EXCEPTION_UNKNOWN','returncode':process.poll(),'pid':process.pid,'exception_class':type(exc).__name__}))
+   raise HostUnknown('Metadata helper exception retained') from exc
   if q.returncode!=0:raise HostUnknown('Current Library helper failed')
   if os.getxattr(path,'user.library-file-id').decode()!=metadata['library_file_id']:raise ValueError('Library identity attr')
   for a in metadata.get('xattrs',[]):
@@ -238,21 +320,15 @@ class ProspectiveDispatchUI:
   return {'run_id':observed['run_id'],'source_sha':observed['source_sha'],'transport':'ACTUAL_BROWSER_JS_PROSPECTIVE','native_authority':False}
 
 def main():
- if sys.argv[1]=='--writer':
-  request=strict(pathlib.Path(sys.argv[2]).read_bytes());print(can(candidate_checkpoint(**request)).decode());return 0
- if sys.argv[1]=='--qualify-readonly':
-  cfg=strict(pathlib.Path(sys.argv[2]).read_bytes());
-  if sys.stdin.isatty():
-   import termios
-   attrs=termios.tcgetattr(sys.stdin.fileno());attrs[3]&=~(termios.ICANON|termios.ECHO);termios.tcsetattr(sys.stdin.fileno(),termios.TCSANOW,attrs)
-  ledger=FrameLedger(cfg['output'],cfg['context'],cfg['deadline_utc_ms']);bridge=StdioBridge(ledger)
-  try:
-   transport=HostTransport(bridge,ledger.root,cfg)
-   original=transport.call('github_fetch',{'url':READ_PR})
-   if original['number']!=18 or original['head']['sha']!=cfg['context']['source_sha'] or original['state']!='open':raise ValueError('Actual pinned current PR18')
-   proof={'schema':'TRACE118_GENUINE_READONLY_BRIDGE','holder_pid':os.getpid(),'context':cfg['context'],'seq':ledger.seq,'actual_PR':18,'actual_head':original['head']['sha'],'actual_main':original['base']['sha'],'transport_counts':transport.counts,'public_metadata_only':True,'native_authority':False,'result':'PASS','cleanup':'NO_CHILDREN_OR_NATIVE_ARTIFACTS; holder exits0'}
-   put(pathlib.Path(cfg['output'])/'genuine-proof.json',can(proof));print(can({'schema':'TRACE118_HOLDER_TERMINAL','result':'PASS','exit_code':0,'proof_sha256':sha(can(proof))}).decode());return 0
-  except BaseException as exc:
-   ledger.failed=True;put(pathlib.Path(cfg['output'])/'genuine-error.json',can({'exception_class':type(exc).__name__,'status':'UNKNOWN_NO_RETRY'}));print(can({'schema':'TRACE118_HOLDER_TERMINAL','result':'UNKNOWN','exit_code':1}).decode());return 1
- raise ValueError('Only fixed source commands')
+ if len(sys.argv)!=3 or sys.argv[1]!='--qualify-publish-intent':raise ValueError('Only current necessary publication qualification')
+ cfg=strict(pathlib.Path(sys.argv[2]).read_bytes());ledger=FrameLedger(cfg['output'],cfg['context'],cfg['deadline_utc_ms']);bridge=StdioBridge(ledger)
+ try:
+  transport=HostTransport(bridge,ledger.root,cfg);transport.bind_phase(min(transport.parent_mono,ledger.parent_mono,time.monotonic()+cfg['phase_s']))
+  payload=strict(pathlib.Path(cfg['payload_path']).read_bytes())
+  if sha(can(payload))!=cfg['payload_sha256']:raise ValueError('Preplanned exact necessary intent')
+  receipt=transport.cas_checkpoint(cfg['current_version'],payload)
+  proof={'schema':'TRACE119_GENUINE_NECESSARY_PUBLISH_INTENT','holder_pid':os.getpid(),'context':cfg['context'],'seq':ledger.seq,'receipt':receipt,'transport_counts':transport.counts,'native_authority':False,'result':'PASS'}
+  put(ledger.root/'genuine-proof.json',can(proof));print(can({'schema':'TRACE119_HOLDER_TERMINAL','result':'PASS','exit_code':0,'proof_sha256':sha(can(proof))}).decode());return 0
+ except BaseException as exc:
+  ledger.failed=True;put(ledger.root/'genuine-error.json',can({'exception_class':type(exc).__name__,'message':str(exc),'status':'UNKNOWN_NO_RETRY'}));print(can({'schema':'TRACE119_HOLDER_TERMINAL','result':'UNKNOWN','exit_code':1}).decode());return 1
 if __name__=='__main__':sys.exit(main())
