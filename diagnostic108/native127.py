@@ -1,0 +1,287 @@
+"""Fixed native loader/port for private127 review. NO native admission127.
+
+No external object, API dictionary, serialized proof, event selector or caller
+module registers a native host. Current authenticated owned direction, exact
+source manifest, whole grouped contract and whole call cap are independent gates.
+"""
+import base64,copy,importlib.util,io,json,os,pathlib,runpy,stat,subprocess,sys,time,types,zipfile
+ROOT=pathlib.Path(__file__).resolve().parent
+def load(name,path):
+ s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);sys.modules[name]=m;s.loader.exec_module(m);return m
+g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
+BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
+base=load('trace127_original118',ROOT/'host_transport118.py')
+_normalizer118=base.normalizer
+def normalizer127(original,kind):
+ if kind!='browser_js':return _normalizer118(original,kind)
+ if type(original) is not dict or original.get('isError'):raise ValueError('Actual UI tool error')
+ value=original.get('structuredContent')
+ if type(value) is not dict:
+  blocks=original.get('content',[])
+  if len(blocks)!=1 or blocks[0].get('type')!='text':raise ValueError('Exact current source UI data result; no arbitrary text/event selector')
+  value=base.strict(blocks[0]['text'])
+ if set(value)!={'schema','selected_run_id','source_sha','attempt','once_receipt_sha256'} or value['schema']!='TRACE127_UI_DISPATCH_DATA' or type(value['selected_run_id']) is not int or value['selected_run_id']<=0:raise ValueError('Full source-produced actual selected UI run data')
+ return value
+base.normalizer=normalizer127
+class ActualClock127:
+ mono=staticmethod(time.monotonic);wall=staticmethod(time.time)
+class CanonicalReader127:
+ """Controller returned PUBLIC metadata/encrypted DATA, in fresh private0700.
+ Existing phase/proof/private-input files still require their original0600 IO.
+ Platform apply_patch chooses file mode; the source requires no group/world
+ WRITE, own UID, singlelink, exact owned0700 parent and complete unchanged EOF.
+ This source-only canonical variant is part of the new independent contract.
+ """
+ def __init__(self,root):self.root=pathlib.Path(root)
+ def read(self,path):
+  p=pathlib.Path(path);root=self.root.lstat();s=p.lstat()
+  if self.root.is_symlink() or not stat.S_ISDIR(root.st_mode) or root.st_uid!=os.getuid() or root.st_mode&0o077 or p.parent!=self.root or p.is_symlink() or p.resolve()!=p or not stat.S_ISREG(s.st_mode) or s.st_uid!=os.getuid() or s.st_nlink!=1 or s.st_mode&0o022 or s.st_size>2097152:raise ValueError('Exact current controller canonical custody')
+  fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)
+  try:
+   before=os.fstat(fd);raw=os.read(fd,2097153);extra=os.read(fd,1);after=os.fstat(fd)
+  finally:os.close(fd)
+  end=p.lstat()
+  if extra or len(raw)!=s.st_size or (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns)!=(before.st_dev,before.st_ino,before.st_size,before.st_mtime_ns) or (before.st_dev,before.st_ino,before.st_size,before.st_mtime_ns)!=(after.st_dev,after.st_ino,after.st_size,after.st_mtime_ns) or end.st_ino!=s.st_ino:raise ValueError('Complete stable canonical EOF')
+  return raw
+class Ledger127(base.FrameLedger):
+ def request(self,op,args):
+  if self.failed or self.pending is not None or self.remaining()<=0:raise RuntimeError('Source/phase/sequence unavailable')
+  port=self.port;self.seq+=1
+  frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'phase_deadline_mono':self.phase_mono,'inventory_call_id':port.current_id,'inventory_sha256':sha(can(port.inventory.plan))}
+  frame['request_digest']=sha(can(frame));raw=can(frame)
+  if len(raw)>base.MAX_FRAME:raise ValueError('Finite complete frame')
+  base.put(self.root/(str(self.seq)+'.request.original.json'),raw);self.pending=frame;return frame
+helper128=load('trace128_native_helper',ROOT/'helper_channel128.py')
+class NativePort127:
+ def __init__(self,key,cfg,manifest,provider):
+  if key is not g._SEAL:raise TypeError('Fixed internal source loader only')
+  self.config=cfg;self.manifest_sha=sha(can(manifest));self.provider=provider;self.source=cfg['source_sha'];self.parent_mono=cfg['integration_context127']['parent_mono'];self.phase_mono=self.parent_mono;self._checkpoint=pathlib.Path(cfg['current_checkpoint']);self._version=cfg['current_version'];self.root=pathlib.Path(cfg['holder_root']);self.current_id=None;self.chunk=0;self.current_original=None
+  # No alternate independent host/provider call counter exists here.
+  self.inventory=c.Inventory127(c.inventory127(),'ACTUAL_SOURCE_PRIVATE',cfg['native_admission127']['inclusive_cap'])
+  self.canonical127=types.SimpleNamespace(io=CanonicalReader127(cfg['capture_directory']))
+  self.layout=base.validate_transfer_layout(cfg['writer_binding'],self.root)
+  self.ledger=Ledger127(self.root/'frames',cfg['context'],cfg['deadline_utc_ms']);self.ledger.port=self;self.bridge=base.StdioBridge(self.ledger)
+  original_put=base.put
+  def budgeted_put(path,raw):
+   name=pathlib.Path(path).name
+   suffix='request' if '.request.original.' in name else 'return' if '.return.original.' in name else 'validated' if name.endswith('.accepted.json') else 'restore' if name.endswith('.fd-restoration.json') else None
+   if '.chunk' in name:
+    if self.chunk>=8:
+     self.inventory.claim(self.current_id+'/failure-partial');original_put(path,raw);raise RuntimeError('Eight precommitted IPC chunks exhausted; overflow original retained, no retry')
+    suffix='chunk/'+str(self.chunk);self.chunk+=1
+   if name.endswith('.partial.original.bin'):suffix='failure-partial'
+   if name.endswith('.stream-UNKNOWN.json'):suffix='failure-status'
+   if name.endswith('.read-exception.original.json'):suffix='failure-read'
+   if '.duplicate-' in name:suffix='failure-duplicate'
+   if suffix is None:raise RuntimeError('Unexpected unplanned frame evidence; canonical prefix preserved')
+   self.inventory.claim(self.current_id+'/'+suffix);return original_put(path,raw)
+  base.put=budgeted_put
+ def bind(self,macro):self.macro=macro
+ def bind_interval(self,phase):
+  self.phase_mono=phase['end_mono'];self.ledger.bind_phase(self.phase_mono)
+ def deadline(self):self.macro.guard()
+ def invoke(self,id,op,args):
+  self.current_id=id;self.chunk=0
+  # Source-closed ops are encoded in caller127, including exact fixedbrowser
+  # dispatch. Shared committed tickets travel with the frame; no second budget.
+  if op not in base.OPS:base.OPS=tuple(base.OPS)+(op,)
+  value=self.bridge(op,args)
+  request=base.strict((self.ledger.root/(str(self.ledger.seq)+'.request.original.json')).read_bytes());frame=base.strict((self.ledger.root/(str(self.ledger.seq)+'.return.original.json')).read_bytes())
+  self.current_original={'request':request,'frame':frame,'canonical_path':str(pathlib.Path(self.config['capture_directory'])/(str(request['seq'])+'.canonical-native-original.json'))}
+  return value
+ def helper(self,phase,role,argv,input=None):
+  self.inventory.claim(phase+'/'+role);started=time.monotonic();proc=None
+  try:
+   proc=subprocess.Popen(argv,stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,close_fds=True)
+   stdout,stderr=proc.communicate(input=input,timeout=min(10 if role=='writer' else 5,max(.001,self.macro.remaining())))
+   original={'status':'TERMINAL','returncode':proc.returncode,'stdout_hex':stdout.hex(),'stderr_hex':stderr.hex(),'elapsed_s':time.monotonic()-started}
+  except BaseException as exc:
+   original={'status':'UNKNOWN_NO_RETRY','exception_class':type(exc).__name__,'stdout_hex':(getattr(exc,'stdout',None) or b'').hex(),'stderr_hex':(getattr(exc,'stderr',None) or b'').hex(),'returncode':None if proc is None else proc.poll(),'hidden_kill':False}
+  self.macro.store.save(phase+'/'+role+'/original',original)
+  self.deadline()
+  if original['status']!='TERMINAL' or original['returncode']!=0:raise RuntimeError('Helper original retained; never rerun')
+  return bytes.fromhex(original['stdout_hex'])
+ def current(self):return base.current_binding(self._checkpoint,self._version,self.config)
+ def original_reference(self,id):
+  self.inventory.claim(id+'/canonical-reference');seq=self.ledger.seq;request=base.strict((self.ledger.root/(str(seq)+'.request.original.json')).read_bytes());path=str(pathlib.Path(self.config['capture_directory'])/(str(seq)+'.canonical-native-original.json'));raw=self.canonical127.io.read(path);d=base.strict(raw)
+  expected={'context_sha256':sha(can(self.config['context'])),'operation':request['op'],'seq':seq,'tool':request['op'],'call_id':request['request_digest']}
+  if d.get('identity')!=expected or request.get('inventory_call_id')!=id:raise ValueError('Canonical actual call identity, never equal-byte merge')
+  if self.current_original and self.current_original['request']['seq']==seq and d.get('original')!=self.current_original['frame']['original_result']:raise ValueError('Actual complete saved native original differs')
+  return {'id':id,'identity':expected,'path':path,'bytes':len(raw),'sha256':sha(raw),'canonical':True}
+ def verify_reference(self,r):
+  raw=self.canonical127.io.read(r['path'])
+  if len(raw)!=r['bytes'] or sha(raw)!=r['sha256'] or base.strict(raw)['identity']!=r['identity']:raise ValueError('Whole prior canonical original before next consumed phase')
+  return r
+ def before_effect(self,id,op,args):
+  current=self.current();payload=current['doc'][current['key']]['records'][-1]['payload'];intent=payload.get('phase_intent127');phase=self.macro.active['name']
+  if not intent or intent['phase']!=phase or intent['plan_sha256']!=self.macro.plan_sha or phase not in self.macro.consumed or intent['context']!=self.macro.context or current['doc']['guard']['operation_id']!=self.macro.context['direction_id']:raise ValueError('Same actual consumed whole phase/current authority before EVERY Git effect')
+  manifest=base.strict((ROOT/'manifest.json').read_bytes())
+  if sha(can(manifest))!=self.manifest_sha:raise ValueError('Manifest drift before effect')
+  for name,pin in manifest['source_files'].items():
+   raw=(ROOT.parent/name).read_bytes()
+   if len(raw)!=pin['bytes'] or sha(raw)!=pin['sha256']:raise ValueError('Exact source drift before individual effect')
+  local=self.macro.store.records[phase+'/intent'];raw=self.macro.store.io.read(local['path'])
+  if sha(raw)!=local['sha256'] or base.strict(raw)['original']!=intent:raise ValueError('No event JSON recreation/changed durable intent')
+  self.macro.store.save(id+'/pre-effect-guard',{'current_version':self._version,'source_manifest_sha256':self.manifest_sha,'consumed_intent_sha256':sha(can(intent)),'tool':op,'args_sha256':sha(can(args))})
+ def attrs(self,phase,role,path,metadata):
+  self.helper(phase,role,[sys.executable,self.config['library_helper'],'apply-xattrs',str(path),metadata['library_file_id']],can(metadata.get('xattrs',[])))
+  if os.getxattr(path,'user.library-file-id').decode()!=metadata['library_file_id']:raise ValueError('Positive actual Library identity')
+  for x in metadata.get('xattrs',[]):
+   if os.getxattr(path,x['name']).decode()!=x['value']:raise ValueError('ALL returned actual attrs')
+ def cas(self,phase,version,payload):
+  if version!=self._version or payload['phase_intent127']['plan_sha256']!=self.macro.plan_sha:raise ValueError('Exact whole live typed phase/version')
+  current=self.current();self.helper(phase,'guard-before',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(self._checkpoint),str(version)])
+  self.macro.store.save(phase+'/writer-input',payload)
+  request=pathlib.Path(self.macro.store.records[phase+'/writer-input']['path'])
+  # Canonical evidence is an identity wrapper; original producer receives a
+  # separately O_EXCL serialized payload, budgeted as source evidence below.
+  payloadpath=self.root/(phase+'-payload.json');c.DiskOriginalIO127().write_once(str(payloadpath),can(payload))
+  writer=pathlib.Path(current['binding']['writer_path']);target=writer.parent/('candidate'+str(version+1))/'TraceHarbor_V1_checkpoint.json'
+  if target.exists():raise RuntimeError('No existing candidate adoption/restart')
+  stdout=self.helper(phase,'writer',[sys.executable,str(writer),'build',str(self._checkpoint),str(version),'PUBLISH_INTENT',str(payloadpath)]);r=base.strict(stdout)
+  raw=target.read_bytes();d=base.strict(raw);wanted=copy.deepcopy(current['doc']);key=current['key'];utc=d['events'][-1]['utc'];n=wanted[key]
+  n['records'].append({'phase':'PUBLISH_INTENT','payload':payload});n['phase']='PUBLISH_INTENT';n['previous_checkpoint']={'version':version,'raw_sha256':sha(current['raw']),'self_sha256':wanted['self_sha256']};n['writer_sha256']=current['binding']['writer_sha256'];n['phase_history'].append({'phase':'PUBLISH_INTENT','utc':utc,'actual_own_version':version+1})
+  wanted['events'].append({'phase':'PUBLISH_INTENT','utc':utc,'delivery_id':current['direction']['id'],'own_version':version+1,'source':'CURRENT Auditor'+str(current['binding']['auditor_version'])+' direction'+str(current['number']),'scope':'SAME_HOST_PRODUCER_COUNTER_CONTRACT_REVIEW_SOURCE'})
+  wanted['guard'].update(operation_id=current['direction']['id'],operation_state='PUBLISH_INTENT',epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK');wanted['state']='NATIVE'+str(current['number'])+'_PUBLISH_INTENT';wanted['self_sha256']=base.selfhash(wanted)
+  if r.get('candidate')!=str(target) or r.get('version')!=version+1 or r.get('raw_sha256')!=sha(raw) or r.get('self_sha256')!=d['self_sha256'] or r.get('preservation')!='PASS' or d!=wanted:raise ValueError('Exact original writer/full preservation before CAS')
+  self.macro.store.save(phase+'/candidate-verify',{'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'preservation':'PASS'})
+  dest=self.layout['transfer']/('group127-upload-'+str(version));dest.mkdir(mode=0o700,exist_ok=False);upload=dest/target.name;c.DiskOriginalIO127().write_once(str(upload),raw)
+  self.macro.store.save(phase+'/transfer-copy',{'path':str(upload),'bytes':len(raw),'sha256':sha(raw)})
+  pub=self.macro.call(phase+'/CAS','library_replace',{'library_file_id':base.OWN,'file':str(upload),'expected_current_version':version,'version_reason':'Actual independently admitted grouped phase consumed before first effect'})
+  if pub.get('status')!='succeeded' or pub.get('library_file_id')!=base.OWN or pub.get('current_version_number')!=version+1:raise ValueError('Actual conditional publication original')
+  self.attrs(phase,'attrs-candidate',target,pub);self.attrs(phase,'attrs-upload',upload,pub)
+  tr=self.macro.call(phase+'/readback','library_materialize',{'items':[{'library_file_id':base.OWN,'file_id':pub['file_id'],'file_name':pub['file_name']}],'destination':{'directory':str(self.layout['transfer']/('group127-readback-'+str(version+1)))}})
+  if tr['file_id']!=pub['file_id'] or tr['current_version_number']!=version+1 or tr['library_file_id']!=base.OWN or tr['xattrs']!=pub['xattrs']:raise ValueError('Pinned peritem current CAS identity')
+  path=pathlib.Path(tr['workspace_path']);expected=self.layout['transfer']/('group127-readback-'+str(version+1))/pub['file_name']
+  if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
+  self.attrs(phase,'attrs-readback',path,tr);check,observed=base.check_checkpoint(path,base.OWN,version+1,sha(raw))
+  if observed!=raw or check!=d:raise ValueError('Wholebyte/self original producer readback')
+  self.macro.store.save(phase+'/readback-verify',{'version':version+1,'file_id':pub['file_id'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'wholebyte_self_allattrs':'PASS'})
+  self._checkpoint=path;self._version=version+1
+  self.helper(phase,'guard-after',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(path),str(version+1)])
+  return {'version':version+1,'sha256':sha(raw),'wholebyte_self_allattrs':'PASS','intent_sha256':sha(can(payload['phase_intent127']))}
+ def dispatch(self):
+  ui=self.config['ui_dispatch127']
+  if ui.get('master_terminal_no_input_conflict') is not True or ui['source_sha']!=self.source or ui['once_receipt_sha256']!=self.config['integration_context127']['once_receipt_sha256'] or ui['script_sha256']!=sha(ui['args']['code'].encode()):raise PermissionError('Actual CURRENT exact UI/source/unusedonce/Master conflict evidence required')
+  selected=self.macro.call('dispatch/UI','browser_js',ui['args'])
+  # Actual selected run_id is supplied by the fixed preloaded UI script's
+  # authenticated original result; never latest-list search or PR-filter API.
+  if selected['source_sha']!=self.source or selected['attempt']!=1 or selected['once_receipt_sha256']!=self.macro.context['once_receipt_sha256']:raise ValueError('Actual selected UI source/attempt/once')
+  runid=selected['selected_run_id']
+  if type(runid) is not int or runid<=0:raise ValueError('Actual selected run returned by exact UI route')
+  self.config['run_id']=runid
+  return self.macro.call('dispatch/run','github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(runid)})
+ def delay_until(self,target):
+  delay=target-time.monotonic()
+  if delay<0:return
+  if delay>30 or target>=self.phase_mono or target>=self.parent_mono:raise TimeoutError('Exact finite ordinary observation delay')
+  time.sleep(delay)
+ def prepare_delivery(self):
+  current=self.current()
+  if 'ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY' not in current['direction']['body']:raise PermissionError('Actual private6 custody independent gate')
+  self.inventory.claim('custody/guard');manifest=base.strict((ROOT/'manifest.json').read_bytes());source=ROOT.parent/'offline103/ingress.py';transfer=ROOT.parent/'offline103/transfer.json'
+  if sha(source.read_bytes())!=manifest['source_files']['offline103/ingress.py']['sha256'] or sha(transfer.read_bytes())!=manifest['canonical_transfer_sha256']:raise ValueError('Unchanged reviewed ingress/private pins')
+  self.inventory.claim('ingress/source');ingress=load('trace127_fixed_ingress',source);cfg=base.strict(transfer.read_bytes());runid=self.config['run_id']
+  run=self.macro.call('recipient/run','github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(runid)})
+  listed=self.macro.call('recipient/list','github_fetch_workflow_run_artifacts',{'repo_full_name':g.REPO,'run_id':runid,'name':'traceharbor-recipient104-'+str(runid)+'-1'})
+  if listed['total_count']!=1 or len(listed['artifacts'])!=1:raise ValueError('Exact NAME-FILTERED selected recipient, not total run inventory')
+  artifact=listed['artifacts'][0]
+  if artifact['name']!='traceharbor-recipient104-'+str(runid)+'-1' or artifact['workflow_run']['id']!=runid or artifact['workflow_run']['head_sha']!=self.source or artifact['expired'] or not 0<artifact['size_in_bytes']<=8192:raise ValueError('Recipient context/digest cap')
+  downloaded=self.macro.call('recipient/download','github_download_workflow_artifact',{'repo_full_name':g.REPO,'artifact_id':artifact['id'],'file_name':'recipient127.zip'});ref=downloaded.get('file',downloaded)
+  destination=self.layout['transfer']/('recipient127-'+str(runid));destination.mkdir(mode=0o700,exist_ok=False)
+  transfer=self.macro.call('recipient/materialize','library_materialize',{'items':[{k:ref[k] for k in ('library_file_id','file_id','file_name') if k in ref}],'destination':{'directory':str(destination)}})
+  raw=self.artifact_bytes(ref,transfer,artifact,destination,'recipient/verify',8192)
+  with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+   if archive.namelist()!=['recipient-public.json'] or archive.testzip() is not None:raise ValueError('Exact recipient complete CRC')
+   public=base.strict(archive.read('recipient-public.json'))
+  trace=[];command=ingress.command;ordinal=[0]
+  # Both encryption and cms structure inspection are bounded actual starts.
+  def counted_command(*args,**kwargs):
+   n=ordinal[0];ordinal[0]+=1;self.inventory.claim('ingress/openssl/'+str(n));return command(*args,**kwargs)
+  ingress.command=counted_command
+  files={k:pathlib.Path(v).read_bytes() for k,v in self.config['private_files127'].items()}
+  try:plan=ingress.prepare_from_artifact(public,run,artifact,sha(raw),files,cfg['private_members'],pathlib.Path(self.config['private_output127']),self.config['source_tree'],trace)
+  finally:self.macro.store.save('ingress/openssl-original',{'trace':trace,'scope':'ACTUAL_EXISTING_INGRESS_ORIGINALS'})
+  delivery={'context':plan['context'],'ciphertext_base64':plan['operations'][0]['body']['content'],'ciphertext_sha256':plan['ciphertext_sha256'],'artifact_digest':sha(raw),'artifact_bytes':len(raw),'retention_days':1,'custody_sha256':sha(can({'pins':cfg['private_members'],'context':plan['context'],'artifact_sha256':sha(raw)}))}
+  self.macro.store.save('ingress/proof',delivery);return delivery
+ def validate_delivery(self,d):
+  raw=base64.b64decode(d['ciphertext_base64'],validate=True);ctx=d['context'];wanted=self.macro.context
+  if not 0<len(raw)<=131072 or sha(raw)!=d['ciphertext_sha256'] or not __import__('re').fullmatch('[a-f0-9]{32}',ctx['nonce']) or ctx['source_sha']!=self.source or ctx['run_id']!=self.config['run_id'] or ctx['attempt']!=1 or ctx['expires_utc']!=wanted['expires_utc']:raise ValueError('Actual recipient/nonce/source/cipher/custody binding')
+ def admit_descriptor(self):
+  template=copy.deepcopy(self.config['admit_descriptor_template127']);run=self.macro.run;x=self.macro.context
+  counter=load('trace127_fixed_counter',ROOT/'counter115.py');admission=counter.producer_module(ROOT.parent)
+  binding={'source_sha':x['source_sha'],'manifest_sha256':x['manifest_sha256'],'once_receipt_sha256':x['once_receipt_sha256'],'run_id':str(run['id']),'request_sha256':'e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2'}
+  started=__import__('datetime').datetime.fromisoformat(run['run_started_at'].replace('Z','+00:00')).timestamp()
+  parent={'schema':'TRACE117_PARENT_CLOCK','run_id':str(run['id']),'run_started_at_utc':started,'workflow_hard_end_utc':started+900,'once_expires_utc':x['expires_utc'],'coordinator_cutoff_utc':self.config['coordinator_cutoff_utc'],'end_utc':min(started+900,x['expires_utc'],self.config['coordinator_cutoff_utc']),'job_limit_s':900}
+  expected=dict(binding,schema='TRACE116_EXTERNAL_ONCE_V1',phase='admit',original_writer=admission.WRITER,own_library_file_id=base.OWN,attempt=1,role='OFFLINE_COUNTER_ONLY',request_bytes=4935,lock_sha256='fcea30197a1bf1c0eaa99314dcbf26a152935ba4535c1544b97f2f5a62f2515a',model_calls=0,spend=0,expires_utc=x['expires_utc'],parent_clock=parent,inputs={n:{'bytes':p[0],'sha256':p[1]} for n,p in counter.input_pins().items()})
+  expected['once_intent']=template['once_intent'];admission.verify_once_intent(expected,binding,counter.input_pins())
+  if template!=expected:raise ValueError('Closed exact real runner admission116 descriptor, not fabricated wire schema')
+  return expected
+ def consumed_descriptor(self,delivery):
+  # Match the existing runner admission116 wire schema exactly, using the
+  # original encrypted chain and current authenticated custody context.
+  ctx=delivery['context'];p=self.macro.proofs['encrypted']
+  return {'phase':'consumed','recipient_context':ctx,'ciphertext_receipt':{'ref':p['ref'],'ciphertext_commit':p['commit'],'ciphertext_sha256':delivery['ciphertext_sha256']},'admit_sha256':sha(self.macro.body('admit')[0])}
+ def provider_value(self,packet,operation):return self.provider.value127(packet,operation,True,self)
+ def packet(self,id,op,args):
+  self.macro.call(id,op,args);o=self.current_original;request=o['request'];identity={'context_sha256':sha(can(self.config['context'])),'operation':op,'seq':request['seq'],'tool':op,'call_id':request['request_digest']};path=o['canonical_path'];raw=self.canonical127.io.read(path)
+  canonical={'path':path,'bytes':len(raw),'sha256':sha(raw)}
+  return self.provider.retain_native127(self,identity,o['frame']['original_result'],canonical)
+ def observe_run(self,n):return self.packet('collection/run/'+str(n),'github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(self.config['run_id'])})
+ def collect_bundle(self,run):
+  p=self.provider_plan();url='https://api.github.com/repos/'+g.REPO+'/'
+  b={'run':run,'commit':self.packet('safe/commit','github_fetch',{'url':url+'commits/'+p['source_sha']}),'tree':self.packet('safe/tree','github_fetch',{'url':url+'git/trees/'+p['source_tree']+'?recursive=1'}),'jobs':self.packet('safe/jobs','github_fetch_workflow_run_jobs',{'repo_full_name':g.REPO,'run_id':p['run_id']}),'artifacts':self.packet('safe/list','github_fetch_workflow_run_artifacts',{'repo_full_name':g.REPO,'run_id':p['run_id'],'name':'traceharbor-safe127-'+str(p['run_id'])+'-1'})}
+  artifact=self.provider.metadata127(p,*[self.provider_value(b[k],op) for k,op in [('run','github_fetch'),('commit','github_fetch'),('tree','github_fetch'),('jobs','github_fetch_workflow_run_jobs'),('artifacts','github_fetch_workflow_run_artifacts')]])
+  b['download']=self.packet('safe/download','github_download_workflow_artifact',{'repo_full_name':g.REPO,'artifact_id':artifact['id'],'file_name':'safe127.zip'});ref=self.provider_value(b['download'],'github_download_workflow_artifact').get('file');self.destination=self.layout['transfer']/('safe-artifact-'+str(p['run_id'])+'-1');self.destination.mkdir(mode=0o700,exist_ok=False)
+  b['materialized']=self.packet('safe/materialize','library_materialize',{'items':[{k:ref[k] for k in ('library_file_id','file_id','file_name') if k in ref}],'destination':{'directory':str(self.destination)}});return b
+ def provider_plan(self):
+  x=self.macro.context;rid=self.config['run_id'];admit,_=self.macro.body('admit');consumed,_=self.macro.body('consumed');descriptor=json.loads(consumed)
+  return {'run_id':rid,'source_sha':x['source_sha'],'source_parent':x['source_parent'],'source_tree':x['source_tree'],'expires_utc':x['expires_utc'],'workflow_path':x['workflow_path'],'workflow_step_names':x['workflow_step_names'],'full_tree_entries':x['full_tree_entries'],'projection_context':{'run_id':rid,'attempt':1,'actor_id':g.OWNER,'repository_id':g.REPOSITORY,'source_sha':x['source_sha'],'manifest_sha256':x['manifest_sha256'],'once_receipt_sha256':x['once_receipt_sha256'],'expires_utc':x['expires_utc'],'admission_sha256':sha(admit),'custody_binding_sha256':sha(can(descriptor['ciphertext_receipt'])),'cost_scope_sha256':x['cost_scope_sha256']}}
+ def artifact_bytes(self,ref,tr,artifact,destination,evidence,cap):
+  self.inventory.claim(evidence);path=pathlib.Path(tr['workspace_path'])
+  if ref.get('file_id')!=tr['file_id'] or ref.get('file_name')!=tr['file_name'] or not tr.get('library_file_id') or ref.get('library_file_id') not in (None,tr['library_file_id']) or path!=destination/ref['file_name'] or path.is_symlink() or path.resolve()!=path:raise ValueError('Actual exact reusable ref/peritem disjoint positiveidentity')
+  s=path.lstat()
+  if not stat.S_ISREG(s.st_mode) or s.st_uid!=os.getuid() or s.st_nlink!=1 or not 0<s.st_size<=cap:raise ValueError('Owned regular bounded nonlink')
+  # Same current helper implementation in-process: no hidden process starts.
+  identity={'phase':evidence,'run':self.config['integration_context127']['once_receipt_sha256'],'source':self.source,'call':evidence+'/helper-original128'}
+  helper128.run_helper128(self.config['library_helper'],self.config['library_helper_sha256'],path,tr['library_file_id'],tr['xattrs'],identity,lambda ident,record:self.macro.store.save(evidence+'/helper-original128',{'identity':ident,'original':record}))
+  if os.getxattr(path,'user.library-file-id').decode()!=tr['library_file_id']:raise ValueError('Actual identity xattr')
+  for x in tr['xattrs']:
+   if os.getxattr(path,x['name']).decode()!=x['value']:raise ValueError('ALL attrs')
+  fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+  try:
+   before=os.fstat(fd);raw=os.read(fd,cap+1);extra=os.read(fd,1);after=os.fstat(fd)
+  finally:os.close(fd)
+  if extra or len(raw)!=s.st_size or (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns)!=(after.st_dev,after.st_ino,after.st_size,after.st_mtime_ns) or (before.st_dev,before.st_ino)!=(s.st_dev,s.st_ino) or path.lstat().st_ino!=s.st_ino or len(raw)!=artifact['size_in_bytes'] or artifact['digest']!='sha256:'+sha(raw):raise ValueError('Stable complete EOF/provider digest')
+  self.deadline();return raw
+ def provider_artifact_bytes127(self,ref,tr,artifact,plan):return self.artifact_bytes(ref,tr,artifact,self.destination,'safe/file-original',65536)
+ def verify_bundle(self,bundle):
+  projection=self.provider.verify_bundle127(self.provider_plan(),bundle,True,self);o=self.provider.ControllerSafeObservation127(self.provider._SEAL,self,self.macro,projection,self.provider_plan());self.provider._OBS[self]=o;return o
+ def require_terminal(self,observation):
+  if self.provider.require_native_terminal127(self,self.macro) is not observation:raise TypeError('Exact source registry typed provider observation')
+def bootstrap127(config_path,provider):
+ if sha((ROOT/'host_transport118.py').read_bytes())!=BASE_SHA:raise ValueError('Accepted immutable original guard')
+ cfg=base.strict(pathlib.Path(config_path).read_bytes());cfg['config_path']=str(pathlib.Path(config_path).resolve());current=base.current_binding(cfg['current_checkpoint'],cfg['current_version'],cfg)
+ markers=('ADMIT_TRACE127_GROUPED_NATIVE','ADMIT_NATIVE_SAFE127_PROVIDER_DELIVERY','ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY','ADMIT_CURRENT_ONCE_DISPATCH_API0')
+ if any(x not in current['direction']['body'] for x in markers):raise PermissionError('Private127 source only; independent journal/security/runtime/custody/dispatch admission ABSENT')
+ admission=current['direction'].get('grouped127_admission');manifest=base.strict((ROOT/'manifest.json').read_bytes())
+ bound_cfg=copy.deepcopy(cfg);bound_cfg['native_admission127']=None;bound_cfg.pop('config_path',None)
+ if admission!=cfg.get('native_admission127') or admission!={'contract':'TRACE127_PHASE_INTENT_V1','manifest_sha256':sha(can(manifest)),'inclusive_cap':c.inventory127()['inclusive_total'],'phase_plan_sha256':cfg['phase_plan_sha256127'],'config_binding_sha256':sha(can(bound_cfg)),'scope':'NEW_UNUSED_ONCE_API0_ONLY'}:raise ValueError('Authentic exact prospective whole contract/cap/config, not current48 override')
+ if cfg.get('ui_dispatch127')!=current['direction'].get('ui_dispatch127_admission') or cfg.get('custody_admission127')!=current['direction'].get('custody_admission127') or cfg.get('cost_admission127')!=current['direction'].get('cost_admission127'):raise PermissionError('Config bool never substitutes actual independent current UI/custody/cost admissions')
+ if not cfg.get('custody_admission127') or not cfg.get('cost_admission127') or cfg['cost_admission127'].get('model_calls')!=0 or cfg['cost_admission127'].get('spend')!=0:raise PermissionError('Exact real API0 private custody/cost authority required')
+ for name,pin in manifest['source_files'].items():
+  path=pathlib.Path(name)
+  if path.is_absolute() or '..' in path.parts:raise ValueError('Safe source path')
+  raw=(ROOT.parent/path).read_bytes()
+  if len(raw)!=pin['bytes'] or sha(raw)!=pin['sha256']:raise ValueError('Whole exact sources before import/clock')
+ if not os.isatty(0):raise TypeError('Actual directPTY before ledger/native holder')
+ root=pathlib.Path(cfg['holder_root']);st=root.lstat()
+ if root.is_symlink() or not stat.S_ISDIR(st.st_mode) or st.st_uid!=os.getuid() or st.st_mode&0o077 or list(root.iterdir()):raise ValueError('Fresh owned0700 sameholder root; no restart/adoption')
+ host=NativePort127(g._SEAL,cfg,manifest,provider);(host.root/'originals').mkdir(mode=0o700,exist_ok=False);clock=ActualClock127();context=cfg['integration_context127'];macro=g.Grouped127(host,clock,context,host.root/'originals',c.DiskOriginalIO127(),host.inventory,'ACTUAL_SOURCE_PRIVATE',g._SEAL)
+ if macro.plan_sha!=cfg['phase_plan_sha256127']:raise ValueError('Exact entire source-produced immutable grouped plan')
+ return host,macro
+def main():
+ if sys.argv[1]=='guard':
+  cfg=base.strict(pathlib.Path(sys.argv[2]).read_bytes());current=base.current_binding(sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
+ provider=load('trace127_fixed_provider',ROOT/'provider_safe127.py');host,macro=provider.bootstrap_native_host127(sys.argv[1]);result=macro.run_complete();print(json.dumps(result));return 0
+if __name__=='__main__':sys.exit(main())
