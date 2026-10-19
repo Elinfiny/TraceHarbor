@@ -150,11 +150,26 @@ def validate_external(d,phase,b,pins,clock,custody=None,admit=None,reserve=195):
     clock.require(reserve if phase=='consumed' else 0)
     return d
 
-def read_external(api,strict,phase,b,pins,clock,deadline,save,custody=None,admit=None):
+def read_external(api,strict,phase,b,pins,clock,deadline,save,custody=None,admit=None,wait_for_admit=False,pause=None):
     prefix='/repos/Elinfiny/TraceHarbor/';ref='heads/traceharbor-counter116-'+phase+'-'+b['once_receipt_sha256']
     read=lambda path,missing=False:phase_read(api,prefix+path,clock,deadline,save,missing)
-    # A missing consumed record is not retried; coordinator must finish it first.
-    actual=read('git/ref/'+ref)
+    # Only initial admit may observe actual404/None. All observations and times
+    # are saved by phase_read before guards; original45s/parent never reset.
+    if wait_for_admit and phase!='admit':raise ValueError('No consumed-ref readiness retry')
+    pause=time.sleep if pause is None else pause
+    observations=0
+    while True:
+        clock.check(deadline)
+        if deadline-clock.mono()<2:raise TimeoutError('Ref read plus immutable validation phase reserve')
+        actual=read('git/ref/'+ref,missing=wait_for_admit and phase=='admit');observations+=1
+        if actual is not None:break
+        if not wait_for_admit or phase!='admit' or observations>=10:raise TimeoutError('Initial admit bounded10observations exhausted')
+        clock.check(deadline)
+        delay=min(.25,max(0,deadline-clock.mono()-2))
+        if delay<=0:raise TimeoutError('No phase reserve before another read')
+        pause(delay)
+        clock.check(deadline)
+    if actual is None:raise ValueError('Consumed/admit immutable record absent')
     if actual['ref']!='refs/'+ref or actual['object']['type']!='commit':raise ValueError('Immutable original once ref')
     commit=read('commits/'+actual['object']['sha'])
     if commit['author']['id']!=OWNER or commit['committer']['id']!=OWNER or [p['sha'] for p in commit['parents']]!=[b['source_sha']]:raise ValueError('Owner source attribution')
@@ -348,7 +363,7 @@ def owned_creation(owner,names,operation):
 
 
 class NativeProducer:
-    __slots__=('caller','root','pins','expected','_g','used','clock','owner','consumption','observations','last_provenance','main_end')
+    __slots__=('caller','root','pins','expected','_g','used','clock','owner','consumption','observations','last_provenance','main_end','observation_root')
     def __init__(self,key,caller,root,pins,g):
         if key is not _NATIVE or type(caller) is not NativeCaller or caller.seal is not _NATIVE:raise TypeError('Actual native caller required')
         self.caller=caller;self.root=root;self.pins=pins;self.expected=dict(caller.binding);self._g=g;self.used=False
@@ -381,21 +396,25 @@ class NativeProducer:
         binding={'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'once_receipt_sha256':x.once_receipt_sha,'run_id':e['GITHUB_RUN_ID'],'request_sha256':manifest['request_sha256']}
         caller=NativeCaller(_NATIVE,run,binding,ingress,repo)
         root=pathlib.Path(e['RUNNER_TEMP'])/('traceharbor-counter117-intake-'+x.once_receipt_sha)
-        owner=OwnedIntake(root,binding,pins,create=initializing)
-        obj=cls(_NATIVE,caller,root,pins,g);obj.clock=clock;obj.owner=owner;obj.consumption=None;obj.observations=observations
+        obj=cls(_NATIVE,caller,root,pins,g);obj.clock=clock;obj.owner=None;obj.consumption=None;obj.observations=observations
+        # Public provider metadata readiness precedes fresh key/private intake.
+        obj.observation_root=pathlib.Path(e['RUNNER_TEMP'])/('trace118-public-admit-'+x.once_receipt_sha+('-init' if initializing else '-main'))
+        obj.observation_root.mkdir(mode=0o700)
         try:
-            receipt=obj.provider_once('admit',maximum=45,reserve=775 if initializing else 610)
+            receipt=obj.provider_once('admit',maximum=45,reserve=775 if initializing else 610,admit_wait=initializing)
             caller.receipt=receipt;caller.expires=receipt['expires_utc']
+            obj.owner=OwnedIntake(root,binding,pins,create=initializing)
             if not initializing:obj.main_end=min(clock.end_mono,tick+720)
             return obj
         except BaseException as exc:
-            exc.intake_cleanup=owner.cleanup('capture_failure',exc);raise
-    def provider_once(self,phase,custody=None,maximum=45,reserve=195):
+            exc.intake_cleanup=obj.owner.cleanup('capture_failure',exc) if obj.owner is not None else {'primary':error117(exc),'cleanup':[],'status':'NO_PRIVATE_INTAKE_CREATED','retry':False}
+            raise
+    def provider_once(self,phase,custody=None,maximum=45,reserve=195,admit_wait=False):
         deadline=self.clock.phase(maximum,reserve)
         def save(value):
             self.observations.append(value)
-            exclusive(self.root/('provider117-'+phase+'-'+str(len(self.observations))+'.json'),can(value))
-        d,provenance=read_external(self.caller.ingress.api,self.caller.ingress.strict,phase,self.caller.binding,self.pins,self.clock,deadline,save,custody,self.caller.receipt)
+            exclusive(self.observation_root/('provider117-'+phase+'-'+str(len(self.observations))+'.json'),can(value))
+        d,provenance=read_external(self.caller.ingress.api,self.caller.ingress.strict,phase,self.caller.binding,self.pins,self.clock,deadline,save,custody,self.caller.receipt,wait_for_admit=admit_wait)
         self.last_provenance=provenance
         return d
     def initialize_recipient(self):
@@ -593,3 +612,18 @@ class ExternalCoordinator117:
           'NativeProducer.receive_inputs -> pre_worker_consume(read_external six fixed-deadline reads) -> NativeConsumedProof SAME object -> complete actual mounts/current native qualification',
           'worker actual sixinput UID65532 intent -> local SAME proof/clock/O_EXCL/fsync -> Counter_GO within original5s workerwait, zero API there',
           'One private stdout-mode count in future separately admitted context only -> scoped once cleanup -> SAFE projection -> exact terminal/readback; no model/spend authority']
+
+
+def bind_host118(bridge,private_root,config,save,current_actual_run):
+    """SAME solewriter holder. JSON/run observations do not become native caps.
+
+    The installed code-mode dispatcher enforces exact admitted operation frames;
+    current118 qualification runs READONLY and invokes no private/native stage.
+    """
+    path=pathlib.Path(__file__).with_name('host_transport118.py')
+    if sha(path.read_bytes())!=config['host_source_sha256']:raise ValueError('Exact hostsource pin')
+    module=load(path,'trace118_host_transport')
+    transport=module.HostTransport(bridge,private_root,config)
+    clock=ParentClock.from_run(current_actual_run,config['once_expires_utc'],config['coordinator_cutoff_utc'])
+    coordinator=ExternalCoordinator117(transport,save,clock,config['source_sha'],config['source_tree'])
+    return coordinator,transport
