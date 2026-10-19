@@ -61,6 +61,7 @@ def prepare_host(g,x,repo,manifest,private,initializing=False):
 def complete_intake(g,plan,binding,repo,manifest):
     p=producer_module(repo);custody=plan['producer'].receive_inputs(manifest)
     plan['custody']=custody
+    plan['consumption']=plan['producer'].pre_worker_consume(custody)
     for name,path in custody.paths.items():
         dest='/vendor/'+name;plan['mounts'][dest]=(path,True);plan['expected'][dest]=custody.pins[name]
     for name in ('counter115.py','admission116.py'):
@@ -68,6 +69,7 @@ def complete_intake(g,plan,binding,repo,manifest):
         plan['mounts']['/driver/'+name]=(path,True);plan['expected']['/driver/'+name]=(len(raw),sha(raw))
     return plan
 def bind_current_mounts(g,plan,evidence,bindings,q):
+    plan['producer'].clock.require(195)
     plan['prepared']=plan['producer'].bind(g,plan['custody'],evidence,bindings,q)
 def make_worker_binding(g,plan,binding,manifest,absolute):
     producer=plan['producer']
@@ -77,14 +79,20 @@ def make_worker_binding(g,plan,binding,manifest,absolute):
 def release_if_ready(g,plan,output,control,private,evidence,state):
     if plan['released']:return
     if output.read('counter115.ready',0,optional=True) is None:return
+    critical_end=time.monotonic()+5
     raw=output.read('counter115.intent.json',8192)
     if strict(raw)!=plan['binding']:raise ValueError('Exact current intent')
     readability=strict(output.read('counter116.inputs.json',8192))
-    producer=plan['producer'];cap=producer.issue(g,plan['prepared'],evidence,g._QUAL113,plan['binding'],readability,state)
+    producer=plan['producer'];producer.clock.require(25)
+    if time.time()+25>=plan['binding']['absolute_deadline_utc']:raise TimeoutError('Final whole worker reserve')
+    cap=producer.issue(g,plan['prepared'],evidence,g._QUAL113,plan['binding'],readability,state)
     # Same factory/class and exact evidence identity; no imported old capability.
     producer_module(pathlib.Path(__file__).parent.parent).native_boundary(cap,producer,evidence,g._QUAL113,plan['binding'])
     producer.consume(cap,evidence,g._QUAL113,plan['binding'])
     plan['authority']=cap;plan['released']=True;g._COUNTER115_RELEASED=True
+    producer.clock.require(25)
+    if time.time()+25>=plan['binding']['absolute_deadline_utc']:raise TimeoutError('No late GO')
+    producer.clock.check(critical_end,25)
     g.send_signal(control,'COUNTER_GO116.json',{'binding_sha256':sha(canonical(plan['binding'])),'intent_sha256':sha(raw),'release_sha256':plan['binding']['release_sha256']},private)
 
 
@@ -156,6 +164,7 @@ def worker_ready_and_count(worker,go,manifest,deadline):
     release=worker.wait('COUNTER_GO116.json',min(deadline-20,time.monotonic()+5))
     expected={'binding_sha256':sha(canonical(b)),'intent_sha256':sha((worker.R/'counter115.intent.json').read_bytes()),'release_sha256':b['release_sha256']}
     if release!=expected or time.time()>=b['absolute_deadline_utc']:raise ValueError('Counter release mismatch')
+    if deadline-time.monotonic()<25 or time.time()+25>=b['absolute_deadline_utc']:raise TimeoutError('Postrelease worker full25s reserve')
     worker.emit('beforecounter115.json',{'stage':'BEFORE_COUNTER','closed':True})
     # ONE real call in a future independently admitted invocation; never called115.
     process=worker.run(list(ARGV),'counter',min(deadline-5,time.monotonic()+20))

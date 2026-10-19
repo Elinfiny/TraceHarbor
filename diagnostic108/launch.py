@@ -642,6 +642,7 @@ def execute(x, private, binding, counter_requested=False):
     sentinel = None
     count = 0
     end = time.monotonic()+180
+    counter_plan = bridge = None
     try:
         m,mf = validate(x,repo,counter=counter_requested)
         counter_plan = bridge = None
@@ -660,8 +661,12 @@ def execute(x, private, binding, counter_requested=False):
         spec = importlib.util.spec_from_file_location('trace113_host',repo/'qualification113/host.py')
         host_module = importlib.util.module_from_spec(spec);spec.loader.exec_module(host_module)
         _HOST113 = host_module
-        _HOST113.prequalify(sys.modules[__name__],x,repo,m,private,binding,overall)
-        if _QUAL113 is None or _QUAL113['diagnostic_admitted'] is not True or overall-time.monotonic()<225:
+        if counter_plan is not None:
+            pclock=counter_plan['producer'].clock
+            overall=min(overall,counter_plan['producer'].main_end,pclock.end_mono)
+            pclock.require(610)
+        _HOST113.prequalify(sys.modules[__name__],x,repo,m,private,binding,overall-(95 if counter_plan is not None else 0))
+        if _QUAL113 is None or _QUAL113['diagnostic_admitted'] is not True or overall-time.monotonic()<(320 if counter_plan is not None else 225):
             raise GateFailure('QUALIFICATION_NOT_APPROVED')
         if counter_plan is not None:
             bridge.complete_intake(sys.modules[__name__],counter_plan,binding,repo,m)
@@ -699,7 +704,11 @@ def execute(x, private, binding, counter_requested=False):
         with sentinel.open('xb') as f:
             f.write(b'SYNTHETIC_NOT_SECRET')
         stage = 'ENVIRONMENT'
+        if counter_plan is not None:counter_plan['producer'].clock.require(195)
         start = time.monotonic();deadline = start+170;end=start+180;absolute=time.time()+170
+        if counter_plan is not None:
+            absolute=min(absolute,counter_plan['producer'].clock.end_utc-25)
+            deadline=min(deadline,counter_plan['producer'].clock.end_mono-25);end=deadline+10
         name = 'traceharbor-diagnostic108-'+os.environ['GITHUB_RUN_ID']+'-'+x.once_receipt_sha[:12]
         image = m['runtime']['immutable_image']
         # Immutable image already verified/pulled at most once by prequalification.
@@ -786,6 +795,9 @@ def execute(x, private, binding, counter_requested=False):
         except BaseException:
             pass
         first = primary(stage,exc.code if isinstance(exc,GateFailure) else ('OUTPUT_SCHEMA' if stage not in ('INITIALIZATION','ENVIRONMENT') else 'INITIALIZATION'),exc)
+        if hasattr(exc,'intake_cleanup'):
+            try:record(private,'intake117-error-cleanup.json',exc.intake_cleanup)
+            except BaseException:pass
         if hasattr(exc,'invoke_original'):
             t = exc.invoke_original
             first['host_subprocess_original'] = {'returncode':t['returncode'],'exception_class':t['exception_class'],'timed_out':t['timed_out'],'primary':t['primary'],'capture_failure':bool(t['capture_failures']),'terminal_saved':t['terminal_saved']}
@@ -799,6 +811,10 @@ def execute(x, private, binding, counter_requested=False):
                 sentinel.unlink(missing_ok=True)
             except BaseException as exc:
                 failures.append(primary('CLEANUP','CLEANUP',exc))
+        if counter_plan is not None:
+            receipt=counter_plan['producer'].cleanup('terminal',None)
+            record(private,'intake117-cleanup.json',receipt)
+            if receipt['unknown']:failures.append(primary('CLEANUP','CLEANUP',RuntimeError()))
         return failures,stopped
     result = finish(private,pathlib.Path(os.environ['RUNNER_TEMP'])/'traceharbor-diagnostic108-proof',output,evidence,binding,first,terminal,approved,cleanup)
     if counter_requested:
@@ -820,11 +836,28 @@ def main():
     parser.add_argument('--once-receipt-sha',required=True)
     parser.add_argument('--counter116',action='store_true')
     parser.add_argument('--counter116-init',action='store_true')
+    parser.add_argument('--counter117-cleanup',action='store_true')
+    parser.add_argument('--once-expires-utc',type=int)
+    parser.add_argument('--coordinator-cutoff-utc',type=int)
     x = parser.parse_args()
     temp = directory(os.environ['RUNNER_TEMP'])
     private = temp/'traceharbor-diagnostic108-private'
-    if not x.counter116_init:private.mkdir(mode=0o700)
+    if not x.counter116_init and not x.counter117_cleanup:private.mkdir(mode=0o700)
     binding = {'source_sha':x.source_sha if re.fullmatch('[0-9a-f]{40}',x.source_sha) else None,'manifest_sha256':x.manifest_sha if re.fullmatch('[0-9a-f]{64}',x.manifest_sha) else None,'once_receipt_sha256':x.once_receipt_sha if re.fullmatch('[0-9a-f]{64}',x.once_receipt_sha) else None,'run_id':os.environ.get('GITHUB_RUN_ID') if re.fullmatch('[0-9]+',os.environ.get('GITHUB_RUN_ID','')) else None,'request_sha256':'e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2'}
+    if x.counter117_cleanup:
+        # Always fallback: source validation + exact known run/nonce/root anchor.
+        repo=directory(pathlib.Path(__file__).absolute().parent.parent)
+        m,mf=validate(x,repo,counter=True)
+        sp=importlib.util.spec_from_file_location('same_cleanup_bridge117',repo/'diagnostic108/counter115.py')
+        cb=importlib.util.module_from_spec(sp);sp.loader.exec_module(cb)
+        p=cb.producer_module(repo);root=temp/('traceharbor-counter117-intake-'+x.once_receipt_sha)
+        try:
+            owner=p.OwnedIntake(root,binding,cb.input_pins(),create=False)
+            r=owner.cleanup('workflow_always')
+            scalar={'schema':'TRACE117_CLEANUP_SAFE','status':r['status'],'paths_observed':len(r['paths']),'unknown':r['unknown'],'retry':False,'secure_erase':False}
+        except BaseException as exc:
+            scalar={'schema':'TRACE117_CLEANUP_SAFE','status':'UNKNOWN','paths_observed':None,'unknown':True,'retry':False,'secure_erase':False}
+        print(encoded(scalar).decode());return 1 if scalar['unknown'] else 0
     if x.counter116_init:
         # Actual future native init step precedes the existing recipient artifact
         # upload. Main later recaptures its caller and exact fresh context.
