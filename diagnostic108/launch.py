@@ -822,7 +822,25 @@ def execute(x, private, binding, counter_requested=False):
             record(private,'intake117-cleanup.json',receipt)
             if receipt['unknown']:failures.append(primary('CLEANUP','CLEANUP',RuntimeError()))
         return failures,stopped
-    result = finish(private,pathlib.Path(os.environ['RUNNER_TEMP'])/'traceharbor-diagnostic108-proof',output,evidence,binding,first,terminal,approved,cleanup)
+    if counter_plan is not None and counter_plan['released']:
+        # PRIVATE125 exact placement before outer extras and output.close.
+        global _SAFE125_API, _SAFE125_OBSERVATION
+        try:
+            safe_path=repo/'diagnostic108/safe_binding125.py'
+            safe_raw=regular(safe_path,262144);safe_pin=m['source_files']['diagnostic108/safe_binding125.py']
+            if len(safe_raw)!=safe_pin['bytes'] or sha(safe_raw)!=safe_pin['sha256']:raise ValueError('Exact source125 SAFE module')
+            safe_spec=importlib.util.spec_from_file_location('trace125_actual_safe',safe_path)
+            _SAFE125_API=importlib.util.module_from_spec(safe_spec);sys.modules[safe_spec.name]=_SAFE125_API;safe_spec.loader.exec_module(_SAFE125_API)
+        except BaseException as safe_error:
+            # A source/import failure never skips the existing one cleanup.
+            record(private,'safe125-source-fault.original.json',{'exception_class':type(safe_error).__name__,'status':'UNKNOWN_NO_RETRY'})
+            result=finish(private,pathlib.Path(os.environ['RUNNER_TEMP'])/'traceharbor-diagnostic108-proof',output,evidence,binding,first,terminal,approved,cleanup)
+            result['capture_failures'].append(primary('EXPORT','OUTPUT_SCHEMA',safe_error));result['exit_code']=1
+        else:
+            _SAFE125_OBSERVATION=None
+            result=_SAFE125_API.finish_with_native_safe125(sys.modules[__name__],bridge,repo,counter_plan,evidence,output,terminal,approved,private,pathlib.Path(os.environ['RUNNER_TEMP'])/'traceharbor-diagnostic108-proof',first,cleanup,min(overall,counter_plan['producer'].clock.end_mono))
+    else:
+        result = finish(private,pathlib.Path(os.environ['RUNNER_TEMP'])/'traceharbor-diagnostic108-proof',output,evidence,binding,first,terminal,approved,cleanup)
     if counter_requested:
         result['counter115_private_projection']=_COUNTER115_RESULT
         result['counter115_public_export']='NOT_ADMITTED; no raw counter channels or worker paths exported'
