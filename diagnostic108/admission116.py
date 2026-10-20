@@ -7,7 +7,11 @@ lease, vendor attestation or financial grant is invented. Nothing runs at import
 import os,pathlib,json,hashlib,time,re,stat,base64,importlib.util
 _NATIVE=object();_CONTRACT=object();_INPUT=object();_PREPARED=object()
 OWNER=273768139;REPO=1391430317;WRITER='e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436'
-INGRESS_SHA='dcb5927563ae09a951ed5eb8ad5844c4a7742aefbec5b86cf20fbc31d20f661e'
+INGRESS_SHA='b1510c25cc3763fcc54d014824581ce3d5c8bf4401de88959e85f3c5132bdc2e'
+#136 exact source-bound create contract, no authority at import.
+_gs136=importlib.util.spec_from_file_location('trace136_runner_git',pathlib.Path(__file__).resolve().parent/'git_dispatch136.py')
+git136=importlib.util.module_from_spec(_gs136);_gs136.loader.exec_module(git136)
+
 def sha(b):return hashlib.sha256(b).hexdigest()
 def can(d):return json.dumps(d,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
 def verify_once_intent(descriptor,binding,pins):
@@ -380,8 +384,11 @@ class NativeProducer:
     @classmethod
     def capture(cls,g,x,repo,manifest,private,pins,initializing=False):
         e=os.environ
-        expected={'GITHUB_REPOSITORY':'Elinfiny/TraceHarbor','GITHUB_REPOSITORY_ID':str(REPO),'GITHUB_ACTOR_ID':str(OWNER),'GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_RUN_ATTEMPT':'1','GITHUB_SHA':x.source_sha,'GITHUB_WORKFLOW_SHA':x.source_sha}
+        expected={'GITHUB_REPOSITORY':'Elinfiny/TraceHarbor','GITHUB_REPOSITORY_ID':str(REPO),'GITHUB_ACTOR_ID':str(OWNER),'GITHUB_EVENT_NAME':git136.event136(os.environ),'GITHUB_RUN_ATTEMPT':'1','GITHUB_SHA':x.source_sha,'GITHUB_WORKFLOW_SHA':x.source_sha}
         if any(e.get(k)!=v for k,v in expected.items()) or not re.fullmatch('[0-9]+',e.get('GITHUB_RUN_ID','')):raise ValueError('Actual native caller context')
+        if os.environ.get('GITHUB_EVENT_NAME')=='create':
+            vv=git136.env_values136(dict(os.environ))
+            if (vv['source_sha'],vv['manifest_sha256'],vv['once_receipt_sha256'],int(vv['once_expires_utc']),int(vv['coordinator_cutoff_utc']))!=(x.source_sha,x.manifest_sha,x.once_receipt_sha,x.once_expires_utc,x.coordinator_cutoff_utc):raise ValueError('Exact source create inputs/expiry')
         if type(x.once_expires_utc) is not int or type(x.coordinator_cutoff_utc) is not int:raise ValueError('Frozen dispatch clock inputs required')
         source=repo/'offline103/ingress.py'
         if sha(g.regular(source,131072))!=INGRESS_SHA:raise ValueError('Reviewed105 ingress source')
@@ -399,7 +406,8 @@ class NativeProducer:
             target=pathlib.Path(e['RUNNER_TEMP'])/('trace117-capture-'+x.once_receipt_sha+('-init' if initializing else '-main')+'.json')
             exclusive(target,can(value))
         run=phase_read(ingress.api,'/repos/Elinfiny/TraceHarbor/actions/runs/'+e['GITHUB_RUN_ID'],Bootstrap(),deadline,save_initial)
-        if run['id']!=int(e['GITHUB_RUN_ID']) or run['run_attempt']!=1 or run['head_sha']!=x.source_sha or run['event']!='workflow_dispatch' or run['actor']['id']!=OWNER or run['repository']['id']!=REPO or run['status']!='in_progress':raise ValueError('Current provider run readback')
+        dispatch_binding136=git136.binding136(git136.args136(git136.env_values136(dict(e)))) if e.get('GITHUB_EVENT_NAME')=='create' else None
+        if run['id']!=int(e['GITHUB_RUN_ID']) or run['run_attempt']!=1 or run['head_sha']!=x.source_sha or not git136.run_event136(run,dispatch_binding136) or run['actor']['id']!=OWNER or run['repository']['id']!=REPO or run['status']!='in_progress':raise ValueError('Current provider run readback')
         clock=ParentClock.from_run(run,x.once_expires_utc,x.coordinator_cutoff_utc)
         clock.require(865 if initializing else 565)
         binding={'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'once_receipt_sha256':x.once_receipt_sha,'run_id':e['GITHUB_RUN_ID'],'request_sha256':manifest['request_sha256']}

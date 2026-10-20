@@ -18,6 +18,10 @@ CODES = frozenset(('TERMINAL_MISSING','OOM','WORKER_NONZERO','QUALIFICATION_NOT_
 EXCEPTIONS = frozenset(('AssertionError','ValueError','TypeError','KeyError','FileNotFoundError','PermissionError','OSError','TimeoutError','TimeoutExpired','CalledProcessError','RuntimeError','KeyboardInterrupt','SystemExit','GateFailure','StageFailure','SignalFailure','FileExistsError'))
 _HOST_KEY = object()
 
+#136 exact source-bound create contract, no authority at import.
+_gs136=importlib.util.spec_from_file_location('trace136_runner_git',pathlib.Path(__file__).resolve().parent/'git_dispatch136.py')
+git136=importlib.util.module_from_spec(_gs136);_gs136.loader.exec_module(git136)
+
 def prequalification_deadline120(overall,producer=None):
     if producer is None:return overall
     clock=producer.clock;clock.require(520)
@@ -610,9 +614,12 @@ def cleanup_once(private, name, terminal, deadline):
 def validate(x, repo, counter=False):
     if not re.fullmatch('[0-9a-f]{40}',x.source_sha) or not re.fullmatch('[0-9a-f]{64}',x.manifest_sha) or not re.fullmatch('[0-9a-f]{64}',x.once_receipt_sha):
         raise GateFailure('INTENT')
-    expected_env = {'GITHUB_REPOSITORY':'Elinfiny/TraceHarbor','GITHUB_REPOSITORY_ID':'1391430317','GITHUB_ACTOR_ID':'273768139','GITHUB_EVENT_NAME':'workflow_dispatch','GITHUB_RUN_ATTEMPT':'1','GITHUB_SHA':x.source_sha,'GITHUB_WORKFLOW_SHA':x.source_sha}
+    expected_env = {'GITHUB_REPOSITORY':'Elinfiny/TraceHarbor','GITHUB_REPOSITORY_ID':'1391430317','GITHUB_ACTOR_ID':'273768139','GITHUB_EVENT_NAME':git136.event136(os.environ),'GITHUB_RUN_ATTEMPT':'1','GITHUB_SHA':x.source_sha,'GITHUB_WORKFLOW_SHA':x.source_sha}
     if any(os.environ.get(k)!=v for k,v in expected_env.items()) or not re.fullmatch('[0-9]+',os.environ.get('GITHUB_RUN_ID','')):
         raise GateFailure('INTENT')
+    if os.environ.get('GITHUB_EVENT_NAME')=='create':
+        vv=git136.env_values136(dict(os.environ))
+        if (vv['source_sha'],vv['manifest_sha256'],vv['once_receipt_sha256'],int(vv['once_expires_utc']),int(vv['coordinator_cutoff_utc']))!=(x.source_sha,x.manifest_sha,x.once_receipt_sha,x.once_expires_utc,x.coordinator_cutoff_utc):raise ValueError('Exact source create inputs/expiry')
     if subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True,timeout=2).strip()!=x.source_sha:
         raise GateFailure('INTENT')
     mf = repo/'diagnostic108/manifest.json'

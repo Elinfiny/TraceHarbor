@@ -1,6 +1,10 @@
 """Source-only103 host DATA acquisition. Never imports downloaded modules."""
 import argparse, hashlib, json, os, pathlib, subprocess, urllib.request, urllib.parse, zipfile, time
 ACQUISITION_DEADLINE=None
+import importlib.util
+_gs136=importlib.util.spec_from_file_location('trace136_acquisition_git',pathlib.Path(__file__).resolve().parent.parent/'diagnostic108/git_dispatch136.py')
+git136=importlib.util.module_from_spec(_gs136);_gs136.loader.exec_module(git136)
+
 def acquisition_deadline135(start_mono,start_wall,maximum,expires,reserve=680):
     import math
     if type(maximum) is not int or not 1<=maximum<=60 or type(expires) is not int or reserve!=680 or not all(math.isfinite(x) for x in (start_mono,start_wall)):raise ValueError('Original bounded public acquisition/reserve')
@@ -33,7 +37,7 @@ def main():
     m=json.loads(raw); assert subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()==x.source_sha
     assert os.environ["GITHUB_SHA"]==x.source_sha and os.environ["GITHUB_WORKFLOW_SHA"]==x.source_sha and os.environ["GITHUB_RUN_ATTEMPT"]=="1"
     assert os.environ["GITHUB_REPOSITORY"]=="Elinfiny/TraceHarbor" and os.environ["GITHUB_REPOSITORY_ID"]=="1391430317"
-    assert os.environ["GITHUB_EVENT_NAME"]=="workflow_dispatch" and os.environ["GITHUB_ACTOR_ID"]=="273768139"
+    assert git136.event136(dict(os.environ)) in ("workflow_dispatch","create") and os.environ["GITHUB_ACTOR_ID"]=="273768139"
     kit=mf.parent
     for name,pin in m["source_files"].items(): assert digest((kit.parent/name).read_bytes())==pin
     assert digest((kit/"request.json").read_bytes())==m["request_sha256"]

@@ -117,7 +117,10 @@ function bindSourceRuntime133(c,frame){
  const b=frame.runtime_binding133,p=c.p;
  if(c.session===null||frame!==c.nativeFrame||frame.seq!==1||frame.inventory_call_id!=='SOURCE_FREEZE/CAS'||!b||b.schema!=='TRACE133_SOURCE_RUNTIME_FRAME'||b.static_config_sha256!==p.staticConfigSha256||b.sourceSha!==p.sourceSha||b.sourceTree!==p.sourceTree||b.context?.domain!=='TRACE133_TYPED_RUNTIME'||b.context.source_sha!==p.sourceSha||b.context.direction_id!==p.directionId133||!/^[a-f0-9]{64}$/.test(b.context.once_receipt_sha256)||!/^[a-f0-9]{64}$/.test(b.context_sha256)||!same(b.context,frame.context)||!Number.isInteger(b.deadlineUtcMs)||b.deadlineUtcMs<=Date.now()||b.deadlineUtcMs>Date.now()+900000)throw Error('Actual source same invocation runtime binding; original900 only');
  if(b.manifestSha256!==p.manifestSha135||b.onceExpiresUtc!==b.deadlineUtcMs/1000||!Number.isInteger(b.coordinatorCutoffUtc)||b.coordinatorCutoffUtc<b.onceExpiresUtc)throw Error('Original source manifest/expiry/cutoff, no reset');
- const expectedArgs={code:renderDispatch135(p.dispatchSource133,{source_sha:p.sourceSha,manifest_sha256:p.manifestSha135,once_receipt_sha256:b.context.once_receipt_sha256,once_expires_utc:String(b.onceExpiresUtc),coordinator_cutoff_utc:String(b.coordinatorCutoffUtc)})};
+ const values136={source_sha:p.sourceSha,manifest_sha256:p.manifestSha135,once_receipt_sha256:b.context.once_receipt_sha256,once_expires_utc:String(b.onceExpiresUtc),coordinator_cutoff_utc:String(b.coordinatorCutoffUtc)};
+ const git136=p.dispatchSource133.kind==='git_create136';
+ if(b.dispatchKind136!==(git136?'git_create136':'browser135'))throw Error('Same fixed source dispatch kind');
+ const expectedArgs=git136?gitCreateArgs136(p.dispatchSource133,values136):{code:renderDispatch135(p.dispatchSource133,values136)};
  if(!same(b.uiDispatchArgs,expectedArgs))throw Error('Static script plus actual newly produced once only');
  p.context=snapshotPlain129(b.context);p.contextSha256=b.context_sha256;p.deadlineUtcMs=b.deadlineUtcMs;p.uiDispatchArgs=snapshotPlain129(b.uiDispatchArgs);
 }
@@ -129,7 +132,18 @@ function guardArgs(c,f){
  if(f.op==='github_create_tree'&&(a.base_tree_sha!==p.sourceTree||a.tree_elements?.length!==1||a.tree_elements[0].sha!==c.lastBlob||a.tree_elements[0].mode!=='100644'||a.tree_elements[0].type!=='blob'))throw Error('Actual preceding blob/source tree');
  if(f.op==='github_create_commit'&&(a.parent_sha!==p.sourceSha||a.tree_sha!==c.lastTree||a.additional_parent_shas?.length))throw Error('Exact source soleparent/tree');
  if(f.op==='github_create_ref'&&(a.sha!==c.lastCommit||!/^traceharbor-(counter116-(admit|consumed)-[a-f0-9]{64}|encrypted104-[a-f0-9]{32})$/.test(a.branch_name)||Object.keys(a).some(k=>!['repository_full_name','branch_name','sha'].includes(k))))throw Error('Create-only exactref, no update/force/delete');
- if(f.op==='github_fetch'&&(!a.url.startsWith('https://api.github.com/repos/'+repo+'/')||!/^https:\/\/api.github.com\/repos\/Elinfiny\/TraceHarbor\/(actions\/runs\/\d+|commits\/[a-f0-9]{40}|git\/(blobs|trees)\/[a-f0-9]{40}(\?recursive=1)?|git\/ref\/heads\/traceharbor-[a-z0-9-]+)$/.test(a.url)))throw Error('Closed run/source/returned immutable GET only');
+ if(f.op==='github_fetch'&&!id.startsWith('dispatch136/')&&(!a.url.startsWith('https://api.github.com/repos/'+repo+'/')||!/^https:\/\/api.github.com\/repos\/Elinfiny\/TraceHarbor\/(actions\/runs\/\d+|commits\/[a-f0-9]{40}|git\/(blobs|trees)\/[a-f0-9]{40}(\?recursive=1)?|git\/ref\/heads\/traceharbor-[a-z0-9-]+)$/.test(a.url)))throw Error('Closed run/source/returned immutable GET only');
+ if(id.startsWith('dispatch136/')){
+  if(p.dispatchSource133.kind!=='git_create136')throw Error('No Git dispatch via manual source');
+  const ref='https://api.github.com/repos/'+repo+'/git/ref/heads/'+p.uiDispatchArgs.branch_name;
+  const list='https://api.github.com/repos/'+repo+'/actions/runs?event=create&head_sha='+p.sourceSha+'&branch='+encodeURIComponent(p.uiDispatchArgs.branch_name)+'&per_page=100';
+  if(id==='dispatch136/create-ref'){if(f.op!=='github_create_dispatch136'||!same(a,p.uiDispatchArgs))throw Error('Exact source create-only args');}
+  else if(id==='dispatch136/ref-absence'){if(f.op!=='github_ref_absence136'||!same(a,{url:ref}))throw Error('Exact prior ref absence');}
+  else if(id==='dispatch136/ref-proof'){if(f.op!=='github_fetch'||!same(a,{url:ref}))throw Error('Exact created ref proof');}
+  else if(/^dispatch136\/runs\/[0-3]$/.test(id)){if(f.op!=='github_fetch'||!same(a,{url:list}))throw Error('Finite source once exact branch list');}
+  else throw Error('No unknown Git dispatch source primitive');
+ }
+ if(['github_ref_absence136','github_create_dispatch136'].includes(f.op)&&!id.startsWith('dispatch136/'))throw Error('No new source op outside exact dispatch136 inventory');
  if(f.op==='browser_js'&&(id!=='dispatch/UI'||!same(a,p.uiDispatchArgs)))throw Error('Exact independently admitted fixed UI script; no generic browser');
  if(f.op==='library_replace'&&(a.library_file_id!=='libfile_3ee8270f03d8819188e1de1f75c3d824'||!Number.isInteger(a.expected_current_version)||!a.file.startsWith(p.transferRoot+'/group127-upload-')||!a.file.endsWith('/TraceHarbor_V1_checkpoint.json')))throw Error('Owned conditionalCAS source staging only');
  if(f.op==='library_materialize'&&(!Array.isArray(a.items)||a.items.length!==1||!a.items[0].file_id||!a.destination.directory.startsWith(p.transferRoot+'/')||a.destination.directory.includes('..')))throw Error('Pinned positive disjoint item only');
@@ -146,6 +160,8 @@ export async function bridge127(handle,frame,tools){
  for(const s of ['tool','canonical','callback','callback-original'])use(c,id+'/'+s,'CONTROLLER');
  let original=null,error=null;const a=frame.args;
  try{switch(frame.op){
+  case 'github_ref_absence136':original=await tools.mcp__codex_apps__github_fetch(a);break;
+  case 'github_create_dispatch136':original=await tools.mcp__codex_apps__github_create_branch(a);break;
   case 'github_fetch':original=await tools.mcp__codex_apps__github_fetch(a);break;
   case 'github_create_blob':original=await tools.mcp__codex_apps__github_create_blob(a);break;
   case 'github_create_tree':original=await tools.mcp__codex_apps__github_create_tree(a);break;
@@ -165,7 +181,8 @@ export async function bridge127(handle,frame,tools){
  if(error&&original===null)original={tool_throw:error,status:'UNKNOWN_NO_RETRY'};
  await capture(c,frame.seq+'.canonical-native-original.json',{identity,original},tools);
  const late=Date.now()>=Math.min(frame.deadline_utc_ms,c.p.deadlineUtcMs);
- if(error||late||original?.isError)c.failed=error||{late,tool_error:original?.isError===true};
+ const expected404136=frame.op==='github_ref_absence136'&&id==='dispatch136/ref-absence'&&original?.isError===true&&original.structuredContent?.error_code==='NOT_FOUND'&&String(original.structuredContent?.error_data?.status)==='404';
+ if(error||late||original?.isError&&!expected404136)c.failed=error||{late,tool_error:original?.isError===true};
  if(!c.failed){const v=original?.structuredContent;
   if(frame.op==='github_create_blob')c.lastBlob=v?.sha;
   if(frame.op==='github_create_tree')c.lastTree=v?.sha;
@@ -231,4 +248,11 @@ export function renderDispatch135(source,inputs){
  const fields={'__TRACE_SOURCE135__':'source_sha','__TRACE_MANIFEST135__':'manifest_sha256','__TRACE_ONCE133__':'once_receipt_sha256','__TRACE_EXPIRES135__':'once_expires_utc','__TRACE_CUTOFF135__':'coordinator_cutoff_utc'};let code=source.script;
  for(const [token,key] of Object.entries(fields)){if(code.split(token).length!==2||typeof inputs[key]!=='string')throw Error('Exact source-owned five-input binding');code=code.replace(token,inputs[key]);}
  if(code.split('__TRACE_TAB135__').length!==2||!Number.isInteger(source.tab_id))throw Error('Exact static tab role');return code.replace('__TRACE_TAB135__',String(source.tab_id));
+}
+
+//136 pure DATA renderer; only fixed preflight/holder registry may invoke tools.
+export function gitCreateArgs136(source,v){
+ if(!source||Object.keys(source).sort().join(',')!=='actor_proof_sha256,expected_actor_id,kind,namespace,workflow_path'||source.kind!=='git_create136'||source.expected_actor_id!==273768139||source.namespace!=='traceharbor/once136/v1/'||source.workflow_path!=='.github/workflows/traceharbor-counter136.yml'||!/^[a-f0-9]{64}$/.test(source.actor_proof_sha256))throw Error('Independent genuine event actor proof remains mandatory');
+ if(!v||Object.keys(v).sort().join(',')!=='coordinator_cutoff_utc,manifest_sha256,once_expires_utc,once_receipt_sha256,source_sha'||!/^[a-f0-9]{40}$/.test(v.source_sha)||!/^[a-f0-9]{64}$/.test(v.manifest_sha256)||!/^[a-f0-9]{64}$/.test(v.once_receipt_sha256)||!/^([1-9][0-9]{0,11})$/.test(v.once_expires_utc)||!/^([1-9][0-9]{0,11})$/.test(v.coordinator_cutoff_utc)||Number(v.coordinator_cutoff_utc)<Number(v.once_expires_utc))throw Error('Closed source native five inputs no reset');
+ return {repository_full_name:'Elinfiny/TraceHarbor',branch_name:source.namespace+[v.source_sha,v.manifest_sha256,v.once_receipt_sha256,v.once_expires_utc,v.coordinator_cutoff_utc].join('-'),sha:v.source_sha};
 }

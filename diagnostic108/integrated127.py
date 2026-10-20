@@ -89,10 +89,13 @@ class Grouped127:
  def freeze(self):
   self.begin('SOURCE_FREEZE');self.phase_intent('SOURCE_FREEZE',[{'role':'exact entire source/inventory/phase-plan freeze','sha256':self.plan_sha}]);self.close()
  def predispatch(self):
-  self.begin('PRE_DISPATCH');self.phase_intent('PRE_DISPATCH',[{'role':'ONCE current fixed UI dispatch','source_sha':self.context['source_sha'],'once':self.context['once_receipt_sha256']}]);self.semantic(0,{'consumed_before_dispatch':True});self.close()
+  self.begin('PRE_DISPATCH');self.phase_intent('PRE_DISPATCH',[{'role':'ONCE current fixed source dispatch','source_sha':self.context['source_sha'],'once':self.context['once_receipt_sha256']}]);self.semantic(0,{'consumed_before_dispatch':True})
+  gitroute=self.context['workflow_path']==p133.g136.WORKFLOW
+  if not gitroute:self.close()
   self.run=self.port.dispatch()
+  if gitroute:self.close()
   r=self.run
-  if r['head_sha']!=self.context['source_sha'] or r['run_attempt']!=1 or r['actor']['id']!=OWNER or r['repository']['id']!=REPOSITORY or r['event']!='workflow_dispatch' or r['status']!='in_progress':raise ValueError('Actual selected current dispatch original')
+  if r['head_sha']!=self.context['source_sha'] or r['run_attempt']!=1 or r['actor']['id']!=OWNER or r['repository']['id']!=REPOSITORY or not p133.g136.run_event136(r,p133.g136.binding136(self.port.config['ui_dispatch127']['args']) if gitroute else None) or r['status']!='in_progress':raise ValueError('Actual selected current dispatch original')
   started=datetime.datetime.fromisoformat(r['run_started_at'].replace('Z','+00:00')).timestamp()
   if not 0<self.parent_wall-started<=900:raise ValueError('Original900 from actual runner start')
  def body(self,phase,resolve=True):
@@ -125,7 +128,7 @@ class Grouped127:
    created=self.call(phase+'/'+kind,'github_create_'+kind,args)
    suffix=('git/blobs/'+created['sha'] if n==0 else 'git/trees/'+created['sha'] if n==1 else 'commits/'+created['sha'] if n==2 else 'git/ref/heads/'+ops[n]['ref'])
    proof=self.call(phase+'/'+kind+'/proof','github_fetch',{'url':'https://api.github.com/repos/'+REPO+'/'+suffix})
-   if n<3 and created['sha']!=proof['sha'] or n==3 and (created['ref']!=proof['ref'] or created['object']!=proof['object']):raise ValueError('Create return/immediate whole proof differ')
+   if n<3 and created['sha']!=proof['sha'] or n==3 and created!={'branch':ops[n]['ref']}:raise ValueError('Create return/immediate whole proof differ')
    if n==0:
     want=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
     if proof['sha']!=want or proof['size']!=len(raw) or proof['encoding']!='base64' or base64.b64decode(''.join(proof['content'].split()),validate=True)!=raw:raise ValueError('Full body/count/GitSHA')
@@ -136,7 +139,7 @@ class Grouped127:
     if proof.get('truncated') is not False or len(proof['tree'])!=len(expected) or {e['path']:{k:e[k] for k in ('path','mode','type','sha')} for e in proof['tree']}!=expected:raise ValueError('Whole baseline + exact one leaf')
    elif n==2:
     if proof['author']['id']!=OWNER or proof['committer']['id']!=OWNER or [x['sha'] for x in proof['parents']]!=[self.context['source_sha']] or proof['commit']['tree']['sha']!=returns[1]['sha']:raise ValueError('Actual Owner/soleparent/tree')
-   elif proof['ref']!='refs/heads/'+ops[n]['ref'] or proof['object']!={'type':'commit','sha':returns[2]['sha']}:raise ValueError('Exact create-only ref/preceding commit')
+   elif proof['ref']!='refs/heads/'+ops[n]['ref'] or type(proof.get('object')) is not dict or not {'type','sha'}<=set(proof['object'])<={'type','sha','url'} or proof['object']['type']!='commit' or proof['object']['sha']!=returns[2]['sha'] or ('url' in proof['object'] and proof['object']['url']!='https://api.github.com/repos/'+REPO+'/git/commits/'+returns[2]['sha']):raise ValueError('Exact create-only ref/preceding commit and canonical optional URL')
    returns.append(proof);self.semantic(start+n,{'operation':ops[n],'original':phase+'/'+kind,'proof':phase+'/'+kind+'/proof'})
   self.proofs[phase]={'blob':returns[0]['sha'],'tree':returns[1]['sha'],'commit':returns[2]['sha'],'ref':returns[3]['ref'],'body_sha256':sha(raw)};self.close()
  def begin_collection(self):
@@ -214,8 +217,11 @@ def runtime_context133(handle):
  return context127({'source_sha':s['commit'],'source_tree':s['tree'],'source_parent':s['parent'],'manifest_sha256':sha(r['manifest_bytes']),'once_receipt_sha256':sha(can(r['once'])),'expires_utc':r['end_wall'],'parent_mono':r['end_mono'],'initial_version':snap['own_version'],'direction_id':d['id'],'direction_sha256':d['sha256'],'writer_sha256':snap['writer_sha256'],'auditor_sha256':snap['auditor_sha256'],'nonce':r['nonce'],'route':'EXISTING_GITHUB_LIBRARY_DIRECTPTY','baseline_entries':w['baseline_entries'],'full_tree_entries':w['full_tree_entries'],'cost_scope_sha256':sha(can(x['cost_scope'])),'custody_binding_sha256':snap['custody_sha256'],'workflow_path':w['path'],'workflow_step_names':w['step_names']})
 def postdispatch133(handle,run,selected,wall,mono):
  r=_runtime133(handle);runtime_guard133(handle,wall,mono);x=json.loads(r['config_raw']);ctx=runtime_context133(handle)
- if type(run) is not dict or type(run.get('id')) is not int or run['id']<=0 or run.get('run_attempt')!=1 or run.get('head_sha')!=x['source']['commit'] or run.get('actor',{}).get('id')!=OWNER or run.get('repository',{}).get('id')!=REPOSITORY or run.get('event')!='workflow_dispatch' or run.get('status')!='in_progress':raise ValueError('Actual selected run/source/repo/actor/attempt')
- if selected!={'schema':'TRACE127_UI_DISPATCH_DATA','selected_run_id':run['id'],'source_sha':x['source']['commit'],'attempt':1,'once_receipt_sha256':ctx['once_receipt_sha256']}:raise ValueError('Actual same invocation selected once')
+ if type(run) is not dict or type(run.get('id')) is not int or run['id']<=0 or run.get('run_attempt')!=1 or run.get('head_sha')!=x['source']['commit'] or run.get('actor',{}).get('id')!=OWNER or run.get('repository',{}).get('id')!=REPOSITORY or not p133.g136.run_event136(run,p133.g136.binding136(p133.g136.args136(p133.dispatch_inputs135(x,ctx,r['cutoff']))) if x['dispatch_source'].get('kind')=='git_create136' else None) or run.get('status')!='in_progress':raise ValueError('Actual selected run/source/repo/actor/attempt')
+ expected_selected={'schema':'TRACE127_UI_DISPATCH_DATA','selected_run_id':run['id'],'source_sha':x['source']['commit'],'attempt':1,'once_receipt_sha256':ctx['once_receipt_sha256']}
+ if x['dispatch_source'].get('kind')=='git_create136':expected_selected.update(schema='TRACE136_GIT_DISPATCH_DATA',branch=p133.g136.branch136(p133.dispatch_inputs135(x,ctx,r['cutoff'])))
+ if selected!=expected_selected:raise ValueError('Actual same invocation selected once/ref')
+
  started=datetime.datetime.fromisoformat(run['run_started_at'].replace('Z','+00:00')).timestamp()
  if not r['armed_wall']<=started<=wall:raise ValueError('Actual job start after original arming')
  run_digest=sha(can({'run':run,'selected':selected}))

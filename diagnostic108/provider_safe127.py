@@ -9,6 +9,7 @@ ROOT=pathlib.Path(__file__).resolve().parent
 s=spec_from_file_location('trace127_control_fixed',ROOT/'control127.py');ctl=module_from_spec(s);s.loader.exec_module(ctl)
 can=ctl.can;sha=ctl.sha
 OWNER=273768139;REPOSITORY=1391430317;REPO='Elinfiny/TraceHarbor'
+_gs136=spec_from_file_location('trace136_provider_git',ROOT/'git_dispatch136.py');g136=module_from_spec(_gs136);_gs136.loader.exec_module(g136)
 _SEAL=object();_HOSTS=weakref.WeakKeyDictionary();_OBS=weakref.WeakKeyDictionary()
 class NativeOriginal127:
  __slots__=('port','identity','original','raw','seal','realm','canonical')
@@ -85,7 +86,7 @@ def validate_steps127(steps,source_names):
  if middle!=source_names or len(posts)!=len(set(posts)) or any(n[5:] not in source_names for n in posts):raise ValueError('Complete source steps + supported post roles, no invented live labels')
  return {'source_names':source_names,'observed_provider_names':[names[0],*posts,names[-1]],'scope':'ACTUAL_DATA_ONLY_NOT_LABEL_PREDICTION'}
 def metadata127(plan,run,commit,tree,jobs,listed):
- if run['id']!=plan['run_id'] or run['run_attempt']!=1 or run['actor']['id']!=OWNER or run['repository']['id']!=REPOSITORY or run['event']!='workflow_dispatch' or run['head_sha']!=plan['source_sha'] or run['path']!=plan['workflow_path'] or run['status']!='completed' or run['conclusion']!='success':raise ValueError('Wrong/pending actual run/source/workflow/Owner/repo/attempt')
+ if run['id']!=plan['run_id'] or run['run_attempt']!=1 or run['actor']['id']!=OWNER or run['repository']['id']!=REPOSITORY or not g136.run_event136(run,plan.get('dispatch_binding136')) or run['head_sha']!=plan['source_sha'] or run['path']!=plan['workflow_path'] or run['status']!='completed' or run['conclusion']!='success':raise ValueError('Wrong/pending actual run/source/workflow/Owner/repo/attempt')
  started=datetime.datetime.fromisoformat(run['run_started_at'].replace('Z','+00:00')).timestamp();finished=datetime.datetime.fromisoformat(run['updated_at'].replace('Z','+00:00')).timestamp()
  if not started<finished<=plan['expires_utc']<=started+900:raise ValueError('Actual completed run under ORIGINAL900/once expiry')
  if commit['sha']!=plan['source_sha'] or commit['author']['id']!=OWNER or commit['committer']['id']!=OWNER or [p['sha'] for p in commit['parents']]!=[plan['source_parent']] or commit['commit']['tree']['sha']!=plan['source_tree']:raise ValueError('Exact actual reviewedsource/soleparent/tree/Owner')
