@@ -5,6 +5,7 @@ import pathlib,json,hashlib,copy,importlib.util,sys,re,math
 ROOT=pathlib.Path(__file__).resolve().parent
 s=importlib.util.spec_from_file_location('trace133_plan_control',ROOT/'control127.py');c=importlib.util.module_from_spec(s);s.loader.exec_module(c)
 can=c.can;sha=c.sha;V2='TRACE133_STATIC_TYPED_RUNTIME_V2';ADMISSION='grouped133_admission'
+g136s=importlib.util.spec_from_file_location('trace136_plan_git',ROOT/'git_dispatch136.py');g136=importlib.util.module_from_spec(g136s);g136s.loader.exec_module(g136)
 STATIC={'source','manifest','request','lock','private6','custody_scope','cost_scope','dispatch_source','path_roles','limits','inventory_sha256','authority_projection_sha256','workflow'}
 PATHS={'private','transfer','holder_parent','capture','library_helper','config','materialize_original'}
 def closed(x,keys,label):
@@ -52,9 +53,15 @@ def static133(config,manifest_bytes,inventory=None):
  text(x['custody_scope']['root'],'private custody root')
  closed(x['cost_scope'],{'model_calls','spend','host_cost_bound'},'API0 cost')
  if x['cost_scope']['model_calls']!=0 or x['cost_scope']['spend']!=0 or x['cost_scope']['host_cost_bound'] is not None and (type(x['cost_scope']['host_cost_bound']) not in (int,float) or not math.isfinite(x['cost_scope']['host_cost_bound']) or x['cost_scope']['host_cost_bound']<0):raise ValueError('Cost bound, not a grant')
- closed(x['dispatch_source'],{'script','script_sha256','tab_id'},'dispatch source');text(x['dispatch_source']['script'],'script');hexpin(x['dispatch_source']['script_sha256'])
- if sha(x['dispatch_source']['script'].encode())!=x['dispatch_source']['script_sha256'] or type(x['dispatch_source']['tab_id']) is not int:raise ValueError('Pinned dispatch script')
- if x['dispatch_source']['script'].count('__TRACE_ONCE133__')!=1:raise ValueError('One runtime once placeholder, no future descriptor')
+ if x['workflow']['path']==g136.WORKFLOW:
+  closed(x['dispatch_source'],{'kind','expected_actor_id','actor_proof_sha256','namespace','workflow_path'},'Git create source')
+  ds=x['dispatch_source']
+  if ds['kind']!='git_create136' or ds['expected_actor_id']!=273768139 or ds['namespace']!=g136.PREFIX or ds['workflow_path']!=g136.WORKFLOW:raise ValueError('Exact Git source contract preserves Owner')
+  hexpin(ds['actor_proof_sha256']) # future independently reviewed genuine pilot proof, currently NULL
+ else:
+  closed(x['dispatch_source'],{'script','script_sha256','tab_id'},'dispatch source');text(x['dispatch_source']['script'],'script');hexpin(x['dispatch_source']['script_sha256'])
+  if sha(x['dispatch_source']['script'].encode())!=x['dispatch_source']['script_sha256'] or type(x['dispatch_source']['tab_id']) is not int:raise ValueError('Pinned dispatch script')
+  if x['dispatch_source']['script'].count('__TRACE_ONCE133__')!=1:raise ValueError('One runtime once placeholder')
  closed(x['path_roles'],PATHS|{'library_helper_sha256'},'path roles')
  for k in PATHS:
   p=pathlib.Path(text(x['path_roles'][k],k))
@@ -81,6 +88,12 @@ def static133(config,manifest_bytes,inventory=None):
   if m['source_files'].get(x['workflow']['path'])!={'bytes':len(raw),'sha256':sha(raw)}:raise ValueError('Exact active source workflow pin')
   wf=json.loads(raw);job=wf['jobs']['counter']
   if set(wf['on'])!={'workflow_dispatch'} or set(wf['on']['workflow_dispatch']['inputs'])!=set(('source_sha','manifest_sha256','once_receipt_sha256','once_expires_utc','coordinator_cutoff_utc')) or wf['permissions']!={'contents':'read'} or job['runs-on']!='ubuntu-24.04' or job['timeout-minutes']!=15 or wf['concurrency']['cancel-in-progress'] is not False or [v['name'] for v in job['steps']]!=x['workflow']['step_names']:raise ValueError('Whole source workflow/inputs/steps/runner/concurrency contract')
+ if x['workflow']['path']==g136.WORKFLOW:
+  raw=(ROOT.parent/g136.WORKFLOW).read_bytes();wf=json.loads(raw);job=wf['jobs']['counter']
+  if m['source_files'].get(g136.WORKFLOW)!={'bytes':len(raw),'sha256':sha(raw)} or wf['on']!={'create':None} or wf['permissions']!={'contents':'read'} or job['runs-on']!='ubuntu-24.04' or job['timeout-minutes']!=15 or wf['concurrency']['cancel-in-progress'] is not False or [a['name'] for a in job['steps']]!=x['workflow']['step_names']:raise ValueError('Whole exact prospective create workflow')
+  guard=job['if']
+  for must in ("github.event_name == 'create'","github.event.ref_type == 'branch'","github.actor_id == '273768139'","github.repository_id == '1391430317'","startsWith(github.event.ref, 'traceharbor/once136/v1/')","github.run_attempt == 1"):
+   if must not in guard:raise ValueError('Source job namespace/Owner/repository/attempt not weakened')
  if x['limits']!=c.FIXED or x['inventory_sha256']!=sha(can(inventory)):raise ValueError('Whole original limits/inventory')
  hexpin(x['authority_projection_sha256']);return x
 def template133(config,manifest_bytes,inventory=None):

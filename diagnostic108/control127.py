@@ -56,6 +56,16 @@ def inventory127():
  row('preflight/collection-close128','local_evidence','CONTROLLER',True)
  for id in ('recipient/verify','safe/file-original'):row(id+'/helper-original128','local_evidence','HOST')
  for id in ('runtime132/once-intent-original','runtime132/armed-context-original','runtime132/postdispatch-bind-original'):row(id,'local_evidence')
+ #136 additive proposal: old dispatch/UI bundle reserved but NOT invoked by Git route.
+ for id in ['dispatch136/ref-absence','dispatch136/create-ref','dispatch136/ref-proof']+['dispatch136/runs/'+str(i) for i in range(4)]:
+  remote.append(id)
+  for suffix,kind,owner in [('tool','native','CONTROLLER'),('canonical','local_evidence','CONTROLLER'),('callback','callback','CONTROLLER'),('callback-original','local_evidence','CONTROLLER'),('request','local_evidence','HOST'),('return','local_evidence','HOST'),('validated','local_evidence','HOST'),('restore','local_evidence','HOST')]:row(id+'/'+suffix,kind,owner)
+  for n in range(8):row(id+'/chunk/'+str(n),'local_evidence')
+  row(id+'/canonical-reference','local_evidence')
+  for suffix in ('failure-partial','failure-status','failure-read','failure-duplicate'):row(id+'/'+suffix,'local_evidence',closure=True)
+ row('dispatch136/create-ref/pre-effect-guard','local_evidence')
+ for n in range(3):row('dispatch136/delay/'+str(n),'wait')
+ for id in ('dispatch136/created-ref-original','dispatch136/selected-run-original'):row(id,'local_evidence')
  assert len({r['id'] for r in rows})==len(rows)
  return {'schema':'TRACE127_WHOLE_PRECOMMITTED_INVENTORY_V1','rows':rows,'inclusive_total':len(rows),'current_comparison_cap':48,'current_fit':len(rows)<=48,'proposal_only_cap':len(rows),'authority':False,'reserved_closure':sum(r['closure'] for r in rows),'observer_maximum':16,'immutable_semantic_graph':list(SEMANTIC),'phase_graph':list(PHASES),'remote_ids':remote}
 class Inventory127:

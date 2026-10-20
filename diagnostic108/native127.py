@@ -13,6 +13,7 @@ BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
 base=load('trace127_original118',ROOT/'host_transport118.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
+ if kind=='github_ref_absence136':return g.p133.g136.absent_original136(original)
  if kind!='browser_js':return _normalizer118(original,kind)
  if type(original) is not dict or original.get('isError'):raise ValueError('Actual UI tool error')
  value=original.get('structuredContent')
@@ -49,7 +50,7 @@ class Ledger127(base.FrameLedger):
   port=self.port;self.seq+=1
   frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'phase_deadline_mono':self.phase_mono,'inventory_call_id':port.current_id,'inventory_sha256':sha(can(port.inventory.plan))}
   if self.seq==1:
-   frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args']),'manifestSha256':port.macro.context['manifest_sha256'],'onceExpiresUtc':port.macro.context['expires_utc'],'coordinatorCutoffUtc':port.config['coordinator_cutoff_utc']}
+   frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'dispatchKind136':port.config['ui_dispatch127'].get('kind','browser135'),'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args']),'manifestSha256':port.macro.context['manifest_sha256'],'onceExpiresUtc':port.macro.context['expires_utc'],'coordinatorCutoffUtc':port.config['coordinator_cutoff_utc']}
   frame['request_digest']=sha(can(frame));raw=can(frame)
   if len(raw)>base.MAX_FRAME:raise ValueError('Finite complete frame')
   base.put(self.root/(str(self.seq)+'.request.original.json'),raw);self.pending=frame;return frame
@@ -164,19 +165,50 @@ class NativePort127:
   return {'version':version+1,'sha256':sha(raw),'wholebyte_self_allattrs':'PASS','intent_sha256':sha(can(payload['phase_intent127']))}
  def dispatch(self):
   ui=self.config['ui_dispatch127']
-  if ui.get('master_terminal_no_input_conflict') is not True or ui['source_sha']!=self.source or ui['once_receipt_sha256']!=self.config['integration_context127']['once_receipt_sha256'] or ui['script_sha256']!=sha(ui['args']['code'].encode()):raise PermissionError('Actual CURRENT exact UI/source/unusedonce/Master conflict evidence required')
-  selected=self.macro.call('dispatch/UI','browser_js',ui['args'])
-  # Actual selected run_id is supplied by the fixed preloaded UI script's
-  # authenticated original result; never latest-list search or PR-filter API.
-  if selected['source_sha']!=self.source or selected['attempt']!=1 or selected['once_receipt_sha256']!=self.macro.context['once_receipt_sha256']:raise ValueError('Actual selected UI source/attempt/once')
-  runid=selected['selected_run_id']
-  if type(runid) is not int or runid<=0:raise ValueError('Actual selected run returned by exact UI route')
-  run=self.macro.call('dispatch/run','github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(runid)})
-  # Retain source-native originals before classification; external JSON cannot
-  # select a descriptor. The full originals remain private in the existing log.
+  if ui.get('kind')=='git_create136':
+   args=ui['args'];helper=g.p133.g136;binding=helper.binding136(args)
+   if ui['source_sha']!=self.source or ui['once_receipt_sha256']!=self.macro.context['once_receipt_sha256']:raise PermissionError('Same source original once, no manual conflict claim')
+   url='https://api.github.com/repos/'+g.REPO+'/git/ref/heads/'+args['branch_name']
+   absent=self.macro.call('dispatch136/ref-absence','github_ref_absence136',{'url':url})
+   if absent!={'absent':True}:raise ValueError('Genuine absent fresh ref required')
+   #138 conservative absolute observation origin BEFORE the one consumed create.
+   observation_start=time.monotonic();observation_end=min(observation_start+60,self.phase_mono,self.parent_mono)
+   created=self.macro.call('dispatch136/create-ref','github_create_dispatch136',args)
+   helper.created136(created,args)
+   proof=self.macro.call('dispatch136/ref-proof','github_fetch',{'url':url});helper.ref136(proof,args)
+   self.macro.store.save('dispatch136/created-ref-original',{'created':created,'ref':proof,'binding':binding})
+   import urllib.parse
+   query=urllib.parse.urlencode({'event':'create','head_sha':self.source,'branch':args['branch_name'],'per_page':100})
+   run=None;last_observation=None
+   for n in range(4):
+    if n:
+     target=last_observation+15
+     if target>=observation_end:raise g.Pending127('Original absolute60 create window exhausted; no later observation or replay')
+     self.inventory.claim('dispatch136/delay/'+str(n-1));self.delay_until(target)
+    if time.monotonic()>=observation_end:raise g.Pending127('Original absolute60 create window exhausted before read')
+    listed=self.macro.call('dispatch136/runs/'+str(n),'github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs?'+query})
+    last_observation=time.monotonic()
+    # macro.call has retained the complete original before this late classification.
+    if last_observation>=observation_end:raise g.Pending127('Late original retained; no classification as timely run or retry')
+    run=helper.selected136(listed,binding)
+    if run is not None:break
+   if run is None:raise g.Pending127('Finite four actual create-run observations exhausted; ref consumed, never recreate')
+   selected={'schema':'TRACE136_GIT_DISPATCH_DATA','selected_run_id':run['id'],'source_sha':self.source,'attempt':1,'once_receipt_sha256':binding['once_receipt_sha256'],'branch':binding['branch']}
+   self.macro.store.save('dispatch136/selected-run-original',{'binding':binding,'selected':selected,'run':run})
+  else:
+   ui=self.config['ui_dispatch127']
+   if ui.get('master_terminal_no_input_conflict') is not True or ui['source_sha']!=self.source or ui['once_receipt_sha256']!=self.config['integration_context127']['once_receipt_sha256'] or ui['script_sha256']!=sha(ui['args']['code'].encode()):raise PermissionError('Actual CURRENT exact UI/source/unusedonce/Master conflict evidence required')
+   selected=self.macro.call('dispatch/UI','browser_js',ui['args'])
+   # Actual selected run_id is supplied by the fixed preloaded UI script's
+   # authenticated original result; never latest-list search or PR-filter API.
+   if selected['source_sha']!=self.source or selected['attempt']!=1 or selected['once_receipt_sha256']!=self.macro.context['once_receipt_sha256']:raise ValueError('Actual selected UI source/attempt/once')
+   runid=selected['selected_run_id']
+   if type(runid) is not int or runid<=0:raise ValueError('Actual selected run returned by exact UI route')
+   run=self.macro.call('dispatch/run','github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(runid)})
+  # Same genuine current run proof binds selected Git DATA; no external JSON selects a descriptor.
   descriptor=g.postdispatch133(self.runtime133,run,selected,time.time(),time.monotonic())
-  self.macro.store.save('runtime132/postdispatch-bind-original',{'run':run,'selected':selected,'descriptor':descriptor,'run_canonical':self.macro.originals['dispatch/run']['canonical']})
-  self.run_id=runid;self.selected133=copy.deepcopy(selected);self.actual_run133=copy.deepcopy(run)
+  self.macro.store.save('runtime132/postdispatch-bind-original',{'run':run,'selected':selected,'descriptor':descriptor,'run_canonical':self.macro.originals[('dispatch136/runs/'+str(n)) if ui.get('kind')=='git_create136' else 'dispatch/run']['canonical']})
+  self.run_id=run['id'];self.selected133=copy.deepcopy(selected);self.actual_run133=copy.deepcopy(run)
   return run
  def delay_until(self,target):
   delay=target-time.monotonic()
@@ -212,7 +244,7 @@ class NativePort127:
   wanted_names={row['name'] for row in cfg['private_members']}
   if not wanted_names<=set(self.config['private_files127']):raise ValueError('Actual private member source closure')
   files={k:pathlib.Path(self.config['private_files127'][k]).read_bytes() for k in wanted_names}
-  try:plan=ingress.prepare_from_artifact(public,run,artifact,sha(raw),files,cfg['private_members'],pathlib.Path(self.config['private_output127']),self.config['source_tree'],trace)
+  try:plan=ingress.prepare_from_artifact(public,run,artifact,sha(raw),files,cfg['private_members'],pathlib.Path(self.config['private_output127']),self.config['source_tree'],trace,dispatch_binding136=g.p133.g136.binding136(self.config['ui_dispatch127']['args']) if self.config['ui_dispatch127'].get('kind')=='git_create136' else None)
   finally:self.macro.store.save('ingress/openssl-original',{'trace':trace,'scope':'ACTUAL_EXISTING_INGRESS_ORIGINALS'})
   delivery={'context':plan['context'],'ciphertext_base64':plan['operations'][0]['body']['content'],'ciphertext_sha256':plan['ciphertext_sha256'],'artifact_digest':sha(raw),'artifact_bytes':len(raw),'retention_days':1,'custody_sha256':sha(can({'pins':cfg['private_members'],'context':plan['context'],'artifact_sha256':sha(raw)}))}
   self.macro.store.save('ingress/proof',delivery);return delivery
@@ -245,7 +277,7 @@ class NativePort127:
   b['materialized']=self.packet('safe/materialize','library_materialize',{'items':[{k:ref[k] for k in ('library_file_id','file_id','file_name') if k in ref}],'destination':{'directory':str(self.destination)}});return b
  def provider_plan(self):
   x=self.macro.context;rid=self.run_id;admit,_=self.macro.body('admit');consumed,_=self.macro.body('consumed');descriptor=json.loads(consumed)
-  return {'run_id':rid,'source_sha':x['source_sha'],'source_parent':x['source_parent'],'source_tree':x['source_tree'],'expires_utc':x['expires_utc'],'workflow_path':x['workflow_path'],'workflow_step_names':x['workflow_step_names'],'full_tree_entries':x['full_tree_entries'],'projection_context':{'run_id':rid,'attempt':1,'actor_id':g.OWNER,'repository_id':g.REPOSITORY,'source_sha':x['source_sha'],'manifest_sha256':x['manifest_sha256'],'once_receipt_sha256':x['once_receipt_sha256'],'expires_utc':x['expires_utc'],'admission_sha256':sha(admit),'custody_binding_sha256':sha(can(descriptor['ciphertext_receipt'])),'cost_scope_sha256':x['cost_scope_sha256']}}
+  return {'run_id':rid,'source_sha':x['source_sha'],'source_parent':x['source_parent'],'source_tree':x['source_tree'],'expires_utc':x['expires_utc'],'workflow_path':x['workflow_path'],'workflow_step_names':x['workflow_step_names'],'full_tree_entries':x['full_tree_entries'],'dispatch_binding136':g.p133.g136.binding136(self.config['ui_dispatch127']['args']) if self.config['ui_dispatch127'].get('kind')=='git_create136' else None,'projection_context':{'run_id':rid,'attempt':1,'actor_id':g.OWNER,'repository_id':g.REPOSITORY,'source_sha':x['source_sha'],'manifest_sha256':x['manifest_sha256'],'once_receipt_sha256':x['once_receipt_sha256'],'expires_utc':x['expires_utc'],'admission_sha256':sha(admit),'custody_binding_sha256':sha(can(descriptor['ciphertext_receipt'])),'cost_scope_sha256':x['cost_scope_sha256']}}
  def artifact_bytes(self,ref,tr,artifact,destination,evidence,cap):
   self.inventory.claim(evidence);path=pathlib.Path(tr['workspace_path'])
   if ref.get('file_id')!=tr['file_id'] or ref.get('file_name')!=tr['file_name'] or not tr.get('library_file_id') or ref.get('library_file_id') not in (None,tr['library_file_id']) or path!=destination/ref['file_name'] or path.is_symlink() or path.resolve()!=path:raise ValueError('Actual exact reusable ref/peritem disjoint positiveidentity')
@@ -297,8 +329,11 @@ def bootstrap127(config_path,provider):
  #134 These are source-derived runtime values from already verified static/custody.
  # No external JSON adds private paths or selects an output outside this holder.
  cfg.update(source_tree=static['source']['tree'],private_files127={name:str(pathlib.Path(static['custody_scope']['root'])/name) for name in static['private6']},private_output127=str(root/'ciphertext133'))
- script=plan.render_dispatch135(static,context,cutoff)
- cfg['ui_dispatch127']={'master_terminal_no_input_conflict':direction.get('master_terminal_no_input_conflict') is True,'source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'script_sha256':sha(script.encode()),'args':{'code':script}}
+ if static['dispatch_source'].get('kind')=='git_create136':
+  cfg['ui_dispatch127']={'kind':'git_create136','source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'args':plan.g136.args136(plan.dispatch_inputs135(static,context,cutoff))}
+ else:
+  script=plan.render_dispatch135(static,context,cutoff)
+  cfg['ui_dispatch127']={'master_terminal_no_input_conflict':direction.get('master_terminal_no_input_conflict') is True,'source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'script_sha256':sha(script.encode()),'args':{'code':script}}
  host=NativePort127(g._SEAL,cfg,manifest,provider);host.runtime133=runtime;host.static_config133=can(static);clock=ActualClock127();macro=g.Grouped127(host,clock,context,root/'originals',c.DiskOriginalIO127(),host.inventory,'ACTUAL_SOURCE_PRIVATE',g._SEAL)
  macro.store.save('runtime132/once-intent-original',once);macro.store.save('runtime132/armed-context-original',{'runtime_context':context,'static_config_sha256':sha(host.static_config133),'phase_template':prepared['phase_template'],'current_whole_snapshot':snap})
  return host,macro

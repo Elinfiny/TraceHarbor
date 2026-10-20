@@ -5,6 +5,10 @@ executes the returned four immutable Git operations once, and reconciles UNKNOWN
 import argparse,base64,hashlib,json,os,pathlib,re,ssl,stat,subprocess,time,urllib.request,urllib.error,urllib.parse
 NAMES=('count_chat.py','count_request.py','served_template.jinja')
 CTX={'repository','repository_id','actor_id','run_id','attempt','source_sha','nonce','certificate_sha256','expires_utc'}
+import importlib.util
+_gs136=importlib.util.spec_from_file_location('trace136_ingress_git',pathlib.Path(__file__).resolve().parent.parent/'diagnostic108/git_dispatch136.py')
+git136=importlib.util.module_from_spec(_gs136);_gs136.loader.exec_module(git136)
+
 def can(d):return json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()
 def sha(b):return hashlib.sha256(b).hexdigest()
 def require(ok):
@@ -119,9 +123,9 @@ def transport(c,cipher,base_tree):
         {'method':'POST','endpoint':'git/trees','body':{'base_tree':base_tree,'tree':[{'path':name,'mode':'100644','type':'blob','sha':'$blob'}]}},
         {'method':'POST','endpoint':'git/commits','body':{'message':'TraceHarbor ephemeral ciphertext104','parents':[c['source_sha']],'tree':'$tree'}},
         {'method':'POST','endpoint':'git/refs','body':{'ref':ref,'sha':'$commit'}}], 'mutation_policy':'Reserve attempt with expected own CAS before each write; one write each; verify actual returned immutable IDs; ref preflight ABSENT; create-if-absent only; any UNKNOWN => readonly reconcile, no resend; no force/update/delete'}
-def prepare_from_artifact(public,run,artifact,artifact_zip_sha,files,pins,out,base_tree,trace=None):
+def prepare_from_artifact(public,run,artifact,artifact_zip_sha,files,pins,out,base_tree,trace=None,dispatch_binding136=None):
     require(set(public)=={'context','certificate_pem'});c=public['context'];context(c)
-    require(run['id']==c['run_id'] and run['run_attempt']==1 and run['head_sha']==c['source_sha'] and run['event']=='workflow_dispatch' and run['actor']['id']==273768139 and run['repository']['id']==1391430317 and run['status']=='in_progress')
+    require(run['id']==c['run_id'] and run['run_attempt']==1 and run['head_sha']==c['source_sha'] and git136.run_event136(run,dispatch_binding136) and run['actor']['id']==273768139 and run['repository']['id']==1391430317 and run['status']=='in_progress')
     require(artifact['id']>0 and artifact['name']=='traceharbor-recipient104-'+str(c['run_id'])+'-1' and artifact['expired'] is False and artifact['size_in_bytes']<=8192 and artifact['workflow_run']['id']==c['run_id'] and artifact['workflow_run']['head_sha']==c['source_sha'])
     require(artifact['digest']=='sha256:'+artifact_zip_sha)
     cipher=encrypt(out,c,public['certificate_pem'].encode(),files,pins,trace);return transport(c,cipher,base_tree)
@@ -148,7 +152,7 @@ def main():
     kit=pathlib.Path(__file__).parent;raw=read(kit/'transfer.json',65536);require(sha(raw)==a.manifest_sha);m=strict(raw)
     require(m['admission']['state']=='INDEPENDENTLY_ADMITTED' and m['private_ingress']['state']=='INDEPENDENTLY_ADMITTED_ENCRYPTED104')
     for name,pin in m['source_files'].items():require(sha(read(kit.parent/name,131072))==pin)
-    e=os.environ;require(e['GITHUB_SHA']==e['GITHUB_WORKFLOW_SHA']==a.source_sha and e['GITHUB_RUN_ATTEMPT']=='1' and e['GITHUB_REPOSITORY']=='Elinfiny/TraceHarbor' and e['GITHUB_REPOSITORY_ID']=='1391430317' and e['GITHUB_ACTOR_ID']=='273768139' and e['GITHUB_EVENT_NAME']=='workflow_dispatch')
+    e=os.environ;require(e['GITHUB_SHA']==e['GITHUB_WORKFLOW_SHA']==a.source_sha and e['GITHUB_RUN_ATTEMPT']=='1' and e['GITHUB_REPOSITORY']=='Elinfiny/TraceHarbor' and e['GITHUB_REPOSITORY_ID']=='1391430317' and e['GITHUB_ACTOR_ID']=='273768139' and git136.event136(e) in ('workflow_dispatch','create'))
     root=pathlib.Path(e['RUNNER_TEMP'])/'traceharbor-private104'
     if a.mode=='init':
         c={'repository':'Elinfiny/TraceHarbor','repository_id':1391430317,'actor_id':273768139,'run_id':int(e['GITHUB_RUN_ID']),'attempt':1,'source_sha':a.source_sha,'nonce':os.urandom(16).hex(),'expires_utc':int(time.time())+840}
