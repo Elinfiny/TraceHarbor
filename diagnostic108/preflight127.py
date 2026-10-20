@@ -6,30 +6,94 @@ ROOT=pathlib.Path(__file__).resolve().parent
 def sha(b):return hashlib.sha256(b).hexdigest()
 def can(x):return json.dumps(x,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()
 _spec=importlib.util.spec_from_file_location('trace128_preflight_helper',ROOT/'helper_channel128.py');helper128=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(helper128)
-def main():
- original=json.loads(pathlib.Path(sys.argv[1]).read_bytes());cfg=json.loads(pathlib.Path(sys.argv[2]).read_bytes());ts=original['structuredContent']['transfers'];docs={}
- own_transfer=next(t for t in ts if t['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');initial_own=json.loads(pathlib.Path(own_transfer['workspace_path']).read_bytes());v=copy.deepcopy(initial_own);expected=v['self_sha256'];v['self_sha256']=None
- if sha(can(v))!=expected:raise ValueError('Actual owned self before helper/config execution')
- initial_key='native'+initial_own['state'].split('_')[0][6:];actual_admission=initial_own[initial_key]['direction'].get('grouped127_admission');bound_cfg=copy.deepcopy(cfg);bound_cfg['native_admission127']=None;bound_cfg.pop('config_path',None)
- if not actual_admission or actual_admission!=cfg.get('native_admission127') or actual_admission.get('config_binding_sha256')!=sha(can(bound_cfg)) or sha(pathlib.Path(cfg['library_helper']).read_bytes())!=cfg['library_helper_sha256']:raise ValueError('Whole actual source/config/helper admission before helper execution')
- for t in ts:
-  path=pathlib.Path(t['workspace_path']);raw=path.read_bytes();d=json.loads(raw);v=copy.deepcopy(d)
-  if t['library_file_id']=='libfile_505e4189bc588191bcda811c4a35da79':expected=v['integrity']['canonical_json_sha256'];v['integrity']['canonical_json_sha256']=None
-  else:expected=v['self_sha256'];v['self_sha256']=None
-  if sha(can(v))!=expected or len(raw)!=t['size_bytes']:raise ValueError('Actual whole/current self/source')
-  identity={'phase':'PREFLIGHT','run':cfg['integration_context127']['once_receipt_sha256'],'source':cfg['source_sha'],'call':'preflight/'+t['library_file_id']}
-  helper128.run_helper128(cfg['library_helper'],cfg['library_helper_sha256'],path,t['library_file_id'],t['xattrs'],identity,lambda ident,record:helper128.retain_private128(cfg['capture_directory'],ident,record))
-  if os.getxattr(path,'user.library-file-id').decode()!=t['library_file_id']:raise ValueError('Actual identity')
-  for x in t['xattrs']:
-   if os.getxattr(path,x['name']).decode()!=x['value']:raise ValueError('ALL actual xattrs')
-  docs[t['library_file_id']]=(d,t,raw)
- own,t,raw=docs['libfile_3ee8270f03d8819188e1de1f75c3d824'];audit,at,araw=docs['libfile_505e4189bc588191bcda811c4a35da79'];policy,pt,praw=docs['libfile_6f69ae483b088191a1fffefca617bbd5'];key='native'+own['state'].split('_')[0][6:];n=own[key]
- boundary=audit['operation']['effect_replay_boundary'];boundary=json.loads(boundary) if isinstance(boundary,str) else boundary
- if n['direction']!=boundary['recipient_outboxes']['TraceHarbor V1'] or own['ownership']['owner']!='TraceHarbor V1' or own['ownership']['duplicate_trace_route_owners']!=0 or own['native_id']!='6acfe37b-828c-83eb-b466-7670beb64ff2':raise ValueError('Current addressed ownership/no stale source')
- if pathlib.Path(cfg['current_checkpoint']).read_bytes()!=raw or cfg['current_version']!=t['current_version_number'] or pathlib.Path(cfg['writer_binding']['auditor_path']).read_bytes()!=araw or cfg['writer_binding']['auditor_version']!=at['current_version_number'] or pt['current_version_number']<101:raise ValueError('Actual current source binding changed; no rebase/retry')
- if sha(pathlib.Path(cfg['library_helper']).read_bytes())!=cfg['library_helper_sha256']:raise ValueError('Actual helper source pin')
- s=__import__('importlib.util').util.spec_from_file_location('trace127_preflight_control',ROOT/'control127.py');ctl=__import__('importlib.util').util.module_from_spec(s);s.loader.exec_module(ctl)
- admission=n['direction'].get('grouped127_admission');inventory=ctl.inventory127()
- if admission!=cfg['native_admission127'] or admission.get('inclusive_cap')!=inventory['inclusive_total'] or admission.get('contract')!='TRACE127_PHASE_INTENT_V1':raise ValueError('Actual exact independent prospective journal/cap boundary')
- print(json.dumps({'schema':'TRACE127_NATIVE_PREFLIGHT_ORIGINAL_V1','current_admission':admission,'inventory_sha256':sha(can(inventory)),'own_version':t['current_version_number'],'auditor_version':at['current_version_number'],'policy_version':pt['current_version_number'],'whole_self_allattrs':'PASS'}))
-if __name__=='__main__':main()
+#133 Fixed-source current intake. A dict describing custody is never a snapshot.
+_SNAP133={}
+class CurrentSnapshot133:
+ __slots__=()
+def _stable_read133(path,expected=None,private=False):
+ import stat
+ p=pathlib.Path(path)
+ if not p.is_absolute() or p.resolve()!=p:raise ValueError('No path aliases')
+ # Every current path component is checked; no symlink ancestor traversal.
+ for parent in [*reversed(p.parents),p]:
+  if parent.is_symlink():raise ValueError('Nofollow every ancestor')
+ s=p.lstat()
+ if not stat.S_ISREG(s.st_mode) or s.st_uid!=os.getuid() or s.st_nlink!=1 or private and s.st_mode&0o077 or s.st_mode&0o022:raise ValueError('Owned stable regular custody')
+ if expected is not None and (s.st_dev,s.st_ino,s.st_uid,s.st_mode&0o777)!=(expected['dev'],expected['ino'],expected['uid'],expected['mode']):raise ValueError('No pruned/recreated custody adoption')
+ fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)
+ try:
+  a=os.fstat(fd);chunks=[]
+  while True:
+   b=os.read(fd,1048576)
+   if not b:break
+   chunks.append(b)
+   if sum(map(len,chunks))>33554432:raise ValueError('Whole bounded custody bytes')
+  b=os.fstat(fd)
+ finally:os.close(fd)
+ end=p.lstat();ident=lambda st:(st.st_dev,st.st_ino,st.st_uid,st.st_mode,st.st_size,st.st_mtime_ns)
+ if ident(s)!=ident(a) or ident(a)!=ident(b) or ident(b)!=ident(end):raise ValueError('Full original changed during read')
+ return b''.join(chunks)
+def custody133(own,config):
+ import stat
+ proof=own[config['custody_scope']['checkpoint_key']]['records'][-1]['payload']['custody'];root=pathlib.Path(config['custody_scope']['root'])
+ if proof['new_verified_root']!=str(root) or proof['manifest']['profile_id']!=config['custody_scope']['profile']:raise ValueError('Actual retained checkpoint custody origin')
+ stage=proof['stage'];st=pathlib.Path(stage['path']).lstat()
+ if pathlib.Path(stage['path']).resolve()!=pathlib.Path(stage['path']) or (st.st_dev,st.st_ino,st.st_uid,st.st_mode&0o777)!=(stage['dev'],stage['ino'],stage['uid'],0o700):raise ValueError('Current original acquisition stage')
+ result={}
+ for name,pin in config['private6'].items():
+  expected=proof['six_member_locators'][name];path=root/name
+  if expected['locator']!=str(path) or {k:expected[k] for k in ('bytes','sha256')}!=pin:raise ValueError('Actual source-acquired locator and pin')
+  for parent in [root,path.parent]:
+   ps=parent.lstat()
+   if parent.resolve()!=parent or not stat.S_ISDIR(ps.st_mode) or ps.st_uid!=os.getuid() or ps.st_mode&0o077:raise ValueError('Private original root/tokenizer')
+  raw=_stable_read133(path,expected,True)
+  if len(raw)!=pin['bytes'] or sha(raw)!=pin['sha256']:raise ValueError('Actual six whole private pins')
+  result[name]={'bytes':len(raw),'sha256':sha(raw),'dev':expected['dev'],'ino':expected['ino'],'uid':expected['uid'],'mode':expected['mode']}
+ return result
+def verify_current133(own,audit,proof,config,manifest_bytes,policy_version):
+ s=importlib.util.spec_from_file_location('trace133_current_field_plan',ROOT/'plan127.py');p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
+ key='native'+own['state'].split('_')[0][6:];n=own[key];boundary=audit['operation']['effect_replay_boundary'];boundary=json.loads(boundary) if isinstance(boundary,str) else boundary;direction=boundary['recipient_outboxes']['TraceHarbor V1']
+ if own['ownership']['owner']!='TraceHarbor V1' or own['ownership']['duplicate_trace_route_owners']!=0 or own['native_id']!='6acfe37b-828c-83eb-b466-7670beb64ff2' or n['direction']!=direction or policy_version<101:raise ValueError('Actual current sole route/owner/policy/outbox')
+ p.release133(direction,config,manifest_bytes)
+ if n['source_verification']['Auditor_V28_checkpoint.json']!=proof['Auditor_V28_checkpoint.json']:raise ValueError('Actual CURRENT whole Auditor source verification')
+ return copy.deepcopy(direction)
+def produce133(original_path,config,*,_native_reload133=False):
+ s=importlib.util.spec_from_file_location('trace133_preflight_plan',ROOT/'plan127.py');p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
+ manifest_bytes=(ROOT/'manifest.json').read_bytes();p.static133(config,manifest_bytes)
+ if str(pathlib.Path(original_path))!=config['path_roles']['materialize_original']:raise ValueError('Only fixed caller actual materialize capture')
+ original=json.loads(_stable_read133(original_path));result=original['structuredContent'];result=result.get('result',result);ts=result['transfers']
+ IDs={'libfile_3ee8270f03d8819188e1de1f75c3d824','libfile_505e4189bc588191bcda811c4a35da79','libfile_6f69ae483b088191a1fffefca617bbd5'}
+ if original.get('isError') or result.get('unavailable_items') or len(ts)!=3 or {t['library_file_id'] for t in ts}!=IDs:raise ValueError('Actual unique full current materialization original')
+ docs={};proof={}
+ helper=config['path_roles']['library_helper'];helper_sha=config['path_roles']['library_helper_sha256']
+ if sha(_stable_read133(helper))!=helper_sha:raise ValueError('Pinned actual helper')
+ for i,t in enumerate(ts):
+  path=pathlib.Path(t['workspace_path']);raw=_stable_read133(path);d=json.loads(raw);v=copy.deepcopy(d)
+  if t['library_file_id']=='libfile_505e4189bc588191bcda811c4a35da79':h=v['integrity']['canonical_json_sha256'];v['integrity']['canonical_json_sha256']=None
+  else:h=v['self_sha256'];v['self_sha256']=None
+  if sha(can(v))!=h or len(raw)!=t['size_bytes']:raise ValueError('Actual full bytes/self before helper')
+  if not _native_reload133:
+   helper128.run_helper128(helper,helper_sha,path,t['library_file_id'],t['xattrs'],{'phase':'PREFLIGHT','run':'STATIC133','source':config['source']['commit'],'call':'preflight/'+t['library_file_id']},lambda ident,record:helper128.retain_private128(config['path_roles']['capture'],ident,record))
+  if os.getxattr(path,'user.library-file-id').decode()!=t['library_file_id'] or int(os.getxattr(path,'user.library-file-version').decode())!=t['current_version_number']:raise ValueError('Actual stable Library ID/version')
+  for a in t['xattrs']:
+   if os.getxattr(path,a['name']).decode()!=a['value']:raise ValueError('ALL current returned attributes')
+  docs[t['library_file_id']]=(d,t,raw);proof[path.name]={'library_file_id':t['library_file_id'],'file_id':t['file_id'],'version':t['current_version_number'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':h,'ALLattrs':'PASS'}
+ own,ot,oraw=docs['libfile_3ee8270f03d8819188e1de1f75c3d824'];audit,at,araw=docs['libfile_505e4189bc588191bcda811c4a35da79'];policy,pt,praw=docs['libfile_6f69ae483b088191a1fffefca617bbd5'];key='native'+own['state'].split('_')[0][6:];n=own[key]
+ direction=verify_current133(own,audit,proof,config,manifest_bytes,pt['current_version_number'])
+ binding=n['records'][0]['payload']['writer_binding'];number=int(key[6:]);s=importlib.util.spec_from_file_location('trace133_immutable_guard',ROOT/'host_transport118.py');base=importlib.util.module_from_spec(s);s.loader.exec_module(base)
+ guard_cfg={'direction_number':number,'writer_binding':binding};current=base.current_binding(ot['workspace_path'],ot['current_version_number'],guard_cfg)
+ if current['direction']!=direction or pathlib.Path(binding['auditor_path']).read_bytes()!=araw:raise ValueError('Immutable guard and exact current Auditor agree')
+ layout=base.validate_transfer_layout(binding)
+ for role in ('private','transfer','holder_parent'):
+  if str(layout[role])!=config['path_roles'][role]:raise ValueError('Actual disjoint role provenance')
+ if own['state'].endswith('_TERMINAL') or n['phase']!='RX_START' or len(n['records'])!=1 or any(x.get('phase')=='DISPATCH_CONSUMED' for x in n['records']):raise ValueError('No consumed/UNKNOWN invocation adoption')
+ custody=custody133(own,config);snapshot=CurrentSnapshot133();_SNAP133[snapshot]={'direction':copy.deepcopy(direction),'ownership':'TraceHarbor V1','own_version':ot['current_version_number'],'current_checkpoint':ot['workspace_path'],'writer_sha256':binding['writer_sha256'],'auditor_sha256':sha(araw),'custody_sha256':sha(can(custody)),'source_verification':proof,'writer_binding':binding,'direction_number':number,'custody':custody}
+ return snapshot
+def require_snapshot133(snapshot):
+ if type(snapshot) is not CurrentSnapshot133 or snapshot not in _SNAP133:raise TypeError('Actual same invocation source-produced current snapshot')
+ return copy.deepcopy(_SNAP133[snapshot])
+def main133():
+ cfg=json.loads(pathlib.Path(sys.argv[2]).read_bytes());snapshot=produce133(sys.argv[1],cfg);x=require_snapshot133(snapshot);s=importlib.util.spec_from_file_location('trace133_preflight_output_plan',ROOT/'plan127.py');p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
+ print(json.dumps({'schema':'TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2','current_admission':x['direction'][p.ADMISSION],'inventory_sha256':cfg['inventory_sha256'],'own_version':x['own_version'],'whole_self_allattrs':'PASS','native_authority':False,'sourceSha':cfg['source']['commit'],'sourceTree':cfg['source']['tree'],'captureDirectory':cfg['path_roles']['capture'],'transferRoot':cfg['path_roles']['transfer'],'dispatchSource':cfg['dispatch_source'],'directionId':x['direction']['id'],'staticConfigSha256':sha(can(cfg))}))
+
+if __name__=='__main__':main133()
