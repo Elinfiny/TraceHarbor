@@ -49,7 +49,7 @@ class Ledger127(base.FrameLedger):
   port=self.port;self.seq+=1
   frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'phase_deadline_mono':self.phase_mono,'inventory_call_id':port.current_id,'inventory_sha256':sha(can(port.inventory.plan))}
   if self.seq==1:
-   frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args'])}
+   frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args']),'manifestSha256':port.macro.context['manifest_sha256'],'onceExpiresUtc':port.macro.context['expires_utc'],'coordinatorCutoffUtc':port.config['coordinator_cutoff_utc']}
   frame['request_digest']=sha(can(frame));raw=can(frame)
   if len(raw)>base.MAX_FRAME:raise ValueError('Finite complete frame')
   base.put(self.root/(str(self.seq)+'.request.original.json'),raw);self.pending=frame;return frame
@@ -206,7 +206,12 @@ class NativePort127:
   def counted_command(*args,**kwargs):
    n=ordinal[0];ordinal[0]+=1;self.inventory.claim('ingress/openssl/'+str(n));return command(*args,**kwargs)
   ingress.command=counted_command
-  files={k:pathlib.Path(v).read_bytes() for k,v in self.config['private_files127'].items()}
+  #135 All SIX current inputs were verified at intake. Existing encrypted
+  # ingress carries exactly its THREE private members; tokenizer data is fetched
+  # by the pinned public-only acquisition step, never smuggled in a3member wire.
+  wanted_names={row['name'] for row in cfg['private_members']}
+  if not wanted_names<=set(self.config['private_files127']):raise ValueError('Actual private member source closure')
+  files={k:pathlib.Path(self.config['private_files127'][k]).read_bytes() for k in wanted_names}
   try:plan=ingress.prepare_from_artifact(public,run,artifact,sha(raw),files,cfg['private_members'],pathlib.Path(self.config['private_output127']),self.config['source_tree'],trace)
   finally:self.macro.store.save('ingress/openssl-original',{'trace':trace,'scope':'ACTUAL_EXISTING_INGRESS_ORIGINALS'})
   delivery={'context':plan['context'],'ciphertext_base64':plan['operations'][0]['body']['content'],'ciphertext_sha256':plan['ciphertext_sha256'],'artifact_digest':sha(raw),'artifact_bytes':len(raw),'retention_days':1,'custody_sha256':sha(can({'pins':cfg['private_members'],'context':plan['context'],'artifact_sha256':sha(raw)}))}
@@ -271,7 +276,7 @@ def bootstrap127(config_path,provider):
  snapshot=preflight.produce133(static['path_roles']['materialize_original'],static,_native_reload133=True);snap=preflight.require_snapshot133(snapshot)
  direction=snap['direction'];manifest_bytes=(ROOT/'manifest.json').read_bytes();manifest=base.strict(manifest_bytes);prepared=plan.release133(direction,static,manifest_bytes)
  markers=('ADMIT_TRACE133_STATIC_TYPED_RUNTIME_V2','ADMIT_NATIVE_SAFE127_PROVIDER_DELIVERY','ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY','ADMIT_CURRENT_ONCE_DISPATCH_API0')
- if any(x not in direction['body'] for x in markers) or static['cost_scope']['host_cost_bound'] is None:raise PermissionError('Actual independent security/source/runtime/custody/cost gate absent')
+ if any(x not in direction['body'] for x in markers) or static['cost_scope']['host_cost_bound']!=0:raise PermissionError('Actual independent security/source/runtime/custody/cost gate absent')
  for name,pin in manifest['source_files'].items():
   path=pathlib.Path(name)
   if path.is_absolute() or '..' in path.parts:raise ValueError('Safe source path')
@@ -292,8 +297,8 @@ def bootstrap127(config_path,provider):
  #134 These are source-derived runtime values from already verified static/custody.
  # No external JSON adds private paths or selects an output outside this holder.
  cfg.update(source_tree=static['source']['tree'],private_files127={name:str(pathlib.Path(static['custody_scope']['root'])/name) for name in static['private6']},private_output127=str(root/'ciphertext133'))
- script=static['dispatch_source']['script'].replace('__TRACE_ONCE133__',context['once_receipt_sha256'])
- cfg['ui_dispatch127']={'master_terminal_no_input_conflict':direction.get('master_terminal_no_input_conflict') is True,'source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'script_sha256':sha(script.encode()),'args':{'code':script,'tab_id':static['dispatch_source']['tab_id']}}
+ script=plan.render_dispatch135(static,context,cutoff)
+ cfg['ui_dispatch127']={'master_terminal_no_input_conflict':direction.get('master_terminal_no_input_conflict') is True,'source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'script_sha256':sha(script.encode()),'args':{'code':script}}
  host=NativePort127(g._SEAL,cfg,manifest,provider);host.runtime133=runtime;host.static_config133=can(static);clock=ActualClock127();macro=g.Grouped127(host,clock,context,root/'originals',c.DiskOriginalIO127(),host.inventory,'ACTUAL_SOURCE_PRIVATE',g._SEAL)
  macro.store.save('runtime132/once-intent-original',once);macro.store.save('runtime132/armed-context-original',{'runtime_context':context,'static_config_sha256':sha(host.static_config133),'phase_template':prepared['phase_template'],'current_whole_snapshot':snap})
  return host,macro

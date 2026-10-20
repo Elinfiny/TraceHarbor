@@ -82,7 +82,7 @@ export async function bootstrapActualCaller127(preloaded){
  let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
  if(verified.schema!=='TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
- const verifiedPreload={...validated129,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:4000}};
+ const verifiedPreload={...validated129,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,manifestSha135:verified.manifestSha135,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:4000}};
  const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);return handle;
 }
 export function reserveObserver127(handle,index,cellId){
@@ -116,7 +116,8 @@ function bindSourceRuntime133(c,frame){
  // No exported function accepts a runtime dict to register native authority.
  const b=frame.runtime_binding133,p=c.p;
  if(c.session===null||frame!==c.nativeFrame||frame.seq!==1||frame.inventory_call_id!=='SOURCE_FREEZE/CAS'||!b||b.schema!=='TRACE133_SOURCE_RUNTIME_FRAME'||b.static_config_sha256!==p.staticConfigSha256||b.sourceSha!==p.sourceSha||b.sourceTree!==p.sourceTree||b.context?.domain!=='TRACE133_TYPED_RUNTIME'||b.context.source_sha!==p.sourceSha||b.context.direction_id!==p.directionId133||!/^[a-f0-9]{64}$/.test(b.context.once_receipt_sha256)||!/^[a-f0-9]{64}$/.test(b.context_sha256)||!same(b.context,frame.context)||!Number.isInteger(b.deadlineUtcMs)||b.deadlineUtcMs<=Date.now()||b.deadlineUtcMs>Date.now()+900000)throw Error('Actual source same invocation runtime binding; original900 only');
- const expectedArgs={code:p.dispatchSource133.script.replace('__TRACE_ONCE133__',b.context.once_receipt_sha256),tab_id:p.dispatchSource133.tab_id};
+ if(b.manifestSha256!==p.manifestSha135||b.onceExpiresUtc!==b.deadlineUtcMs/1000||!Number.isInteger(b.coordinatorCutoffUtc)||b.coordinatorCutoffUtc<b.onceExpiresUtc)throw Error('Original source manifest/expiry/cutoff, no reset');
+ const expectedArgs={code:renderDispatch135(p.dispatchSource133,{source_sha:p.sourceSha,manifest_sha256:p.manifestSha135,once_receipt_sha256:b.context.once_receipt_sha256,once_expires_utc:String(b.onceExpiresUtc),coordinator_cutoff_utc:String(b.coordinatorCutoffUtc)})};
  if(!same(b.uiDispatchArgs,expectedArgs))throw Error('Static script plus actual newly produced once only');
  p.context=snapshotPlain129(b.context);p.contextSha256=b.context_sha256;p.deadlineUtcMs=b.deadlineUtcMs;p.uiDispatchArgs=snapshotPlain129(b.uiDispatchArgs);
 }
@@ -224,4 +225,10 @@ export async function collectPreflight128(first,{tools,deadlineUtcMs,retain,clai
   try{claim('preflight/collection-close128');await retain('preflight-collection128.original.json',{phase:'PREFLIGHT',session_id:session,parts,output,primary,terminal_verified:!!verified,registration:false});}
   catch(error){cleanup={name:error?.name,message:String(error)};if(primary)throw new AggregateError([primary,cleanup],'Preflight primary and later retention cleanup; no registration');throw error;}
  }
+}
+
+export function renderDispatch135(source,inputs){
+ const fields={'__TRACE_SOURCE135__':'source_sha','__TRACE_MANIFEST135__':'manifest_sha256','__TRACE_ONCE133__':'once_receipt_sha256','__TRACE_EXPIRES135__':'once_expires_utc','__TRACE_CUTOFF135__':'coordinator_cutoff_utc'};let code=source.script;
+ for(const [token,key] of Object.entries(fields)){if(code.split(token).length!==2||typeof inputs[key]!=='string')throw Error('Exact source-owned five-input binding');code=code.replace(token,inputs[key]);}
+ if(code.split('__TRACE_TAB135__').length!==2||!Number.isInteger(source.tab_id))throw Error('Exact static tab role');return code.replace('__TRACE_TAB135__',String(source.tab_id));
 }

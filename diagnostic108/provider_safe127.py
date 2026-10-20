@@ -158,3 +158,34 @@ def require_native_terminal127(host,macro):
  if macro.snapshot()['scope']!='PRIVATE_JOURNAL_PLAN' or macro.snapshot()['first_unknown'] is not None or macro.snapshot()['cursor']!=15:raise ValueError('No synthetic/UNKNOWN/foreign macro terminal')
  if time.time()>=observation.plan['expires_utc'] or time.monotonic()>=host.parent_mono:raise TimeoutError('Original parent/epoch/onceexpired')
  return observation
+
+#135 ONE zero-artifact public receipt adapter, CONTRACT-ONLY until actual origin
+# and complete provider byte contract are independently accepted. This is NOT a
+# substitute for a running recipient artifact: the current documented job-log
+# contract does not prove complete in-progress EOF/readiness before encryption.
+LOG_PREFIX135='TRACEHARBOR_PUBLIC_RECEIPT135:'
+def encode_public_receipt135(kind,raw,env):
+ spec=spec_from_file_location('trace135_logs_public_guard',ROOT/'plan127.py');p=module_from_spec(spec);spec.loader.exec_module(p);p.public_payload135(kind,raw,env)
+ record={'schema':'TRACE135_PUBLIC_LOG_RECEIPT','kind':kind,'run_id':int(env['GITHUB_RUN_ID']),'attempt':1,'source_sha':env['TRACE135_SOURCE_SHA'],'manifest_sha256':env['TRACE135_MANIFEST_SHA256'],'once_receipt_sha256':env['TRACE135_ONCE_RECEIPT_SHA256'],'payload_bytes':len(raw),'payload_sha256':sha(raw),'payload_base64':base64.b64encode(raw).decode()}
+ return LOG_PREFIX135+base64.b64encode(can(record)).decode()+':EOF135\n'
+def decode_public_receipt135(raw_logs,kind,env,job,*,provider_complete=False,truncated=True):
+ # Whole logs come only from an actual retained source-native job-log original.
+ # A caller-supplied completeness bool never mints NativeOriginal127 or SAFE.
+ if type(raw_logs) is not bytes or len(raw_logs)>1048576 or not provider_complete or truncated or not raw_logs.endswith(b'\n'):raise ValueError('Full bounded actual provider original/EOF required; no truncation repair')
+ if job.get('run_id')!=int(env['GITHUB_RUN_ID']) or job.get('run_attempt')!=1 or job.get('status')!='completed' or job.get('conclusion')!='success':raise PermissionError('Completed successful same-attempt job only; early recipient launch NOT supported by this contract')
+ text=raw_logs.decode('utf-8');found=[]
+ for line in text.splitlines():
+  # GitHub may prefix UTC log timestamps. No arbitrary substring/event selector.
+  line=re.sub(r'^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+Z ','',line)
+  if line.startswith(LOG_PREFIX135):found.append(line)
+ if len(found)!=1 or not found[0].endswith(':EOF135'):raise ValueError('Exactly one whole source-framed receipt; no duplicate or partial merge')
+ rec=strict(base64.b64decode(found[0][len(LOG_PREFIX135):-len(':EOF135')],validate=True))
+ keys={'schema','kind','run_id','attempt','source_sha','manifest_sha256','once_receipt_sha256','payload_bytes','payload_sha256','payload_base64'}
+ if set(rec)!=keys or rec['schema']!='TRACE135_PUBLIC_LOG_RECEIPT' or rec['kind']!=kind or rec['run_id']!=int(env['GITHUB_RUN_ID']) or rec['attempt']!=1 or rec['source_sha']!=env['TRACE135_SOURCE_SHA'] or rec['manifest_sha256']!=env['TRACE135_MANIFEST_SHA256'] or rec['once_receipt_sha256']!=env['TRACE135_ONCE_RECEIPT_SHA256']:raise ValueError('Exact source/run/once/manifest record binding')
+ raw=base64.b64decode(rec['payload_base64'],validate=True)
+ if len(raw)!=rec['payload_bytes'] or sha(raw)!=rec['payload_sha256']:raise ValueError('Whole public payload bytes/digest')
+ spec=spec_from_file_location('trace135_logs_public_read_guard',ROOT/'plan127.py');p=module_from_spec(spec);spec.loader.exec_module(p);p.public_payload135(kind,raw,env)
+ return {'scope':'PUBLIC_ALLOWLIST_DATA_NOT_NATIVE_CAPABILITY','payload':json.loads(raw),'payload_sha256':sha(raw),'source_log_sha256':sha(raw_logs),'actual_origin_proved':False}
+def job_log_contract135(job):
+ if type(job.get('id')) is not int or job['id']<=0:raise ValueError('Actual selected job ID required before read')
+ return {'tool':'mcp__codex_apps__github_fetch_workflow_job_logs','args':{'repo_full_name':'Elinfiny/TraceHarbor','job_id':job['id']},'status':'AVAILABLE_CONTRACT_ONLY','native_authority':False,'primary_recipient_compatibility':'REJECTED_UNTIL_COMPLETE_IN_PROGRESS_LOG_ORIGIN_EOF_AVAILABLE_WITHOUT_LOSING_SAME_JOB_PRIVATE_KEY','whole_transaction_cost_zero_proved':False}
