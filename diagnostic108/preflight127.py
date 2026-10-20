@@ -35,7 +35,11 @@ def _stable_read133(path,expected=None,private=False):
  return b''.join(chunks)
 def custody133(own,config):
  import stat
- proof=own[config['custody_scope']['checkpoint_key']]['records'][-1]['payload']['custody'];root=pathlib.Path(config['custody_scope']['root'])
+ checkpoint_key=config['custody_scope']['checkpoint_key'];record=own[checkpoint_key]['records'][-1];proof=record['payload']['custody'];root=pathlib.Path(config['custody_scope']['root'])
+ if checkpoint_key!='native132':
+  original=own['native132']['records'][-1]['payload']['custody'];lineage=proof.get('lineage')
+  wanted={'original_checkpoint_key':'native132','original_archive_sha256':original['archive']['sha256'],'profile_id':original['manifest']['profile_id'],'revision':original['manifest']['revision'],'recovery_direction':own[checkpoint_key]['direction']['id'],'new_stage_only':True,'oldstage_adopted':False}
+  if lineage!=wanted or proof['archive']['sha256']!=original['archive']['sha256'] or proof['archive']['bytes']!=original['archive']['bytes'] or proof['manifest']!=original['manifest'] or proof['new_verified_root']==original['new_verified_root'] or proof['stage']['path']==original['stage']['path']:raise ValueError('Exact canonical recovery lineage; old pruned home never adopted/recreated')
  if proof['new_verified_root']!=str(root) or proof['manifest']['profile_id']!=config['custody_scope']['profile']:raise ValueError('Actual retained checkpoint custody origin')
  stage=proof['stage'];st=pathlib.Path(stage['path']).lstat()
  if pathlib.Path(stage['path']).resolve()!=pathlib.Path(stage['path']) or (st.st_dev,st.st_ino,st.st_uid,st.st_mode&0o777)!=(stage['dev'],stage['ino'],stage['uid'],0o700):raise ValueError('Current original acquisition stage')

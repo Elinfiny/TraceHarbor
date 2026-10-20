@@ -49,7 +49,7 @@ def static133(config,manifest_bytes,inventory=None):
  if x['private6']!=m['counter116']['input_pins'] or len(x['private6'])!=6:raise ValueError('Exact six private pins')
  for p in x['private6'].values():pin(p)
  closed(x['custody_scope'],{'profile','root','checkpoint_key'},'custody scope')
- if x['custody_scope']['profile']!='nemotron-lightning-input-v1' or x['custody_scope']['checkpoint_key']!='native132':raise ValueError('Actual retained acquisition profile')
+ if x['custody_scope']['profile']!='nemotron-lightning-input-v1' or type(x['custody_scope']['checkpoint_key']) is not str or re.fullmatch(r'native[1-9][0-9]{0,3}',x['custody_scope']['checkpoint_key']) is None or int(x['custody_scope']['checkpoint_key'][6:])<132:raise ValueError('Exact independently bound source-acquisition checkpoint; no historical rewrite')
  text(x['custody_scope']['root'],'private custody root')
  closed(x['cost_scope'],{'model_calls','spend','host_cost_bound'},'API0 cost')
  if x['cost_scope']['model_calls']!=0 or x['cost_scope']['spend']!=0 or x['cost_scope']['host_cost_bound'] is not None and (type(x['cost_scope']['host_cost_bound']) not in (int,float) or not math.isfinite(x['cost_scope']['host_cost_bound']) or x['cost_scope']['host_cost_bound']<0):raise ValueError('Cost bound, not a grant')
