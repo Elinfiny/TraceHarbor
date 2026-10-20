@@ -135,7 +135,7 @@ def export_public_projection127(g,plan,directory,manifest_sha256):
  producer.clock.require(0)
  return {'bytes':len(raw),'sha256':sha(raw),'classification':'ORDINARY_POST_SAFE_CLOSEOUT_INSIDE_REMAINING_ORIGINAL900_ONCE_NOT_PROOF15'}
 
-SOURCE_PINS127={'launch127.py': (52732, 'b9c1236d05b275612036b21a5155a9f6e018ab25ceceb5eac5a8d471a1785e6d'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (49199, '84eedc882c6c95f8227d2aafc1bee991930c914e0ad8eef276df77c450333eed')}
+SOURCE_PINS127={'launch127.py': (52732, 'b9c1236d05b275612036b21a5155a9f6e018ab25ceceb5eac5a8d471a1785e6d'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (49199, '2cbc361f356c51ebbe6324a1c1d0774a05620114bdb2cc7adf5ac43cc607e330')}
 
 def closeout127(result,output,exporter=None,retain=None):
  """Exactly once ordinary closeout even after projection O_EXCL/write/fsync.

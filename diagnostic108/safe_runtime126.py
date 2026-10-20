@@ -135,4 +135,4 @@ def export_public_projection126(g,plan,directory,manifest_sha256):
  producer.clock.require(0)
  return {'bytes':len(raw),'sha256':sha(raw),'classification':'ORDINARY_POST_SAFE_CLOSEOUT_INSIDE_REMAINING_ORIGINAL900_ONCE_NOT_PROOF15'}
 
-SOURCE_PINS126={'launch126.py': (52187, '31d7163911e72c2cd7bcef4243f6f6fd8c7a030845d88564a5b2c5face30d63e'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (49199, '84eedc882c6c95f8227d2aafc1bee991930c914e0ad8eef276df77c450333eed')}
+SOURCE_PINS126={'launch126.py': (52187, '31d7163911e72c2cd7bcef4243f6f6fd8c7a030845d88564a5b2c5face30d63e'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (49199, '2cbc361f356c51ebbe6324a1c1d0774a05620114bdb2cc7adf5ac43cc607e330')}
