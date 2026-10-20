@@ -7,7 +7,7 @@ lease, vendor attestation or financial grant is invented. Nothing runs at import
 import os,pathlib,json,hashlib,time,re,stat,base64,importlib.util
 _NATIVE=object();_CONTRACT=object();_INPUT=object();_PREPARED=object()
 OWNER=273768139;REPO=1391430317;WRITER='e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436'
-INGRESS_SHA='811119109f538ea90d8e0262eb6feeba43884506d14b8a9f1ef8fca45c795840'
+INGRESS_SHA='dcb5927563ae09a951ed5eb8ad5844c4a7742aefbec5b86cf20fbc31d20f661e'
 def sha(b):return hashlib.sha256(b).hexdigest()
 def can(d):return json.dumps(d,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
 def verify_once_intent(descriptor,binding,pins):

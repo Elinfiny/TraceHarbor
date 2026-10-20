@@ -198,4 +198,4 @@ def accepts_controller125(transport,macro):
  if type(binding) is not ControllerSafeBinding125 or binding.observation.producer._g._SAFE125_API is not __import__('sys').modules.get(__name__):return False
  return binding.observation.phase_receipts.accepts(binding.observation.producer) and binding.accepts(transport,macro)
 
-SOURCE_PINS125={'launch.py': (51978, 'bb5530cda403cc3363fbc65fbac883aa3348ee4a4c7ac7bc1feaed4685e35a14'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (49199, '84eedc882c6c95f8227d2aafc1bee991930c914e0ad8eef276df77c450333eed')}
+SOURCE_PINS125={'launch.py': (51978, 'bb5530cda403cc3363fbc65fbac883aa3348ee4a4c7ac7bc1feaed4685e35a14'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (49199, '2cbc361f356c51ebbe6324a1c1d0774a05620114bdb2cc7adf5ac43cc607e330')}

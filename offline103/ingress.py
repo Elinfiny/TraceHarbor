@@ -31,15 +31,23 @@ def read(p,cap):
     finally:os.close(fd)
 def command(args,timeout=20,trace=None):
     start=time.time()
+    # Publisher107 only: exact CMS structure inspection can print ciphertext.
+    inspection=len(args)==8 and tuple(args[:5])==('cms','-cmsout','-inform','DER','-in') and tuple(args[6:])==('-print','-noout')
+    stdout_cap=1048576 if inspection else 65536
     try:
         r=subprocess.run(['openssl',*map(str,args)],stdin=subprocess.DEVNULL,capture_output=True,timeout=timeout,close_fds=True)
         receipt={'argv_operation':args[0],'returncode':r.returncode,'utc':start,'stdout':r.stdout.decode(errors='replace'),'stderr':r.stderr.decode(errors='replace')}
+        for name,data in (('stdout',r.stdout),('stderr',r.stderr)):
+            receipt[name+'_base64']=base64.b64encode(data).decode('ascii');receipt[name+'_bytes']=len(data);receipt[name+'_sha256']=sha(data)
     except subprocess.TimeoutExpired as exc:
         receipt={'argv_operation':args[0],'returncode':None,'utc':start,'timeout':True,'stdout':None if exc.stdout is None else exc.stdout.decode(errors='replace'),'stderr':None if exc.stderr is None else exc.stderr.decode(errors='replace')}
+        for name,data in (('stdout',exc.stdout),('stderr',exc.stderr)):
+            receipt[name+'_base64']=None if data is None else base64.b64encode(data).decode('ascii');receipt[name+'_bytes']=None if data is None else len(data);receipt[name+'_sha256']=None if data is None else sha(data)
         if trace is not None:trace.append(receipt)
         raise RuntimeError('OpenSSL terminal UNKNOWN') from None
-    require(len(r.stdout)<=65536 and len(r.stderr)<=65536)
+    receipt['stdout_cap_bytes']=stdout_cap;receipt['stderr_cap_bytes']=65536;receipt['inspection_cap_scope']=inspection
     if trace is not None:trace.append(receipt)
+    require(len(r.stdout)<=stdout_cap and len(r.stderr)<=65536)
     if r.returncode!=0:raise RuntimeError('OpenSSL rejected operation rc='+str(r.returncode))
     return r.stdout
 def context(c):
