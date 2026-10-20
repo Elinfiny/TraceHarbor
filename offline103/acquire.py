@@ -1,6 +1,13 @@
 """Source-only103 host DATA acquisition. Never imports downloaded modules."""
 import argparse, hashlib, json, os, pathlib, subprocess, urllib.request, urllib.parse, zipfile, time
 ACQUISITION_DEADLINE=None
+def acquisition_deadline135(start_mono,start_wall,maximum,expires,reserve=680):
+    import math
+    if type(maximum) is not int or not 1<=maximum<=60 or type(expires) is not int or reserve!=680 or not all(math.isfinite(x) for x in (start_mono,start_wall)):raise ValueError('Original bounded public acquisition/reserve')
+    end=min(start_mono+maximum,start_mono+(expires-start_wall-reserve))
+    if end<=start_mono:raise TimeoutError('Public acquisition cannot consume protected680 reserve')
+    return end
+
 def digest(b): return hashlib.sha256(b).hexdigest()
 def get(url, cap):
     assert urllib.parse.urlsplit(url).scheme=="https"
@@ -17,8 +24,11 @@ def get(url, cap):
     return b
 def main():
     global ACQUISITION_DEADLINE
-    ACQUISITION_DEADLINE=time.monotonic()+180
-    a=argparse.ArgumentParser(); a.add_argument("--manifest",required=True); a.add_argument("--manifest-sha",required=True); a.add_argument("--source-sha",required=True); a.add_argument("--public-only",action="store_true"); x=a.parse_args()
+    original_mono=time.monotonic();original_wall=time.time();ACQUISITION_DEADLINE=original_mono+180
+    a=argparse.ArgumentParser(); a.add_argument("--manifest",required=True); a.add_argument("--manifest-sha",required=True); a.add_argument("--source-sha",required=True); a.add_argument("--public-only",action="store_true"); a.add_argument("--maximum-seconds135",type=int);a.add_argument("--once-expires-utc135",type=int);x=a.parse_args()
+    if x.maximum_seconds135 is not None:
+        assert x.public_only, "Bounded135 preparation is public DATA only"
+        ACQUISITION_DEADLINE=acquisition_deadline135(original_mono,original_wall,x.maximum_seconds135,x.once_expires_utc135)
     mf=pathlib.Path(x.manifest); raw=mf.read_bytes(); assert digest(raw)==x.manifest_sha
     m=json.loads(raw); assert subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()==x.source_sha
     assert os.environ["GITHUB_SHA"]==x.source_sha and os.environ["GITHUB_WORKFLOW_SHA"]==x.source_sha and os.environ["GITHUB_RUN_ATTEMPT"]=="1"

@@ -94,6 +94,6 @@ def require_snapshot133(snapshot):
  return copy.deepcopy(_SNAP133[snapshot])
 def main133():
  cfg=json.loads(pathlib.Path(sys.argv[2]).read_bytes());snapshot=produce133(sys.argv[1],cfg);x=require_snapshot133(snapshot);s=importlib.util.spec_from_file_location('trace133_preflight_output_plan',ROOT/'plan127.py');p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
- print(json.dumps({'schema':'TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2','current_admission':x['direction'][p.ADMISSION],'inventory_sha256':cfg['inventory_sha256'],'own_version':x['own_version'],'whole_self_allattrs':'PASS','native_authority':False,'sourceSha':cfg['source']['commit'],'sourceTree':cfg['source']['tree'],'captureDirectory':cfg['path_roles']['capture'],'transferRoot':cfg['path_roles']['transfer'],'dispatchSource':cfg['dispatch_source'],'directionId':x['direction']['id'],'staticConfigSha256':sha(can(cfg))}))
+ print(json.dumps({'schema':'TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2','current_admission':x['direction'][p.ADMISSION],'inventory_sha256':cfg['inventory_sha256'],'own_version':x['own_version'],'whole_self_allattrs':'PASS','native_authority':False,'sourceSha':cfg['source']['commit'],'sourceTree':cfg['source']['tree'],'captureDirectory':cfg['path_roles']['capture'],'transferRoot':cfg['path_roles']['transfer'],'dispatchSource':cfg['dispatch_source'],'directionId':x['direction']['id'],'staticConfigSha256':sha(can(cfg)),'manifestSha135':cfg['manifest']['sha256']}))
 
 if __name__=='__main__':main133()

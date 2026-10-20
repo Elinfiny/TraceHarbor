@@ -67,9 +67,20 @@ def static133(config,manifest_bytes,inventory=None):
   if type(x['workflow'][k]) is not list:raise ValueError('Whole fixed tree')
   seen=set()
   for row in x['workflow'][k]:
-   closed(row,{'path','mode','type','sha'},'tree leaf');text(row['path'],'leaf path');hexpin(row['sha'],40)
-   if row['path'] in seen or row['mode'] not in ('100644','100755') or row['type']!='blob':raise ValueError('Unique blob leaves')
+   required={'path','mode','type','sha'};allowed=required if k=='baseline_entries' else required|{'size','url'}
+   if type(row) is not dict or not required<=set(row)<=allowed:raise ValueError('Closed actual direct/recursive Git tree identity')
+   text(row['path'],'source path');hexpin(row['sha'],40);path=pathlib.PurePosixPath(row['path'])
+   if path.is_absolute() or '..' in path.parts or row['path'] in seen or row['type'] not in ('tree','blob') or row['mode'] not in (('040000',) if row['type']=='tree' else ('100644','100755')) or k=='baseline_entries' and '/' in row['path']:raise ValueError('Unique exact direct root/recursive source identities')
+   if 'size' in row and (row['type']!='blob' or type(row['size']) is not int or row['size']<0):raise ValueError('Actual public source blob size')
+   if 'url' in row and row['url']!='https://api.github.com/repos/Elinfiny/TraceHarbor/git/'+('trees/' if row['type']=='tree' else 'blobs/')+row['sha']:raise ValueError('Only immutable canonical source URLs')
    seen.add(row['path'])
+ if x['workflow']['path']=='.github/workflows/traceharbor-counter135.yml':
+  for marker in ('__TRACE_SOURCE135__','__TRACE_MANIFEST135__','__TRACE_ONCE133__','__TRACE_EXPIRES135__','__TRACE_CUTOFF135__','__TRACE_TAB135__'):
+   if x['dispatch_source']['script'].count(marker)!=1:raise ValueError('Complete dispatch template before any runtime allocation')
+  path=ROOT.parent/x['workflow']['path'];raw=path.read_bytes()
+  if m['source_files'].get(x['workflow']['path'])!={'bytes':len(raw),'sha256':sha(raw)}:raise ValueError('Exact active source workflow pin')
+  wf=json.loads(raw);job=wf['jobs']['counter']
+  if set(wf['on'])!={'workflow_dispatch'} or set(wf['on']['workflow_dispatch']['inputs'])!=set(('source_sha','manifest_sha256','once_receipt_sha256','once_expires_utc','coordinator_cutoff_utc')) or wf['permissions']!={'contents':'read'} or job['runs-on']!='ubuntu-24.04' or job['timeout-minutes']!=15 or wf['concurrency']['cancel-in-progress'] is not False or [v['name'] for v in job['steps']]!=x['workflow']['step_names']:raise ValueError('Whole source workflow/inputs/steps/runner/concurrency contract')
  if x['limits']!=c.FIXED or x['inventory_sha256']!=sha(can(inventory)):raise ValueError('Whole original limits/inventory')
  hexpin(x['authority_projection_sha256']);return x
 def template133(config,manifest_bytes,inventory=None):
@@ -85,5 +96,92 @@ def release133(direction,config,manifest_bytes,inventory=None):
  prepared=prepare127(config,direction,manifest_bytes,inventory)
  if direction.get(ADMISSION)!=prepared['proposed_admission']:raise PermissionError('Actual independently published exact V2 release required')
  return prepared
+#135 PRIVATE prospective activation support. No import executes these methods.
+ACTIVE_WORKFLOW135='.github/workflows/traceharbor-counter135.yml'
+INPUTS135=('source_sha','manifest_sha256','once_receipt_sha256','once_expires_utc','coordinator_cutoff_utc')
+TOKENS135={'__TRACE_SOURCE135__':'source_sha','__TRACE_MANIFEST135__':'manifest_sha256','__TRACE_ONCE133__':'once_receipt_sha256','__TRACE_EXPIRES135__':'once_expires_utc','__TRACE_CUTOFF135__':'coordinator_cutoff_utc'}
+def dispatch_inputs135(config,context,cutoff):
+ if context['source_sha']!=config['source']['commit'] or context['manifest_sha256']!=config['manifest']['sha256']:raise ValueError('Same source/manifest runtime context')
+ for k in ('source_sha',):hexpin(context[k],40)
+ for k in ('manifest_sha256','once_receipt_sha256'):hexpin(context[k])
+ end=context['expires_utc']
+ if type(end) is not int or type(cutoff) is not int or end<=0 or cutoff<end:raise ValueError('Original source runtime expiry/cutoff, never caller time')
+ return {'source_sha':context['source_sha'],'manifest_sha256':context['manifest_sha256'],'once_receipt_sha256':context['once_receipt_sha256'],'once_expires_utc':str(end),'coordinator_cutoff_utc':str(cutoff)}
+def render_dispatch135(config,context,cutoff):
+ values=dispatch_inputs135(config,context,cutoff);script=config['dispatch_source']['script']
+ for token,key in TOKENS135.items():
+  if script.count(token)!=1:raise ValueError('One exact source-owned dispatch input placeholder')
+  script=script.replace(token,values[key])
+ if script.count('__TRACE_TAB135__')!=1:raise ValueError('One exact existing tab role placeholder')
+ return script.replace('__TRACE_TAB135__',str(config['dispatch_source']['tab_id']))
+def dispatch_contract135(config,context,cutoff,ref):
+ # Official fresh workflow_dispatch API, not an exposed generic POST transport.
+ # This descriptor cannot mint a native origin or execute in the browser.
+ if type(ref) is not str or not re.fullmatch('refs/heads/[A-Za-z0-9_./-]+',ref) or '..' in ref:raise ValueError('Explicit admitted source ref')
+ return {'schema':'TRACE135_FRESH_DISPATCH_CONTRACT_DATA_ONLY','status':'AVAILABLE_CONTRACT_ONLY_NOT_AUTHENTICATED_LAUNCH','method':'POST','url':'https://api.github.com/repos/Elinfiny/TraceHarbor/actions/workflows/traceharbor-counter135.yml/dispatches','body':{'ref':ref,'inputs':dispatch_inputs135(config,context,cutoff)},'actual_exposed_tool':'mcp__codex_apps__browser_js','actual_tool_arguments':{'code':'SOURCE_OWNED_REVIEWED_UI_SCRIPT_REQUIRED_AFTER_ORIGIN_RESTORATION'},'no_dispatch_connector':True,'native_authority':False}
+def runner_guard135(env,wall):
+ # Safe first-run source guard: values come from fixed workflow env, never shell
+ # interpolation. Existing typed original once/admission is still checked by
+ # launch127 before recipient creation/protected work.
+ if env.get('GITHUB_REPOSITORY')!='Elinfiny/TraceHarbor' or env.get('GITHUB_REPOSITORY_ID')!='1391430317' or env.get('GITHUB_ACTOR_ID')!='273768139' or env.get('GITHUB_RUN_ATTEMPT')!='1' or env.get('GITHUB_EVENT_NAME')!='workflow_dispatch':raise PermissionError('Exact Owner/repository/attempt1/manual event')
+ if env.get('GITHUB_WORKFLOW_REF','').split('@')[0]!='Elinfiny/TraceHarbor/'+ACTIVE_WORKFLOW135:raise ValueError('Exact reviewed active workflow path')
+ values={k:env['TRACE135_'+k.upper()] for k in INPUTS135}
+ hexpin(values['source_sha'],40)
+ for k in ('manifest_sha256','once_receipt_sha256'):hexpin(values[k])
+ if values['source_sha']!=env.get('GITHUB_SHA') or env.get('GITHUB_WORKFLOW_SHA')!=values['source_sha']:raise ValueError('Immutable selected source/workflow')
+ if not re.fullmatch('[1-9][0-9]{0,11}',values['once_expires_utc']) or not re.fullmatch('[1-9][0-9]{0,11}',values['coordinator_cutoff_utc']):raise ValueError('Original integer clock inputs')
+ end=min(int(values['once_expires_utc']),int(values['coordinator_cutoff_utc']))
+ if type(wall) not in (int,float) or not math.isfinite(wall) or not wall<end<=wall+900:raise ValueError('Original future900; no reset')
+ return values
+
+def public_payload135(kind,raw,env):
+ # Only already public allowlisted protocol data, never raw/private/ciphertext.
+ import ssl
+ if type(raw) is not bytes or not 0<len(raw)<=8192:raise ValueError('Public one-file payload <=8192')
+ x=json.loads(raw);source=env['TRACE135_SOURCE_SHA'];run=int(env['GITHUB_RUN_ID']);expiry=int(env['TRACE135_ONCE_EXPIRES_UTC'])
+ if kind=='recipient':
+  closed(x,{'context','certificate_pem'},'PUBLIC recipient');q=closed(x['context'],{'repository','repository_id','actor_id','run_id','attempt','source_sha','nonce','expires_utc','certificate_sha256'},'PUBLIC recipient context')
+  if q['repository']!='Elinfiny/TraceHarbor' or q['repository_id']!=1391430317 or q['actor_id']!=273768139 or q['run_id']!=run or q['attempt']!=1 or q['source_sha']!=source or q['expires_utc']!=expiry:raise ValueError('Actual selected public recipient context')
+  hexpin(q['nonce'],32);hexpin(q['certificate_sha256']);pem=text(x['certificate_pem'],'PUBLIC certificate')
+  if not pem.startswith('-----BEGIN CERTIFICATE-----') or 'PRIVATE KEY' in pem or sha(ssl.PEM_cert_to_DER_cert(pem))!=q['certificate_sha256']:raise ValueError('Only public certificate, exact DER digest')
+ elif kind=='safe':
+  s=importlib.util.spec_from_file_location('trace135_public_SAFE_allowlist',ROOT/'provider_safe127.py');v=importlib.util.module_from_spec(s);s.loader.exec_module(v)
+  ctx=x.get('context',{})
+  if ctx.get('actor_id')!=273768139 or ctx.get('repository_id')!=1391430317 or ctx.get('attempt')!=1 or ctx.get('run_id')!=run or ctx.get('source_sha')!=source or ctx.get('once_receipt_sha256')!=env['TRACE135_ONCE_RECEIPT_SHA256'] or ctx.get('manifest_sha256')!=env['TRACE135_MANIFEST_SHA256'] or ctx.get('expires_utc')!=expiry:raise ValueError('Actual source/once/manifest/public SAFE context')
+  v.approved_projection127(raw,{'projection_context':ctx},'SOURCE_PRODUCED_PUBLIC_SAFE_DATA')
+ else:raise ValueError('Only two public receipt kinds')
+ return x
+
+def artifact_guard135(kind,env):
+ import os,stat
+ root=pathlib.Path(env['RUNNER_TEMP']);once=hexpin(env['TRACE135_ONCE_RECEIPT_SHA256']);path=root/('traceharbor-counter117-intake-'+once)/'recipient-public.json' if kind=='recipient' else root/'traceharbor-safe127/projection.json'
+ for parent in (path,*path.parents):
+  if parent.is_symlink():raise ValueError('No public upload path aliases')
+ st=path.lstat()
+ if path.resolve()!=path or not stat.S_ISREG(st.st_mode) or st.st_uid!=os.getuid() or st.st_nlink!=1 or st.st_mode&0o022 or not 0<st.st_size<=8192:raise ValueError('Exact owned bounded public source file')
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
+ try:
+  a=os.fstat(fd);raw=os.read(fd,8193);extra=os.read(fd,1);b=os.fstat(fd)
+ finally:os.close(fd)
+ if extra or len(raw)!=st.st_size or (st.st_dev,st.st_ino,st.st_size,st.st_mtime_ns)!=(a.st_dev,a.st_ino,a.st_size,a.st_mtime_ns) or (a.st_dev,a.st_ino,a.st_size,a.st_mtime_ns)!=(b.st_dev,b.st_ino,b.st_size,b.st_mtime_ns):raise ValueError('Whole stable public source EOF')
+ public_payload135(kind,raw,env);return {'kind':kind,'bytes':len(raw),'sha256':sha(raw),'scope':'PUBLIC_ALLOWLIST_ONLY_NOT_FINANCIAL_HEADROOM_PROOF'}
+
+def cli135():
+ import os,time
+ mode=sys.argv[1];env=dict(os.environ)
+ if mode=='guard135':
+  values=runner_guard135(env,time.time());mb=(ROOT/'manifest.json').read_bytes()
+  if sha(mb)!=values['manifest_sha256']:raise ValueError('Whole final source manifest before recipient')
+  for name,pinvalue in json.loads(mb)['source_files'].items():
+   path=pathlib.Path(name)
+   if path.is_absolute() or '..' in path.parts:raise ValueError('Safe source member')
+   raw=(ROOT.parent/path).read_bytes()
+   if len(raw)!=pinvalue['bytes'] or sha(raw)!=pinvalue['sha256']:raise ValueError('Full exact source closure before recipient')
+  print(json.dumps({'guard':'PASS','native_authority':False}))
+ elif mode in ('artifact-recipient135','artifact-safe135'):print(json.dumps(artifact_guard135('recipient' if mode=='artifact-recipient135' else 'safe',env)))
+ else:raise ValueError('Fixed135 source command')
+
 if __name__=='__main__':
- values=json.loads(pathlib.Path(sys.argv[1]).read_bytes());print(json.dumps(prepare127(values['config'],values['direction'],(ROOT/'manifest.json').read_bytes()),sort_keys=True,separators=(',',':')))
+ if sys.argv[1] in ('guard135','artifact-recipient135','artifact-safe135'):cli135()
+ else:
+  values=json.loads(pathlib.Path(sys.argv[1]).read_bytes());print(json.dumps(prepare127(values['config'],values['direction'],(ROOT/'manifest.json').read_bytes()),sort_keys=True,separators=(',',':')))
