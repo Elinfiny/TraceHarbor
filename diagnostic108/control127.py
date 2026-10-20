@@ -55,6 +55,7 @@ def inventory127():
   row('preflight/poll128/'+str(n),'native','CONTROLLER');row('preflight/poll-original128/'+str(n),'local_evidence','CONTROLLER')
  row('preflight/collection-close128','local_evidence','CONTROLLER',True)
  for id in ('recipient/verify','safe/file-original'):row(id+'/helper-original128','local_evidence','HOST')
+ for id in ('runtime132/once-intent-original','runtime132/armed-context-original','runtime132/postdispatch-bind-original'):row(id,'local_evidence')
  assert len({r['id'] for r in rows})==len(rows)
  return {'schema':'TRACE127_WHOLE_PRECOMMITTED_INVENTORY_V1','rows':rows,'inclusive_total':len(rows),'current_comparison_cap':48,'current_fit':len(rows)<=48,'proposal_only_cap':len(rows),'authority':False,'reserved_closure':sum(r['closure'] for r in rows),'observer_maximum':16,'immutable_semantic_graph':list(SEMANTIC),'phase_graph':list(PHASES),'remote_ids':remote}
 class Inventory127:

@@ -58,12 +58,13 @@ function use(c,id,owner){const r=c.rows.get(id);if(!r||r.owner!==owner||c.used.h
 export function prepare127(preloaded,key=null){
  const p=snapshotPlain129(preloaded),rows=p.inventory.rows;
  if(rows.length!==p.inventory.inclusive_total||new Set(rows.map(x=>x.id)).size!==rows.length||p.inventory.authority!==false)throw Error('Whole exact source-produced inventory');
- if(p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(key!==NATIVE_CALLER_SEAL127||p.currentNativeAdmission?.inclusive_cap!==rows.length||p.currentNativeAdmission?.contract!=='TRACE127_PHASE_INTENT_V1'))throw Error('No native registry from supplied booleans/dicts; actual fixed preflight required');
+ if(p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(key!==NATIVE_CALLER_SEAL127||p.currentNativeAdmission?.inclusive_cap!==rows.length||p.currentNativeAdmission?.contract!=='TRACE133_STATIC_TYPED_RUNTIME_V2'))throw Error('No native registry from supplied booleans/dicts; actual fixed preflight required');
  const h=Object.freeze({realm:p.realm}),c={p,rows:new Map(rows.map(x=>[x.id,x])),used:new Set(),failed:null,nextSeq:1,session:null,observerCell:null,observers:new Set(),lastBlob:null,lastTree:null,lastCommit:null,artifact:null,fileRef:null};HANDLES.set(h,c);return h;
 }
 export async function bootstrapActualCaller127(preloaded){
  if(!PLATFORM_TOOLS127)throw Error('Actual platform lexical tools unavailable; no supplied callback authority');
  const validated129=snapshotPlain129(preloaded);
+ for(const key of ['context','contextSha256','deadlineUtcMs','uiDispatchArgs'])if(Object.hasOwn(validated129,key))throw Error('No premature runtime context/clock/once in static preload');
  const preflightDeadline128=Date.now()+PREFLIGHT128.totalMs;
  const preview=prepare127({...validated129,realm:'SYNTHETIC_SOURCE_ONLY'}),c=HANDLES.get(preview),t=PLATFORM_TOOLS127;
  use(c,'preflight/materialize','CONTROLLER');use(c,'preflight/materialize-original','CONTROLLER');
@@ -76,12 +77,12 @@ export async function bootstrapActualCaller127(preloaded){
  // addressed admission. No executable path/hash/bool supplied by the caller
  // can register a native capability before this source-native check.
  const q=s=>"'"+String(s).replaceAll("'","'\\''")+"'";
- const code=`import pathlib,json,hashlib,runpy,sys\na=json.loads(pathlib.Path(sys.argv[1]).read_bytes())['structuredContent'];ts=a['transfers'];assert not a.get('unavailable_items') and len(ts)==3\nown=next(x for x in ts if x['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');d=json.loads(pathlib.Path(own['workspace_path']).read_bytes());k='native'+d['state'].split('_')[0][6:];ad=d[k]['direction'].get('grouped127_admission');assert ad and 'ADMIT_TRACE127_GROUPED_NATIVE' in d[k]['direction']['body']\nroot=pathlib.Path(sys.argv[2]);raw=(root/'diagnostic108/manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==ad['manifest_sha256'];m=json.loads(raw)\nfor n,p in m['source_files'].items():\n f=root/n;assert not pathlib.Path(n).is_absolute() and '..' not in pathlib.Path(n).parts;b=f.read_bytes();assert len(b)==p['bytes'] and hashlib.sha256(b).hexdigest()==p['sha256']\nsys.argv=[str(root/'diagnostic108/preflight127.py'),sys.argv[1],sys.argv[3]];runpy.run_path(str(root/'diagnostic108/preflight127.py'),run_name='__main__')`;
+ const code=`import pathlib,json,hashlib,runpy,sys\na=json.loads(pathlib.Path(sys.argv[1]).read_bytes())['structuredContent'];a=a.get('result',a);ts=a['transfers'];assert not a.get('unavailable_items') and len(ts)==3\nown=next(x for x in ts if x['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');d=json.loads(pathlib.Path(own['workspace_path']).read_bytes());k='native'+d['state'].split('_')[0][6:];ad=d[k]['direction'].get('grouped133_admission');assert ad and ad.get('contract')=='TRACE133_STATIC_TYPED_RUNTIME_V2' and 'ADMIT_TRACE133_STATIC_TYPED_RUNTIME_V2' in d[k]['direction']['body']\nroot=pathlib.Path(sys.argv[2]);raw=(root/'diagnostic108/manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==ad['manifest_sha256'];m=json.loads(raw)\nfor n,p in m['source_files'].items():\n f=root/n;assert not pathlib.Path(n).is_absolute() and '..' not in pathlib.Path(n).parts;b=f.read_bytes();assert len(b)==p['bytes'] and hashlib.sha256(b).hexdigest()==p['sha256']\nsys.argv=[str(root/'diagnostic108/preflight127.py'),sys.argv[1],sys.argv[3]];runpy.run_path(str(root/'diagnostic108/preflight127.py'),run_name='__main__')`;
  for(let n=0;n<3;n++)use(c,'preflight/helper-original128/'+n,'CONTROLLER');
  let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
- if(verified.schema!=='TRACE127_NATIVE_PREFLIGHT_ORIGINAL_V1'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
- const verifiedPreload={...validated129,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:4000}};
+ if(verified.schema!=='TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
+ const verifiedPreload={...validated129,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:4000}};
  const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);return handle;
 }
 export function reserveObserver127(handle,index,cellId){
@@ -110,6 +111,15 @@ export async function launch127(handle,tools){
  await capture(c,'holder-start.original.json',original,tools);
  if(!Number.isInteger(original.session_id)||original.exit_code!=null){c.failed={holder_start:original};throw Error('No actual live sameholder; no retry');}c.session=original.session_id;return original;
 }
+function bindSourceRuntime133(c,frame){
+ // This DATA comes only from the exact source holder's retained start original.
+ // No exported function accepts a runtime dict to register native authority.
+ const b=frame.runtime_binding133,p=c.p;
+ if(c.session===null||frame!==c.nativeFrame||frame.seq!==1||frame.inventory_call_id!=='SOURCE_FREEZE/CAS'||!b||b.schema!=='TRACE133_SOURCE_RUNTIME_FRAME'||b.static_config_sha256!==p.staticConfigSha256||b.sourceSha!==p.sourceSha||b.sourceTree!==p.sourceTree||b.context?.domain!=='TRACE133_TYPED_RUNTIME'||b.context.source_sha!==p.sourceSha||b.context.direction_id!==p.directionId133||!/^[a-f0-9]{64}$/.test(b.context.once_receipt_sha256)||!/^[a-f0-9]{64}$/.test(b.context_sha256)||!same(b.context,frame.context)||!Number.isInteger(b.deadlineUtcMs)||b.deadlineUtcMs<=Date.now()||b.deadlineUtcMs>Date.now()+900000)throw Error('Actual source same invocation runtime binding; original900 only');
+ const expectedArgs={code:p.dispatchSource133.script.replace('__TRACE_ONCE133__',b.context.once_receipt_sha256),tab_id:p.dispatchSource133.tab_id};
+ if(!same(b.uiDispatchArgs,expectedArgs))throw Error('Static script plus actual newly produced once only');
+ p.context=snapshotPlain129(b.context);p.contextSha256=b.context_sha256;p.deadlineUtcMs=b.deadlineUtcMs;p.uiDispatchArgs=snapshotPlain129(b.uiDispatchArgs);
+}
 function guardArgs(c,f){
  const a=f.args,p=c.p,repo='Elinfiny/TraceHarbor',id=f.inventory_call_id;
  if(!p.inventory.remote_ids.includes(id)||f.inventory_sha256!==p.inventorySha256||!same(f.context,p.context)||f.seq!==c.nextSeq||f.schema!=='TRACE118_HOST_REQUEST'||Date.now()>=Math.min(f.deadline_utc_ms,p.deadlineUtcMs))throw Error('Exact source/context/inventory/sequence/original parent');
@@ -127,8 +137,10 @@ function guardArgs(c,f){
  if(f.op==='github_download_workflow_artifact'&&a.artifact_id!==c.artifact)throw Error('Only actual preceding selected artifact');
 }
 export async function bridge127(handle,frame,tools){
- const c=HANDLES.get(handle);if(!c||c.failed)throw Error('Exact preloaded source registry/no UNKNOWN retry');guardArgs(c,frame);
+ const c=HANDLES.get(handle);if(!c||c.failed)throw Error('Exact preloaded source registry/no UNKNOWN retry');
  if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(tools!==PLATFORM_TOOLS127||frame!==c.nativeFrame))throw Error('Only original SAME actual source holder frame; no caller-supplied dict');
+ if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&c.p.context===null)bindSourceRuntime133(c,frame);
+ guardArgs(c,frame);
  const id=frame.inventory_call_id;
  for(const s of ['tool','canonical','callback','callback-original'])use(c,id+'/'+s,'CONTROLLER');
  let original=null,error=null;const a=frame.args;

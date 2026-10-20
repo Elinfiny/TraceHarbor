@@ -48,6 +48,8 @@ class Ledger127(base.FrameLedger):
   if self.failed or self.pending is not None or self.remaining()<=0:raise RuntimeError('Source/phase/sequence unavailable')
   port=self.port;self.seq+=1
   frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'phase_deadline_mono':self.phase_mono,'inventory_call_id':port.current_id,'inventory_sha256':sha(can(port.inventory.plan))}
+  if self.seq==1:
+   frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args'])}
   frame['request_digest']=sha(can(frame));raw=can(frame)
   if len(raw)>base.MAX_FRAME:raise ValueError('Finite complete frame')
   base.put(self.root/(str(self.seq)+'.request.original.json'),raw);self.pending=frame;return frame
@@ -169,8 +171,13 @@ class NativePort127:
   if selected['source_sha']!=self.source or selected['attempt']!=1 or selected['once_receipt_sha256']!=self.macro.context['once_receipt_sha256']:raise ValueError('Actual selected UI source/attempt/once')
   runid=selected['selected_run_id']
   if type(runid) is not int or runid<=0:raise ValueError('Actual selected run returned by exact UI route')
-  self.config['run_id']=runid
-  return self.macro.call('dispatch/run','github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(runid)})
+  run=self.macro.call('dispatch/run','github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(runid)})
+  # Retain source-native originals before classification; external JSON cannot
+  # select a descriptor. The full originals remain private in the existing log.
+  descriptor=g.postdispatch133(self.runtime133,run,selected,time.time(),time.monotonic())
+  self.macro.store.save('runtime132/postdispatch-bind-original',{'run':run,'selected':selected,'descriptor':descriptor,'run_canonical':self.macro.originals['dispatch/run']['canonical']})
+  self.run_id=runid;self.selected133=copy.deepcopy(selected);self.actual_run133=copy.deepcopy(run)
+  return run
  def delay_until(self,target):
   delay=target-time.monotonic()
   if delay<0:return
@@ -181,7 +188,7 @@ class NativePort127:
   if 'ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY' not in current['direction']['body']:raise PermissionError('Actual private6 custody independent gate')
   self.inventory.claim('custody/guard');manifest=base.strict((ROOT/'manifest.json').read_bytes());source=ROOT.parent/'offline103/ingress.py';transfer=ROOT.parent/'offline103/transfer.json'
   if sha(source.read_bytes())!=manifest['source_files']['offline103/ingress.py']['sha256'] or sha(transfer.read_bytes())!=manifest['canonical_transfer_sha256']:raise ValueError('Unchanged reviewed ingress/private pins')
-  self.inventory.claim('ingress/source');ingress=load('trace127_fixed_ingress',source);cfg=base.strict(transfer.read_bytes());runid=self.config['run_id']
+  self.inventory.claim('ingress/source');ingress=load('trace127_fixed_ingress',source);cfg=base.strict(transfer.read_bytes());runid=self.run_id
   run=self.macro.call('recipient/run','github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(runid)})
   listed=self.macro.call('recipient/list','github_fetch_workflow_run_artifacts',{'repo_full_name':g.REPO,'run_id':runid,'name':'traceharbor-recipient104-'+str(runid)+'-1'})
   if listed['total_count']!=1 or len(listed['artifacts'])!=1:raise ValueError('Exact NAME-FILTERED selected recipient, not total run inventory')
@@ -206,17 +213,14 @@ class NativePort127:
   self.macro.store.save('ingress/proof',delivery);return delivery
  def validate_delivery(self,d):
   raw=base64.b64decode(d['ciphertext_base64'],validate=True);ctx=d['context'];wanted=self.macro.context
-  if not 0<len(raw)<=131072 or sha(raw)!=d['ciphertext_sha256'] or not __import__('re').fullmatch('[a-f0-9]{32}',ctx['nonce']) or ctx['source_sha']!=self.source or ctx['run_id']!=self.config['run_id'] or ctx['attempt']!=1 or ctx['expires_utc']!=wanted['expires_utc']:raise ValueError('Actual recipient/nonce/source/cipher/custody binding')
+  if not 0<len(raw)<=131072 or sha(raw)!=d['ciphertext_sha256'] or not __import__('re').fullmatch('[a-f0-9]{32}',ctx['nonce']) or ctx['source_sha']!=self.source or ctx['run_id']!=self.run_id or ctx['attempt']!=1 or ctx['expires_utc']!=wanted['expires_utc']:raise ValueError('Actual recipient/nonce/source/cipher/custody binding')
  def admit_descriptor(self):
-  template=copy.deepcopy(self.config['admit_descriptor_template127']);run=self.macro.run;x=self.macro.context
+  g.require_native_runtime133(self.runtime133)
+  if self.actual_run133!=self.macro.run:raise ValueError('Actual typed run original mutated')
+  expected=g.postdispatch133(self.runtime133,self.actual_run133,self.selected133,time.time(),time.monotonic())
   counter=load('trace127_fixed_counter',ROOT/'counter115.py');admission=counter.producer_module(ROOT.parent)
-  binding={'source_sha':x['source_sha'],'manifest_sha256':x['manifest_sha256'],'once_receipt_sha256':x['once_receipt_sha256'],'run_id':str(run['id']),'request_sha256':'e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2'}
-  started=__import__('datetime').datetime.fromisoformat(run['run_started_at'].replace('Z','+00:00')).timestamp()
-  parent={'schema':'TRACE117_PARENT_CLOCK','run_id':str(run['id']),'run_started_at_utc':started,'workflow_hard_end_utc':started+900,'once_expires_utc':x['expires_utc'],'coordinator_cutoff_utc':self.config['coordinator_cutoff_utc'],'end_utc':min(started+900,x['expires_utc'],self.config['coordinator_cutoff_utc']),'job_limit_s':900}
-  expected=dict(binding,schema='TRACE116_EXTERNAL_ONCE_V1',phase='admit',original_writer=admission.WRITER,own_library_file_id=base.OWN,attempt=1,role='OFFLINE_COUNTER_ONLY',request_bytes=4935,lock_sha256='fcea30197a1bf1c0eaa99314dcbf26a152935ba4535c1544b97f2f5a62f2515a',model_calls=0,spend=0,expires_utc=x['expires_utc'],parent_clock=parent,inputs={n:{'bytes':p[0],'sha256':p[1]} for n,p in counter.input_pins().items()})
-  expected['once_intent']=template['once_intent'];admission.verify_once_intent(expected,binding,counter.input_pins())
-  if template!=expected:raise ValueError('Closed exact real runner admission116 descriptor, not fabricated wire schema')
-  return expected
+  binding={k:expected[k] for k in ('source_sha','manifest_sha256','once_receipt_sha256','run_id','request_sha256')}
+  admission.verify_once_intent(expected,binding,counter.input_pins());return expected
  def consumed_descriptor(self,delivery):
   # Match the existing runner admission116 wire schema exactly, using the
   # original encrypted chain and current authenticated custody context.
@@ -227,7 +231,7 @@ class NativePort127:
   self.macro.call(id,op,args);o=self.current_original;request=o['request'];identity={'context_sha256':sha(can(self.config['context'])),'operation':op,'seq':request['seq'],'tool':op,'call_id':request['request_digest']};path=o['canonical_path'];raw=self.canonical127.io.read(path)
   canonical={'path':path,'bytes':len(raw),'sha256':sha(raw)}
   return self.provider.retain_native127(self,identity,o['frame']['original_result'],canonical)
- def observe_run(self,n):return self.packet('collection/run/'+str(n),'github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(self.config['run_id'])})
+ def observe_run(self,n):return self.packet('collection/run/'+str(n),'github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(self.run_id)})
  def collect_bundle(self,run):
   p=self.provider_plan();url='https://api.github.com/repos/'+g.REPO+'/'
   b={'run':run,'commit':self.packet('safe/commit','github_fetch',{'url':url+'commits/'+p['source_sha']}),'tree':self.packet('safe/tree','github_fetch',{'url':url+'git/trees/'+p['source_tree']+'?recursive=1'}),'jobs':self.packet('safe/jobs','github_fetch_workflow_run_jobs',{'repo_full_name':g.REPO,'run_id':p['run_id']}),'artifacts':self.packet('safe/list','github_fetch_workflow_run_artifacts',{'repo_full_name':g.REPO,'run_id':p['run_id'],'name':'traceharbor-safe127-'+str(p['run_id'])+'-1'})}
@@ -235,7 +239,7 @@ class NativePort127:
   b['download']=self.packet('safe/download','github_download_workflow_artifact',{'repo_full_name':g.REPO,'artifact_id':artifact['id'],'file_name':'safe127.zip'});ref=self.provider_value(b['download'],'github_download_workflow_artifact').get('file');self.destination=self.layout['transfer']/('safe-artifact-'+str(p['run_id'])+'-1');self.destination.mkdir(mode=0o700,exist_ok=False)
   b['materialized']=self.packet('safe/materialize','library_materialize',{'items':[{k:ref[k] for k in ('library_file_id','file_id','file_name') if k in ref}],'destination':{'directory':str(self.destination)}});return b
  def provider_plan(self):
-  x=self.macro.context;rid=self.config['run_id'];admit,_=self.macro.body('admit');consumed,_=self.macro.body('consumed');descriptor=json.loads(consumed)
+  x=self.macro.context;rid=self.run_id;admit,_=self.macro.body('admit');consumed,_=self.macro.body('consumed');descriptor=json.loads(consumed)
   return {'run_id':rid,'source_sha':x['source_sha'],'source_parent':x['source_parent'],'source_tree':x['source_tree'],'expires_utc':x['expires_utc'],'workflow_path':x['workflow_path'],'workflow_step_names':x['workflow_step_names'],'full_tree_entries':x['full_tree_entries'],'projection_context':{'run_id':rid,'attempt':1,'actor_id':g.OWNER,'repository_id':g.REPOSITORY,'source_sha':x['source_sha'],'manifest_sha256':x['manifest_sha256'],'once_receipt_sha256':x['once_receipt_sha256'],'expires_utc':x['expires_utc'],'admission_sha256':sha(admit),'custody_binding_sha256':sha(can(descriptor['ciphertext_receipt'])),'cost_scope_sha256':x['cost_scope_sha256']}}
  def artifact_bytes(self,ref,tr,artifact,destination,evidence,cap):
   self.inventory.claim(evidence);path=pathlib.Path(tr['workspace_path'])
@@ -261,27 +265,40 @@ class NativePort127:
   if self.provider.require_native_terminal127(self,self.macro) is not observation:raise TypeError('Exact source registry typed provider observation')
 def bootstrap127(config_path,provider):
  if sha((ROOT/'host_transport118.py').read_bytes())!=BASE_SHA:raise ValueError('Accepted immutable original guard')
- cfg=base.strict(pathlib.Path(config_path).read_bytes());cfg['config_path']=str(pathlib.Path(config_path).resolve());current=base.current_binding(cfg['current_checkpoint'],cfg['current_version'],cfg)
- markers=('ADMIT_TRACE127_GROUPED_NATIVE','ADMIT_NATIVE_SAFE127_PROVIDER_DELIVERY','ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY','ADMIT_CURRENT_ONCE_DISPATCH_API0')
- if any(x not in current['direction']['body'] for x in markers):raise PermissionError('Private127 source only; independent journal/security/runtime/custody/dispatch admission ABSENT')
- admission=current['direction'].get('grouped127_admission');manifest=base.strict((ROOT/'manifest.json').read_bytes())
- bound_cfg=copy.deepcopy(cfg);bound_cfg['native_admission127']=None;bound_cfg.pop('config_path',None)
- if admission!=cfg.get('native_admission127') or admission!={'contract':'TRACE127_PHASE_INTENT_V1','manifest_sha256':sha(can(manifest)),'inclusive_cap':c.inventory127()['inclusive_total'],'phase_plan_sha256':cfg['phase_plan_sha256127'],'config_binding_sha256':sha(can(bound_cfg)),'scope':'NEW_UNUSED_ONCE_API0_ONLY'}:raise ValueError('Authentic exact prospective whole contract/cap/config, not current48 override')
- if cfg.get('ui_dispatch127')!=current['direction'].get('ui_dispatch127_admission') or cfg.get('custody_admission127')!=current['direction'].get('custody_admission127') or cfg.get('cost_admission127')!=current['direction'].get('cost_admission127'):raise PermissionError('Config bool never substitutes actual independent current UI/custody/cost admissions')
- if not cfg.get('custody_admission127') or not cfg.get('cost_admission127') or cfg['cost_admission127'].get('model_calls')!=0 or cfg['cost_admission127'].get('spend')!=0:raise PermissionError('Exact real API0 private custody/cost authority required')
+ static=base.strict(pathlib.Path(config_path).read_bytes());plan=g.p133
+ if static['path_roles']['config']!=str(pathlib.Path(config_path).resolve()):raise ValueError('Pinned static config role')
+ preflight=load('trace133_native_current_intake',ROOT/'preflight127.py')
+ snapshot=preflight.produce133(static['path_roles']['materialize_original'],static,_native_reload133=True);snap=preflight.require_snapshot133(snapshot)
+ direction=snap['direction'];manifest_bytes=(ROOT/'manifest.json').read_bytes();manifest=base.strict(manifest_bytes);prepared=plan.release133(direction,static,manifest_bytes)
+ markers=('ADMIT_TRACE133_STATIC_TYPED_RUNTIME_V2','ADMIT_NATIVE_SAFE127_PROVIDER_DELIVERY','ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY','ADMIT_CURRENT_ONCE_DISPATCH_API0')
+ if any(x not in direction['body'] for x in markers) or static['cost_scope']['host_cost_bound'] is None:raise PermissionError('Actual independent security/source/runtime/custody/cost gate absent')
  for name,pin in manifest['source_files'].items():
   path=pathlib.Path(name)
   if path.is_absolute() or '..' in path.parts:raise ValueError('Safe source path')
   raw=(ROOT.parent/path).read_bytes()
-  if len(raw)!=pin['bytes'] or sha(raw)!=pin['sha256']:raise ValueError('Whole exact sources before import/clock')
- if not os.isatty(0):raise TypeError('Actual directPTY before ledger/native holder')
- root=pathlib.Path(cfg['holder_root']);st=root.lstat()
- if root.is_symlink() or not stat.S_ISDIR(st.st_mode) or st.st_uid!=os.getuid() or st.st_mode&0o077 or list(root.iterdir()):raise ValueError('Fresh owned0700 sameholder root; no restart/adoption')
- host=NativePort127(g._SEAL,cfg,manifest,provider);(host.root/'originals').mkdir(mode=0o700,exist_ok=False);clock=ActualClock127();context=cfg['integration_context127'];macro=g.Grouped127(host,clock,context,host.root/'originals',c.DiskOriginalIO127(),host.inventory,'ACTUAL_SOURCE_PRIVATE',g._SEAL)
- if macro.plan_sha!=cfg['phase_plan_sha256127']:raise ValueError('Exact entire source-produced immutable grouped plan')
+  if len(raw)!=pin['bytes'] or sha(raw)!=pin['sha256']:raise ValueError('Whole exact sources before clock')
+ if not os.isatty(0):raise TypeError('Actual directPTY before holder')
+ root=pathlib.Path(static['path_roles']['holder_parent'])/'holder';st=root.lstat()
+ if root.resolve()!=root or not stat.S_ISDIR(st.st_mode) or st.st_uid!=os.getuid() or st.st_mode&0o077 or list(root.iterdir()):raise ValueError('Fresh owned0700 holder; no restart/adoption')
+ # The O_EXCL originals directory consumes the existing holder construction
+ # before allocating once. A failed invocation cannot adopt an occupied root.
+ (root/'originals').mkdir(mode=0o700,exist_ok=False)
+ wall=time.time();mono=time.monotonic();expires=int(wall)+900;cutoff=expires
+ once={'schema':'TRACE116_ONCE_INTENT_V1','original_writer':'e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436','source_sha':static['source']['commit'],'manifest_sha256':sha(manifest_bytes),'request_sha256':static['request']['sha256'],'request_bytes':4935,'lock_sha256':static['lock']['sha256'],'inputs':copy.deepcopy(static['private6']),'role':'OFFLINE_COUNTER_ONLY','max_counter_invocations':1,'model_calls':0,'spend':0,'nonce':os.urandom(16).hex(),'expires_utc':expires}
+ runtime=g._mint_runtime133(g._SEAL,direction,static,manifest_bytes,snap,once,os.urandom(32).hex(),wall,mono,cutoff);context=g.runtime_context133(runtime)
+ # Static bytes are never mutated; this separate private runtime configuration
+ # is source-derived after release, and never feeds the static admission hash.
+ cfg={'source_sha':static['source']['commit'],'current_checkpoint':snap['current_checkpoint'],'current_version':snap['own_version'],'direction_number':snap['direction_number'],'writer_binding':snap['writer_binding'],'holder_root':str(root),'capture_directory':static['path_roles']['capture'],'library_helper':static['path_roles']['library_helper'],'library_helper_sha256':static['path_roles']['library_helper_sha256'],'config_path':str(config_path),'integration_context127':context,'native_admission127':prepared['proposed_admission'],'coordinator_cutoff_utc':cutoff,'deadline_utc_ms':int(context['expires_utc']*1000),'context':{'domain':'TRACE133_TYPED_RUNTIME','source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'direction_id':context['direction_id']}}
+ #134 These are source-derived runtime values from already verified static/custody.
+ # No external JSON adds private paths or selects an output outside this holder.
+ cfg.update(source_tree=static['source']['tree'],private_files127={name:str(pathlib.Path(static['custody_scope']['root'])/name) for name in static['private6']},private_output127=str(root/'ciphertext133'))
+ script=static['dispatch_source']['script'].replace('__TRACE_ONCE133__',context['once_receipt_sha256'])
+ cfg['ui_dispatch127']={'master_terminal_no_input_conflict':direction.get('master_terminal_no_input_conflict') is True,'source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'script_sha256':sha(script.encode()),'args':{'code':script,'tab_id':static['dispatch_source']['tab_id']}}
+ host=NativePort127(g._SEAL,cfg,manifest,provider);host.runtime133=runtime;host.static_config133=can(static);clock=ActualClock127();macro=g.Grouped127(host,clock,context,root/'originals',c.DiskOriginalIO127(),host.inventory,'ACTUAL_SOURCE_PRIVATE',g._SEAL)
+ macro.store.save('runtime132/once-intent-original',once);macro.store.save('runtime132/armed-context-original',{'runtime_context':context,'static_config_sha256':sha(host.static_config133),'phase_template':prepared['phase_template'],'current_whole_snapshot':snap})
  return host,macro
 def main():
  if sys.argv[1]=='guard':
-  cfg=base.strict(pathlib.Path(sys.argv[2]).read_bytes());current=base.current_binding(sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
+  static=base.strict(pathlib.Path(sys.argv[2]).read_bytes());doc,_=base.check_checkpoint(sys.argv[3],base.OWN,int(sys.argv[4]));key='native'+doc['state'].split('_')[0][6:];g.p133.release133(doc[key]['direction'],static,(ROOT/'manifest.json').read_bytes());cfg={'direction_number':int(key[6:]),'writer_binding':doc[key]['records'][0]['payload']['writer_binding']};current=base.current_binding(sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
  provider=load('trace127_fixed_provider',ROOT/'provider_safe127.py');host,macro=provider.bootstrap_native_host127(sys.argv[1]);result=macro.run_complete();print(json.dumps(result));return 0
 if __name__=='__main__':sys.exit(main())
