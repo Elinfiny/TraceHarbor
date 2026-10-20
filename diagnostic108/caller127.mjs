@@ -4,21 +4,70 @@
 const HANDLES=new WeakMap();
 const NATIVE_CALLER_SEAL127=Symbol('source-owned-native-caller');
 const PLATFORM_TOOLS127=typeof tools==='object'?tools:null;
+
+//129 plain data only. Native opaque handles stay in HANDLES, never copied.
+export const CONFIG_LIMITS129=Object.freeze({depth:64,nodes:32768,array:8192,keys:4096,utf8Bytes:2097152});
+export function utf8ByteCount129(value,limit=262144){
+ if(typeof value!=='string'||!Number.isSafeInteger(limit)||limit<0)throw Error('Exact UTF8 string and finite integer bound');
+ let bytes=0;
+ for(let i=0;i<value.length;i++){
+  const unit=value.charCodeAt(i);
+  if(unit<=0x7f)bytes++;
+  else if(unit<=0x7ff)bytes+=2;
+  else if(unit>=0xd800&&unit<=0xdbff&&i+1<value.length&&value.charCodeAt(i+1)>=0xdc00&&value.charCodeAt(i+1)<=0xdfff){bytes+=4;i++;}
+  else bytes+=3; // Lone surrogate is U+FFFD, as the supported UTF8 contract.
+  if(bytes>limit)throw Error('Complete bounded preflight output');
+ }
+ return bytes;
+}
+export function snapshotPlain129(input){
+ const memo=new Map(),active=new Set();let nodes=0,bytes=0;
+ function stringBudget(value){bytes+=utf8ByteCount129(value,CONFIG_LIMITS129.utf8Bytes);if(bytes>CONFIG_LIMITS129.utf8Bytes)throw Error('Bounded plain-config total UTF8 bytes');}
+ function visit(value,depth){
+  if(depth>CONFIG_LIMITS129.depth||++nodes>CONFIG_LIMITS129.nodes)throw Error('Bounded plain-config depth/nodes');
+  if(value===null||typeof value==='boolean')return value;
+  if(typeof value==='string'){stringBudget(value);return value;}
+  if(typeof value==='number'){if(!Number.isFinite(value))throw Error('Finite plain-config number');return value;}
+  if(typeof value!=='object')throw Error('No undefined/function/symbol/BigInt config values');
+  if(HANDLES.has(value))throw Error('Source-owned opaque handle remains in original registry');
+  if(active.has(value))throw Error('No cyclic plain config');
+  if(memo.has(value))return memo.get(value);
+  const array=Array.isArray(value),proto=Object.getPrototypeOf(value);
+  if(proto!==(array?Array.prototype:Object.prototype))throw Error('Only exact plain object/array prototypes');
+  const descriptors=Object.getOwnPropertyDescriptors(value),keys=Reflect.ownKeys(value);
+  if(keys.some(k=>typeof k!=='string'))throw Error('No symbol config keys');
+  const length=array?descriptors.length.value:0;
+  if(array&&(!Number.isSafeInteger(length)||length<0||length>CONFIG_LIMITS129.array||keys.length!==length+1))throw Error('Bounded dense array without extra properties');
+  if(!array&&keys.length>CONFIG_LIMITS129.keys)throw Error('Bounded plain-config key count');
+  const copy=array?new Array(length):{};memo.set(value,copy);active.add(value);
+  for(const key of keys){
+   if(array&&key==='length')continue;
+   if(array&&(!/^(0|[1-9][0-9]*)$/.test(key)||Number(key)>=length))throw Error('Exact dense array indices');
+   const descriptor=descriptors[key];
+   if(!Object.prototype.hasOwnProperty.call(descriptor,'value')||descriptor.enumerable!==true)throw Error('No accessors or hidden config properties');
+   stringBudget(key);Object.defineProperty(copy,key,{value:visit(descriptor.value,depth+1),writable:true,enumerable:true,configurable:true});
+  }
+  active.delete(value);return copy;
+ }
+ return visit(input,0);
+}
+
 const canonical=v=>v===null||typeof v!=='object'?JSON.stringify(v):Array.isArray(v)?'['+v.map(canonical).join(',')+']':'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canonical(v[k])).join(',')+'}';
 const same=(a,b)=>canonical(a)===canonical(b);
 function use(c,id,owner){const r=c.rows.get(id);if(!r||r.owner!==owner||c.used.has(id)||c.failed&&!r.closure)throw Error('Shared immutable ticket/firstUNKNOWN/no replay');c.used.add(id);return r;}
 export function prepare127(preloaded,key=null){
- const p=structuredClone(preloaded),rows=p.inventory.rows;
+ const p=snapshotPlain129(preloaded),rows=p.inventory.rows;
  if(rows.length!==p.inventory.inclusive_total||new Set(rows.map(x=>x.id)).size!==rows.length||p.inventory.authority!==false)throw Error('Whole exact source-produced inventory');
  if(p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(key!==NATIVE_CALLER_SEAL127||p.currentNativeAdmission?.inclusive_cap!==rows.length||p.currentNativeAdmission?.contract!=='TRACE127_PHASE_INTENT_V1'))throw Error('No native registry from supplied booleans/dicts; actual fixed preflight required');
  const h=Object.freeze({realm:p.realm}),c={p,rows:new Map(rows.map(x=>[x.id,x])),used:new Set(),failed:null,nextSeq:1,session:null,observerCell:null,observers:new Set(),lastBlob:null,lastTree:null,lastCommit:null,artifact:null,fileRef:null};HANDLES.set(h,c);return h;
 }
 export async function bootstrapActualCaller127(preloaded){
  if(!PLATFORM_TOOLS127)throw Error('Actual platform lexical tools unavailable; no supplied callback authority');
+ const validated129=snapshotPlain129(preloaded);
  const preflightDeadline128=Date.now()+PREFLIGHT128.totalMs;
- const preview=prepare127({...preloaded,realm:'SYNTHETIC_SOURCE_ONLY'}),c=HANDLES.get(preview),t=PLATFORM_TOOLS127;
+ const preview=prepare127({...validated129,realm:'SYNTHETIC_SOURCE_ONLY'}),c=HANDLES.get(preview),t=PLATFORM_TOOLS127;
  use(c,'preflight/materialize','CONTROLLER');use(c,'preflight/materialize-original','CONTROLLER');
- const original=await t.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_505e4189bc588191bcda811c4a35da79'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'}],destination:{directory:preloaded.preflightDirectory}});
+ const original=await t.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_505e4189bc588191bcda811c4a35da79'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'}],destination:{directory:validated129.preflightDirectory}});
  await capture(c,'preflight-materialize.original.json',original,t);
  if(original.isError)throw Error('Actual current native read refused');
  use(c,'preflight/exec','CONTROLLER');use(c,'preflight/process','CONTROLLER');// first-original ticket consumed by finite collector below
@@ -29,10 +78,10 @@ export async function bootstrapActualCaller127(preloaded){
  const q=s=>"'"+String(s).replaceAll("'","'\\''")+"'";
  const code=`import pathlib,json,hashlib,runpy,sys\na=json.loads(pathlib.Path(sys.argv[1]).read_bytes())['structuredContent'];ts=a['transfers'];assert not a.get('unavailable_items') and len(ts)==3\nown=next(x for x in ts if x['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');d=json.loads(pathlib.Path(own['workspace_path']).read_bytes());k='native'+d['state'].split('_')[0][6:];ad=d[k]['direction'].get('grouped127_admission');assert ad and 'ADMIT_TRACE127_GROUPED_NATIVE' in d[k]['direction']['body']\nroot=pathlib.Path(sys.argv[2]);raw=(root/'diagnostic108/manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==ad['manifest_sha256'];m=json.loads(raw)\nfor n,p in m['source_files'].items():\n f=root/n;assert not pathlib.Path(n).is_absolute() and '..' not in pathlib.Path(n).parts;b=f.read_bytes();assert len(b)==p['bytes'] and hashlib.sha256(b).hexdigest()==p['sha256']\nsys.argv=[str(root/'diagnostic108/preflight127.py'),sys.argv[1],sys.argv[3]];runpy.run_path(str(root/'diagnostic108/preflight127.py'),run_name='__main__')`;
  for(let n=0;n<3;n++)use(c,'preflight/helper-original128/'+n,'CONTROLLER');
- let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(preloaded.reviewedRoot)+' '+q(preloaded.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
+ let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
- if(verified.schema!=='TRACE127_NATIVE_PREFLIGHT_ORIGINAL_V1'||verified.inventory_sha256!==preloaded.inventorySha256||!same(verified.current_admission,preloaded.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
- const verifiedPreload={...preloaded,holderCommand:{cmd:'python '+q(preloaded.reviewedRoot+'/diagnostic108/native127.py')+' '+q(preloaded.configPath),tty:true,yield_time_ms:1000,max_output_tokens:4000}};
+ if(verified.schema!=='TRACE127_NATIVE_PREFLIGHT_ORIGINAL_V1'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
+ const verifiedPreload={...validated129,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:4000}};
  const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);return handle;
 }
 export function reserveObserver127(handle,index,cellId){
@@ -144,7 +193,7 @@ export async function collectPreflight128(first,{tools,deadlineUtcMs,retain,clai
    if(!response||typeof response.output!=='string'||response.isError||response.tool_throw||response.original_token_count>4000)throw Error('Complete untruncated native preflight original');
    if(typeof response.chunk_id!=='string'||!response.chunk_id||chunks.has(response.chunk_id))throw Error('Unique ordered original chunk identity');
    chunks.add(response.chunk_id);parts++;output+=response.output;
-   if(new TextEncoder().encode(output).length>PREFLIGHT128.maxBytes)throw Error('Complete bounded preflight output');
+   if(utf8ByteCount129(output)>PREFLIGHT128.maxBytes)throw Error('Complete bounded preflight output');
    if(response.exit_code!=null){
     if(response.exit_code!==0||response.session_id!=null||response.eof===false)throw Error('Actual terminal0 plus EOF required');
     verified=JSON.parse(output);if(!verified||Array.isArray(verified)||typeof verified!=='object')throw Error('ONE complete structured JSON record required');
