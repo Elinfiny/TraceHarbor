@@ -11,9 +11,10 @@ def load(name,path):
 t146=load('trace146_native_timing',ROOT/'timing146.py')
 g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
-base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart154.py')
+base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart156.py')
 p150=load('trace150_publication_protocol',ROOT/'publication150.py')
 preflight152=load('trace152_native_authority_preflight',ROOT/'preflight127.py')
+r156=load('trace156_sameown_values',ROOT/'references156.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
  if kind=='library_replace':return p150.normalize150(original)
@@ -151,6 +152,7 @@ class NativePort127:
   self.authority152_last={'scope':scope,'seq':self.ledger.seq,'own_version':version,'authority':auth152}
  def before_effect(self,id,op,args):
   current=self.current();payload=current['doc'][current['key']]['records'][-1]['payload'];intent=payload.get('phase_intent127');phase=self.macro.active['name']
+  if intent and current['number']==150:intent=r156.expand_intent156(current['doc'],intent,len(current['doc']['native150']['records'])-1)
   preflight152.a152.require_predecessor152(id,phase,self._version,self.ledger.seq,getattr(self,'authority152_last',None))
   if not intent or intent['phase']!=phase or intent['plan_sha256']!=self.macro.plan_sha or phase not in self.macro.consumed or intent['context']!=self.macro.context or current['doc']['guard']['operation_id']!=self.macro.context['direction_id']:raise ValueError('Same actual consumed whole phase/current authority before EVERY Git effect')
   manifest=base.strict((ROOT/'manifest.json').read_bytes())
@@ -170,16 +172,20 @@ class NativePort127:
   cas_start=time.monotonic()
   if version!=self._version or payload['phase_intent127']['plan_sha256']!=self.macro.plan_sha:raise ValueError('Exact whole live typed phase/version')
   current=self.current();self.helper(phase,'guard-before',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(self._checkpoint),str(version)])
-  self.macro.store.save(phase+'/writer-input',payload)
+  stored_payload=copy.deepcopy(payload)
+  if current['number']==150:
+   stored_payload['phase_intent127']=r156.compact_intent156(current['doc'],payload['phase_intent127'])
+   if r156.expand_intent156(current['doc'],stored_payload['phase_intent127'],len(current['doc']['native150']['records']))!=payload['phase_intent127']:raise ValueError('Whole byte-value expansion before original writer')
+  self.macro.store.save(phase+'/writer-input',stored_payload)
   request=pathlib.Path(self.macro.store.records[phase+'/writer-input']['path'])
   # Canonical evidence is an identity wrapper; original producer receives a
   # separately O_EXCL serialized payload, budgeted as source evidence below.
-  payloadpath=self.root/(phase+'-payload.json');c.DiskOriginalIO127().write_once(str(payloadpath),can(payload))
+  payloadpath=self.root/(phase+'-payload.json');c.DiskOriginalIO127().write_once(str(payloadpath),can(stored_payload))
   writer=pathlib.Path(current['binding']['writer_path']);target=writer.parent/('candidate'+str(version+1))/'TraceHarbor_V1_checkpoint.json'
   if target.exists():raise RuntimeError('No existing candidate adoption/restart')
   stdout=self.helper(phase,'writer',[sys.executable,str(writer),'build',str(self._checkpoint),str(version),'PUBLISH_INTENT',str(payloadpath)]);r=base.strict(stdout)
   raw=target.read_bytes();d=base.strict(raw);wanted=copy.deepcopy(current['doc']);key=current['key'];utc=d['events'][-1]['utc'];n=wanted[key]
-  n['records'].append({'phase':'PUBLISH_INTENT','payload':payload});n['phase']='PUBLISH_INTENT';n['previous_checkpoint']={'version':version,'raw_sha256':sha(current['raw']),'self_sha256':wanted['self_sha256']};n['writer_sha256']=current['binding']['writer_sha256'];n['phase_history'].append({'phase':'PUBLISH_INTENT','utc':utc,'actual_own_version':version+1})
+  n['records'].append({'phase':'PUBLISH_INTENT','payload':stored_payload});n['phase']='PUBLISH_INTENT';n['previous_checkpoint']={'version':version,'raw_sha256':sha(current['raw']),'self_sha256':wanted['self_sha256']};n['writer_sha256']=current['binding']['writer_sha256'];n['phase_history'].append({'phase':'PUBLISH_INTENT','utc':utc,'actual_own_version':version+1})
   wanted['events'].append({'phase':'PUBLISH_INTENT','utc':utc,'delivery_id':current['direction']['id'],'own_version':version+1,'source':'CURRENT Auditor'+str(current['binding']['auditor_version'])+' direction'+str(current['number']),'scope':'SAME_HOST_PRODUCER_COUNTER_CONTRACT_REVIEW_SOURCE'})
   wanted['guard'].update(operation_id=current['direction']['id'],operation_state='PUBLISH_INTENT',epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK');wanted['state']='NATIVE'+str(current['number'])+'_PUBLISH_INTENT';wanted['self_sha256']=base.selfhash(wanted)
   if r.get('candidate')!=str(target) or r.get('version')!=version+1 or r.get('raw_sha256')!=sha(raw) or r.get('self_sha256')!=d['self_sha256'] or r.get('preservation')!='PASS' or d!=wanted:raise ValueError('Exact original writer/full preservation before CAS')
@@ -198,6 +204,7 @@ class NativePort127:
   if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
   self.attrs(phase,'attrs-readback',path,tr);check,observed=base.check_checkpoint(path,base.OWN,version+1,sha(raw))
   if observed!=raw or check!=d:raise ValueError('Wholebyte/self original producer readback')
+  if current['number']==150 and r156.expand_intent156(check,check['native150']['records'][-1]['payload']['phase_intent127'],len(check['native150']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole resolved original intent after pinned readback')
   self.macro.store.save(phase+'/readback-verify',{'version':version+1,'file_id':pub['file_id'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'wholebyte_self_allattrs':'PASS'})
   self._checkpoint=path;self._version=version+1
   self.helper(phase,'guard-after',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(path),str(version+1)])
