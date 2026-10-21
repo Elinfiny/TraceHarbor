@@ -82,7 +82,7 @@ export async function bootstrapActualCaller127(preloaded){
  let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
  if(verified.schema!=='TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
- const verifiedPreload={...validated129,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,manifestSha135:verified.manifestSha135,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:4000}};
+ const verifiedPreload={...validated129,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,manifestSha135:verified.manifestSha135,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:262144}};
  const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);return handle;
 }
 export function reserveObserver127(handle,index,cellId){
@@ -107,6 +107,7 @@ export async function launch127(handle,tools){
  const c=HANDLES.get(handle);if(!c||c.session!==null)throw Error('ONE source-bound holder');
  if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&tools!==PLATFORM_TOOLS127)throw Error('No supplied native tool callback');
  use(c,'holder/start','CONTROLLER');use(c,'holder/start-original','CONTROLLER');
+ c.streamCutoff143=Date.now()+15000;
  let original;try{original=await tools.exec_command(c.p.holderCommand);}catch(e){original={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};}
  await capture(c,'holder-start.original.json',original,tools);
  if(!Number.isInteger(original.session_id)||original.exit_code!=null){c.failed={holder_start:original};throw Error('No actual live sameholder; no retry');}c.session=original.session_id;return original;
@@ -190,22 +191,48 @@ export async function bridge127(handle,frame,tools){
   if(frame.op==='github_fetch_workflow_run_artifacts'){if(v?.total_count!==1||v.artifacts?.length!==1||v.artifacts[0].name!==a.name){c.failed={artifact_identity:true};}else c.artifact=v.artifacts[0].id;}
  }
  const response={schema:'TRACE118_HOST_RETURN',seq:frame.seq,context:frame.context,op:frame.op,request_digest:frame.request_digest,original_result:original,transport_error:error,late:late||!!c.failed};
- let terminal;try{terminal=await tools.write_stdin({session_id:c.session,chars:JSON.stringify(response)+'\n',yield_time_ms:1000,max_output_tokens:4000});}catch(e){terminal={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};c.failed??=terminal;}
+ c.streamCutoff143=Math.min(Date.now()+15000,frame.deadline_utc_ms,c.p.deadlineUtcMs);
+ let terminal;try{terminal=await tools.write_stdin({session_id:c.session,chars:JSON.stringify(response)+'\n',yield_time_ms:1000,max_output_tokens:262144});}catch(e){terminal={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};c.failed??=terminal;}
  await capture(c,frame.seq+'.canonical-callback-original.json',terminal,tools);c.nextSeq++;
  if(c.failed)throw Error('First original/exception retained; entire phase non-retriable');return terminal;
 }
+async function collectHolderStream143(handle,first,tools,window){
+ const c=HANDLES.get(handle),deadline=c?.streamCutoff143;
+ if(!c||c.failed||!['launch',...c.p.inventory.remote_ids].includes(window)||!Number.isInteger(deadline))throw Error('One source-owned original stream window');
+ let response=first,output='',verified=null,primary=null;const chunks=new Set(),identities=[];
+ try{
+  for(let n=0;n<=8;n++){
+   // Initial original was retained by launch/callback. Every additional
+   // actual empty-input read is captured BEFORE any parse/deadline guard.
+   if(n){use(c,'stream143/'+window+'/poll-original/'+(n-1),'CONTROLLER');await capture(c,'stream143-'+window.replaceAll('/','-')+'-poll-'+(n-1)+'.original.json',response,tools);}
+   identities.push({index:n,chunk_id:response?.chunk_id,session_id:response?.session_id,exit_code:response?.exit_code});
+   if(Date.now()>=deadline)throw Error('Original stream/phase/parent cutoff; no reset');
+   if(!response||response.isError||response.tool_throw||typeof response.output!=='string'||response.original_token_count>262144||typeof response.chunk_id!=='string'||!response.chunk_id||chunks.has(response.chunk_id))throw Error('Complete bounded ordered original stream chunk');
+   chunks.add(response.chunk_id);output+=response.output;utf8ByteCount129(output,262144);
+   if(response.exit_code!=null){if(response.session_id!=null||response.eof===false)throw Error('Actual terminal plus EOF required');verified={...response,output};return verified;}
+   if(response.session_id!==c.session||response.eof===true)throw Error('Only actual SAME live holder; no restart');
+   if(output.endsWith('\n')){verified={...response,output};return verified;}
+   if(n===8)throw Error('Eight precommitted source-stream reads exhausted; no retry');
+   use(c,'stream143/'+window+'/poll/'+n,'CONTROLLER');
+   try{response=await tools.write_stdin({session_id:c.session,chars:'',yield_time_ms:1000,max_output_tokens:262144});}
+   catch(error){response={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
+  }
+ }catch(error){primary={name:error?.name,message:String(error)};c.failed??=primary;throw error;}
+ finally{use(c,'stream143/'+window+'/close','CONTROLLER');await capture(c,'stream143-'+window.replaceAll('/','-')+'-close.original.json',{window,deadline,identities,output,primary,complete:!!verified,initial_original:first},tools);}
+}
 export async function drive127(handle,tools){
- // Entire live method binding. No hidden poll. Each callback must return the
- // next complete source frame or the actual process terminal. An incomplete
- // output is UNKNOWN; never resend exec/callback/consumed phase to repair it.
- const c=HANDLES.get(handle);let original=await launch127(handle,tools);
- for(let n=0;n<=c.p.inventory.remote_ids.length;n++){
-  if(original.exit_code!=null){use(c,'holder/terminal','CONTROLLER');use(c,'holder/terminal-original','CONTROLLER');await capture(c,'holder-terminal.original.json',original,tools);if(original.exit_code!==0)throw Error('Actual source holder nonzero');return original;}
-  if(n===c.p.inventory.remote_ids.length)throw Error('Finite remote schedule exhausted before terminal; no extra poll');
-  const lines=(original.output||'').trim().split('\n');if(lines.length!==1)throw Error('One exact bounded source frame, no prefix/event selection');
-  const frame=JSON.parse(lines[0]);c.nativeFrame=frame;original=await bridge127(handle,frame,tools);c.nativeFrame=null;
- }
- throw Error('Finite complete macro frame schedule exhausted; no retry');
+ const c=HANDLES.get(handle);let original,window='launch';
+ try{
+  original=await launch127(handle,tools);
+  for(let n=0;n<=c.p.inventory.remote_ids.length;n++){
+   original=await collectHolderStream143(handle,original,tools,window);
+   if(original.exit_code!=null){use(c,'holder/terminal','CONTROLLER');use(c,'holder/terminal-original','CONTROLLER');await capture(c,'holder-terminal.original.json',original,tools);if(original.exit_code!==0)throw Error('Actual source holder nonzero; original retained');return original;}
+   if(n===c.p.inventory.remote_ids.length)throw Error('Finite remote schedule exhausted before terminal');
+   const lines=original.output.trim().split('\n');if(lines.length!==1)throw Error('One exact complete source frame; no prefix/event selection');
+   const frame=JSON.parse(lines[0]);c.nativeFrame=frame;window=frame.inventory_call_id;original=await bridge127(handle,frame,tools);c.nativeFrame=null;
+  }
+  throw Error('Finite complete macro stream exhausted; no retry');
+ }catch(error){c.failed??={name:error?.name,message:String(error)};use(c,'controller/failure143','CONTROLLER');await capture(c,'controller-failure143.original.json',{failure:c.failed,error:{name:error?.name,message:String(error)}},tools);throw error;}
 }
 
 // No capability is created by this collector. The native bootstrap alone uses

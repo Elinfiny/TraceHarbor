@@ -66,6 +66,15 @@ def inventory127():
  row('dispatch136/create-ref/pre-effect-guard','local_evidence')
  for n in range(3):row('dispatch136/delay/'+str(n),'wait')
  for id in ('dispatch136/created-ref-original','dispatch136/selected-run-original'):row(id,'local_evidence')
+ # Prospective143 stream collection: each initial/callback original is
+ # already canonical. Eight read-only SAME-session polls per window and
+ # their originals, plus one close receipt, are separately precommitted.
+ for window in ['launch']+remote:
+  for n in range(8):
+   row('stream143/'+window+'/poll/'+str(n),'native','CONTROLLER')
+   row('stream143/'+window+'/poll-original/'+str(n),'local_evidence','CONTROLLER')
+  row('stream143/'+window+'/close','local_evidence','CONTROLLER',True)
+ row('controller/failure143','local_evidence','CONTROLLER',True)
  assert len({r['id'] for r in rows})==len(rows)
  return {'schema':'TRACE127_WHOLE_PRECOMMITTED_INVENTORY_V1','rows':rows,'inclusive_total':len(rows),'current_comparison_cap':48,'current_fit':len(rows)<=48,'proposal_only_cap':len(rows),'authority':False,'reserved_closure':sum(r['closure'] for r in rows),'observer_maximum':16,'immutable_semantic_graph':list(SEMANTIC),'phase_graph':list(PHASES),'remote_ids':remote}
 class Inventory127:
