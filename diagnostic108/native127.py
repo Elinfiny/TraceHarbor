@@ -12,8 +12,10 @@ t146=load('trace146_native_timing',ROOT/'timing146.py')
 g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
 base=load('trace127_original118',ROOT/'host_transport118.py')
+p150=load('trace150_publication_protocol',ROOT/'publication150.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
+ if kind=='library_replace':return p150.normalize150(original)
  if kind=='github_ref_absence136':return g.p133.g136.absent_original136(original)
  if kind=='github_fetch_workflow_run_artifacts':
   if type(original) is not dict or original.get('isError') or type(original.get('structuredContent',{}).get('content')) is not str:raise ValueError('Whole original artifact REST body with total_count')
@@ -111,7 +113,7 @@ class NativePort127:
  def current(self):return base.current_binding(self._checkpoint,self._version,self.config)
  def original_reference(self,id):
   self.inventory.claim(id+'/canonical-reference');seq=self.ledger.seq;request=base.strict((self.ledger.root/(str(seq)+'.request.original.json')).read_bytes());path=str(pathlib.Path(self.config['capture_directory'])/(str(seq)+'.canonical-native-original.json'));raw=self.canonical127.io.read(path);d=base.strict(raw)
-  expected={'context_sha256':sha(can(self.config['context'])),'operation':request['op'],'seq':seq,'tool':request['op'],'call_id':request['request_digest']}
+  expected={'context_sha256':sha(can(self.config['context'])),'operation':request['op'],'seq':seq,'tool':'exec_command' if request['op']=='library_replace' else request['op'],'call_id':request['request_digest']}
   if d.get('identity')!=expected or request.get('inventory_call_id')!=id:raise ValueError('Canonical actual call identity, never equal-byte merge')
   if self.current_original and self.current_original['request']['seq']==seq and d.get('original')!=self.current_original['frame']['original_result']:raise ValueError('Actual complete saved native original differs')
   return {'id':id,'identity':expected,'path':path,'bytes':len(raw),'sha256':sha(raw),'canonical':True}
@@ -154,12 +156,15 @@ class NativePort127:
   if r.get('candidate')!=str(target) or r.get('version')!=version+1 or r.get('raw_sha256')!=sha(raw) or r.get('self_sha256')!=d['self_sha256'] or r.get('preservation')!='PASS' or d!=wanted:raise ValueError('Exact original writer/full preservation before CAS')
   self.macro.store.save(phase+'/candidate-verify',{'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'preservation':'PASS'})
   dest=self.layout['transfer']/('group127-upload-'+str(version));dest.mkdir(mode=0o700,exist_ok=False);upload=dest/target.name;c.DiskOriginalIO127().write_once(str(upload),raw)
+  for attr in os.listxattr(target):os.setxattr(upload,attr,os.getxattr(target,attr))
   self.macro.store.save(phase+'/transfer-copy',{'path':str(upload),'bytes':len(raw),'sha256':sha(raw)})
   pub=self.macro.call(phase+'/CAS','library_replace',{'library_file_id':base.OWN,'file':str(upload),'expected_current_version':version,'version_reason':'Actual independently admitted grouped phase consumed before first effect'})
   if pub.get('status')!='succeeded' or pub.get('library_file_id')!=base.OWN or pub.get('current_version_number')!=version+1:raise ValueError('Actual conditional publication original')
+  proof150=pub['publication150']['upload']
+  if proof150['sha256']!=sha(raw) or proof150['bytes']!=len(raw) or proof150['self_sha256']!=d['self_sha256'] or proof150['expected_current_version']!=version:raise ValueError('Actual prepared upload fullbody/expectedversion')
   self.attrs(phase,'attrs-candidate',target,pub);self.attrs(phase,'attrs-upload',upload,pub)
   tr=self.macro.call(phase+'/readback','library_materialize',{'items':[{'library_file_id':base.OWN,'file_id':pub['file_id'],'file_name':pub['file_name']}],'destination':{'directory':str(self.layout['transfer']/('group127-readback-'+str(version+1)))}})
-  if tr['file_id']!=pub['file_id'] or tr['current_version_number']!=version+1 or tr['library_file_id']!=base.OWN or tr['xattrs']!=pub['xattrs']:raise ValueError('Pinned peritem current CAS identity')
+  if tr['file_id']!=pub['file_id'] or tr['current_version_number']!=version+1 or tr['library_file_id']!=base.OWN or any({a['name']:a['value'] for a in pub['xattrs']}.get(a['name'])!=a['value'] for a in tr['xattrs']):raise ValueError('Pinned peritem current CAS identity')
   path=pathlib.Path(tr['workspace_path']);expected=self.layout['transfer']/('group127-readback-'+str(version+1))/pub['file_name']
   if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
   self.attrs(phase,'attrs-readback',path,tr);check,observed=base.check_checkpoint(path,base.OWN,version+1,sha(raw))
@@ -290,7 +295,7 @@ class NativePort127:
   return {'phase':'consumed','recipient_context':ctx,'ciphertext_receipt':{'ref':p['ref'],'ciphertext_commit':p['commit'],'ciphertext_sha256':delivery['ciphertext_sha256']},'admit_sha256':sha(self.macro.body('admit')[0])}
  def provider_value(self,packet,operation):return self.provider.value127(packet,operation,True,self)
  def packet(self,id,op,args):
-  self.macro.call(id,op,args);o=self.current_original;request=o['request'];identity={'context_sha256':sha(can(self.config['context'])),'operation':op,'seq':request['seq'],'tool':op,'call_id':request['request_digest']};path=o['canonical_path'];raw=self.canonical127.io.read(path)
+  self.macro.call(id,op,args);o=self.current_original;request=o['request'];identity={'context_sha256':sha(can(self.config['context'])),'operation':op,'seq':request['seq'],'tool':'exec_command' if op=='library_replace' else op,'call_id':request['request_digest']};path=o['canonical_path'];raw=self.canonical127.io.read(path)
   canonical={'path':path,'bytes':len(raw),'sha256':sha(raw)}
   return self.provider.retain_native127(self,identity,o['frame']['original_result'],canonical)
  def observe_run(self,n):return self.packet('collection/run/'+str(n),'github_fetch',{'url':'https://api.github.com/repos/'+g.REPO+'/actions/runs/'+str(self.run_id)})

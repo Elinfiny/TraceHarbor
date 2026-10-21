@@ -146,6 +146,28 @@ function guardArgs(c,f){
  if(f.op==='github_fetch_workflow_run_artifacts'&&!new RegExp('^traceharbor-(recipient104|safe127|failure146)-'+a.run_id+'-1$').test(a.name))throw Error('Exact name-filtered artifact, not total run inventory');
  if(f.op==='github_download_workflow_artifact'&&a.artifact_id!==c.artifact)throw Error('Only actual preceding selected artifact');
 }
+async function publishPrepared150(c,frame,tools){
+ const phase=frame.inventory_call_id.split('/')[0],prefix='prepared150/'+phase+'/',originals=[];
+ for(const id of ['process','prepare','transfer','finalize','metadata','intent','helper-original','receipt','normalize','close'])use(c,prefix+id,'CONTROLLER');
+ const quote=s=>"'"+String(s).replaceAll("'","'\\''")+"'";
+ const cmd='python3 '+quote(c.p.reviewedRoot+'/diagnostic108/publication150.py')+' '+quote(c.p.configPath)+' '+quote(JSON.stringify(frame.args));
+ let current;try{current=await tools.exec_command({cmd,yield_time_ms:1000,max_output_tokens:16000});}catch(e){current={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};}
+ originals.push(current);await capture(c,'prepared150-'+phase+'-exec0.original.json',current,tools);
+ const session=current?.session_id;
+ for(let n=0;current?.exit_code==null&&n<8;n++){
+  if(current?.session_id!==session||!Number.isInteger(session)||Date.now()>=frame.deadline_utc_ms)throw Error('Prepared helper UNKNOWN: retained first result, no secondwrite/fallback');
+  use(c,prefix+'poll/'+n,'CONTROLLER');use(c,prefix+'poll-original/'+n,'CONTROLLER');
+  try{current=await tools.write_stdin({session_id:session,chars:'',yield_time_ms:1000,max_output_tokens:16000});}catch(e){current={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};}
+  originals.push(current);await capture(c,'prepared150-'+phase+'-poll'+n+'.original.json',current,tools);
+ }
+ // Raw original exec identity is carried intact, never impersonated as a
+ // tools.library_replace result. Native normalizer150 validates terminalEOF,
+ // complete helper stdout/peritem/version/localattrs before dependent effects.
+ if(current?.exit_code!==0||current.session_id!=null||current.eof===false||Date.now()>=frame.deadline_utc_ms)throw Error('Prepared terminal unknown/late: no retry/direct fallback');
+ const carrier150={schema:'TRACE150_AUTHENTIC_EXEC_CARRIER',request:frame.args,exec_originals:originals};
+ utf8ByteCount129(JSON.stringify(carrier150),131072); // request<=262144 + carrier<=131072 + envelope4096 < original1MiB
+ return carrier150;
+}
 export async function bridge127(handle,frame,tools){
  const c=HANDLES.get(handle);if(!c||c.failed)throw Error('Exact preloaded source registry/no UNKNOWN retry');
  if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(tools!==PLATFORM_TOOLS127||frame!==c.nativeFrame))throw Error('Only original SAME actual source holder frame; no caller-supplied dict');
@@ -165,12 +187,12 @@ export async function bridge127(handle,frame,tools){
   case 'github_fetch_workflow_run_jobs':original=await tools.mcp__codex_apps__github_fetch_workflow_run_jobs(a);break;
   case 'github_fetch_workflow_run_artifacts':original=await tools.mcp__codex_apps__github_fetch({url:'https://api.github.com/repos/Elinfiny/TraceHarbor/actions/runs/'+a.run_id+'/artifacts?name='+encodeURIComponent(a.name)+'&per_page=100'});break;
   case 'github_download_workflow_artifact':original=await tools.mcp__codex_apps__github_download_workflow_artifact(a);break;
-  case 'library_replace':original=await tools.mcp__codex_apps__library_replace_library_file(a);break;
+  case 'library_replace':original=await publishPrepared150(c,frame,tools);break;
   case 'library_materialize':original=await tools.mcp__codex_apps__library_prepare_materialize(a);break;
   case 'browser_js':original=await tools.mcp__codex_apps__browser_js(a);break;
   default:throw Error('No arbitrary tool/new route');
  }}catch(e){error={exception_class:e?.name||'Error',message:String(e?.message||e),status:'UNKNOWN_NO_RETRY'};}
- const identity={context_sha256:c.p.contextSha256,operation:frame.op,seq:frame.seq,tool:frame.op,call_id:frame.request_digest};
+ const identity={context_sha256:c.p.contextSha256,operation:frame.op,seq:frame.seq,tool:frame.op==='library_replace'?'exec_command':frame.op,call_id:frame.request_digest};
  // Exactly one canonical complete native result before ALL postguards. Alias
  // consumers use this exact file/count/hash; equal bytes of othercalls differ.
  if(error&&original===null)original={tool_throw:error,status:'UNKNOWN_NO_RETRY'};
