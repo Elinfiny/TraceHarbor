@@ -68,6 +68,7 @@ def verify_current133(own,audit,proof,config,manifest_bytes,policy_version,*,cur
  if own['ownership']['owner']!='TraceHarbor V1' or own['ownership']['duplicate_trace_route_owners']!=0 or own['native_id']!=a152.TRACE_CHAT or n['direction']!=direction:raise ValueError('Actual current sole route/owner/outbox')
  p.release133(direction,config,manifest_bytes)
  evidence=a152.verify152(own,current_docs152,current_proofs152,config,manifest_bytes)
+ __import__('runpy').run_path(str(ROOT/'prestart154.py'))['current_prestart154'](own,config,empty=True)
  return copy.deepcopy(direction),evidence
 def produce133(original_path,config,*,_native_reload133=False):
  s=importlib.util.spec_from_file_location('trace133_preflight_plan',ROOT/'plan127.py');p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
@@ -93,19 +94,20 @@ def produce133(original_path,config,*,_native_reload133=False):
  own,ot,oraw=docs['libfile_3ee8270f03d8819188e1de1f75c3d824'];audit,at,araw=docs['libfile_f87a6a307f70819194e0af0fa453afd1'];policy,pt,praw=docs['libfile_6f69ae483b088191a1fffefca617bbd5'];key='native'+own['state'].split('_')[0][6:];n=own[key]
  current_docs152={stable:value[0] for stable,value in docs.items()};current_proofs152={t['library_file_id']:proof['Auditor_V28_checkpoint.json' if t['library_file_id']==a152.AUDIT else pathlib.Path(t['workspace_path']).name] for t in ts};direction,authority152=verify_current133(own,audit,proof,config,manifest_bytes,pt['current_version_number'],current_docs152=current_docs152,current_proofs152=current_proofs152)
  binding=n['records'][0]['payload']['writer_binding'];number=int(key[6:]);s=importlib.util.spec_from_file_location('trace133_immutable_guard',ROOT/'host_transport118.py');base=importlib.util.module_from_spec(s);s.loader.exec_module(base)
- guard_cfg={'direction_number':number,'writer_binding':binding};current=base.current_binding(ot['workspace_path'],ot['current_version_number'],guard_cfg)
+ guard_cfg={'direction_number':number,'writer_binding':binding,'config_path':config['path_roles']['config']};h154=__import__('runpy').run_path(str(ROOT/'prestart154.py'));current=h154['current_binding154'](base,ot['workspace_path'],ot['current_version_number'],guard_cfg)
  if current['direction']!=direction or current['binding']['auditor_version']!=authority152['admission_A'][a152.AUDIT]['version']:raise ValueError('Original118 immutable A and independently verified CURRENT B')
  layout=base.validate_transfer_layout(binding)
  for role in ('private','transfer','holder_parent'):
   if str(layout[role])!=config['path_roles'][role]:raise ValueError('Actual disjoint role provenance')
  if own['state'].endswith('_TERMINAL') or n['phase']!='RX_START' or len(n['records'])!=1 or any(x.get('phase')=='DISPATCH_CONSUMED' for x in n['records']):raise ValueError('No consumed/UNKNOWN invocation adoption')
  custody=custody133(own,config);snapshot=CurrentSnapshot133();_SNAP133[snapshot]={'direction':copy.deepcopy(direction),'ownership':'TraceHarbor V1','own_version':ot['current_version_number'],'current_checkpoint':ot['workspace_path'],'writer_sha256':binding['writer_sha256'],'auditor_sha256':authority152['immutable_guard_auditor_sha256'],'authority152':authority152,'custody_sha256':sha(can(custody)),'source_verification':copy.deepcopy(n['source_verification']),'current_source_verification152':proof,'writer_binding':binding,'direction_number':number,'custody':custody}
+ _SNAP133[snapshot]['holder_preparation154']=copy.deepcopy(n['records'][0]['payload']['holder_preparation154']);_SNAP133[snapshot]['prestart154']=h154['current_prestart154'](own,config,empty=True)
  return snapshot
 def require_snapshot133(snapshot):
  if type(snapshot) is not CurrentSnapshot133 or snapshot not in _SNAP133:raise TypeError('Actual same invocation source-produced current snapshot')
  return copy.deepcopy(_SNAP133[snapshot])
 def main133():
  cfg=json.loads(pathlib.Path(sys.argv[2]).read_bytes());snapshot=produce133(sys.argv[1],cfg);x=require_snapshot133(snapshot);s=importlib.util.spec_from_file_location('trace133_preflight_output_plan',ROOT/'plan127.py');p=importlib.util.module_from_spec(s);s.loader.exec_module(p)
- print(json.dumps({'schema':'TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2','current_admission':x['direction'][p.ADMISSION],'inventory_sha256':cfg['inventory_sha256'],'own_version':x['own_version'],'whole_self_allattrs':'PASS','native_authority':False,'sourceSha':cfg['source']['commit'],'sourceTree':cfg['source']['tree'],'captureDirectory':cfg['path_roles']['capture'],'transferRoot':cfg['path_roles']['transfer'],'dispatchSource':cfg['dispatch_source'],'directionId':x['direction']['id'],'staticConfigSha256':sha(can(cfg)),'manifestSha135':cfg['manifest']['sha256']}))
+ print(json.dumps({'schema':'TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2','prestart154':x['prestart154'],'current_admission':x['direction'][p.ADMISSION],'inventory_sha256':cfg['inventory_sha256'],'own_version':x['own_version'],'whole_self_allattrs':'PASS','native_authority':False,'sourceSha':cfg['source']['commit'],'sourceTree':cfg['source']['tree'],'captureDirectory':cfg['path_roles']['capture'],'transferRoot':cfg['path_roles']['transfer'],'dispatchSource':cfg['dispatch_source'],'directionId':x['direction']['id'],'staticConfigSha256':sha(can(cfg)),'manifestSha135':cfg['manifest']['sha256']}))
 
 if __name__=='__main__':main133()
