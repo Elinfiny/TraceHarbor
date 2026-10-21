@@ -10,24 +10,29 @@ _spec=importlib.util.spec_from_file_location('trace128_preflight_helper',ROOT/'h
 _SNAP133={}
 class CurrentSnapshot133:
  __slots__=()
-def _stable_read133(path,expected=None,private=False):
+CURRENT_METADATA_LIMIT133=67108864
+PRIVATE_MEMBER_LIMIT133=33554432
+def _stable_read133(path,expected=None,private=False,*,metadata=False):
  import stat
  p=pathlib.Path(path)
  if not p.is_absolute() or p.resolve()!=p:raise ValueError('No path aliases')
  # Every current path component is checked; no symlink ancestor traversal.
  for parent in [*reversed(p.parents),p]:
   if parent.is_symlink():raise ValueError('Nofollow every ancestor')
+ if type(metadata) is not bool or metadata and private:raise ValueError('Metadata flag cannot enlarge private custody')
+ limit=CURRENT_METADATA_LIMIT133 if metadata else PRIVATE_MEMBER_LIMIT133
  s=p.lstat()
+ if s.st_size>limit:raise ValueError('Whole bounded metadata bytes' if metadata else 'Whole bounded custody bytes')
  if not stat.S_ISREG(s.st_mode) or s.st_uid!=os.getuid() or s.st_nlink!=1 or private and s.st_mode&0o077 or s.st_mode&0o022:raise ValueError('Owned stable regular custody')
  if expected is not None and (s.st_dev,s.st_ino,s.st_uid,s.st_mode&0o777)!=(expected['dev'],expected['ino'],expected['uid'],expected['mode']):raise ValueError('No pruned/recreated custody adoption')
  fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)
  try:
-  a=os.fstat(fd);chunks=[]
+  a=os.fstat(fd);chunks=[];total=0
   while True:
    b=os.read(fd,1048576)
    if not b:break
-   chunks.append(b)
-   if sum(map(len,chunks))>33554432:raise ValueError('Whole bounded custody bytes')
+   chunks.append(b);total+=len(b)
+   if total>limit:raise ValueError('Whole bounded custody bytes')
   b=os.fstat(fd)
  finally:os.close(fd)
  end=p.lstat();ident=lambda st:(st.st_dev,st.st_ino,st.st_uid,st.st_mode,st.st_size,st.st_mtime_ns)
@@ -72,7 +77,7 @@ def produce133(original_path,config,*,_native_reload133=False):
  helper=config['path_roles']['library_helper'];helper_sha=config['path_roles']['library_helper_sha256']
  if sha(_stable_read133(helper))!=helper_sha:raise ValueError('Pinned actual helper')
  for i,t in enumerate(ts):
-  path=pathlib.Path(t['workspace_path']);raw=_stable_read133(path);d=json.loads(raw);v=copy.deepcopy(d)
+  path=pathlib.Path(t['workspace_path']);raw=_stable_read133(path,metadata=True);d=json.loads(raw);v=copy.deepcopy(d)
   if t['library_file_id']=='libfile_f87a6a307f70819194e0af0fa453afd1':h=v['integrity']['canonical_json_sha256'];v['integrity']['canonical_json_sha256']=None
   else:h=v['self_sha256'];v['self_sha256']=None
   if sha(can(v))!=h or len(raw)!=t['size_bytes']:raise ValueError('Actual full bytes/self before helper')
