@@ -13,10 +13,21 @@ g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
 base=load('trace127_original118',ROOT/'host_transport118.py')
 p150=load('trace150_publication_protocol',ROOT/'publication150.py')
+preflight152=load('trace152_native_authority_preflight',ROOT/'preflight127.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
  if kind=='library_replace':return p150.normalize150(original)
- if kind=='github_ref_absence136':return g.p133.g136.absent_original136(original)
+ if kind=='github_fetch' and type(original) is dict and original.get('schema')=='TRACE152_AUTHENTIC_READ_PAIR':
+  if set(original)!={'schema','value','current','native_authority'} or original['native_authority'] is not False:raise ValueError('Closed authentic current/proof pair')
+  return {'source_value152':_normalizer118(original['value'],kind),'current_original152':original['current']}
+ if kind=='library_materialize' and type(original) is dict and original.get('schema')=='TRACE152_AUTHENTIC_PHASE_READBACK':
+  if set(original)!={'schema','current','native_authority'} or original['native_authority'] is not False:raise ValueError('Closed authentic whole phase current readback')
+  ts=original['current'].get('structuredContent',{}).get('transfers',[])
+  if len(ts)!=4 or len([t for t in ts if t['library_file_id']==base.OWN])!=1:raise ValueError('Actual unique own+current three phase readback')
+  return {'source_value152':next(t for t in ts if t['library_file_id']==base.OWN),'current_original152':original['current']}
+ if kind=='github_ref_absence136':
+  if type(original) is not dict or set(original)!={'schema','absence','current','native_authority'} or original['schema']!='TRACE152_AUTHENTIC_COMPOUND_ORIGINAL' or original['native_authority'] is not False:raise ValueError('Whole separate authentic152 originals')
+  absent=g.p133.g136.absent_original136(original['absence']);return dict(absent,current_original152=original['current'])
  if kind=='github_fetch_workflow_run_artifacts':
   if type(original) is not dict or original.get('isError') or type(original.get('structuredContent',{}).get('content')) is not str:raise ValueError('Whole original artifact REST body with total_count')
   return base.strict(original['structuredContent']['content'])
@@ -95,6 +106,8 @@ class NativePort127:
   # dispatch. Shared committed tickets travel with the frame; no second budget.
   if op not in base.OPS:base.OPS=tuple(base.OPS)+(op,)
   value=self.bridge(op,args)
+  if type(value) is dict and set(value)=={'source_value152','current_original152'}:
+   self.refresh_authority152(value['current_original152'],id,phase_readback=id.endswith('/readback'));value=value['source_value152']
   request=base.strict((self.ledger.root/(str(self.ledger.seq)+'.request.original.json')).read_bytes());frame=base.strict((self.ledger.root/(str(self.ledger.seq)+'.return.original.json')).read_bytes())
   self.current_original={'request':request,'frame':frame,'canonical_path':str(pathlib.Path(self.config['capture_directory'])/(str(request['seq'])+'.canonical-native-original.json'))}
   return value
@@ -121,8 +134,24 @@ class NativePort127:
   raw=self.canonical127.io.read(r['path'])
   if len(raw)!=r['bytes'] or sha(raw)!=r['sha256'] or base.strict(raw)['identity']!=r['identity']:raise ValueError('Whole prior canonical original before next consumed phase')
   return r
+ def refresh_authority152(self,original152,scope,phase_readback=False):
+  ts152=original152.get('structuredContent',{}).get('transfers',[])
+  if original152.get('isError') or original152.get('tool_throw') or len(ts152)!=4 or {t['library_file_id'] for t in ts152}!=set(preflight152.a152.IDS):raise ValueError('Whole actual fresh current four-document original before every Git create')
+  docs152={};proofs152={}
+  for i,t in enumerate(ts152):
+   ident={'phase':self.macro.active['name'],'run':self.macro.context['once_receipt_sha256'],'source':self.source,'call':'authority152/'+scope+'/helper-original/'+str(i)}
+   helper128.run_helper128(self.config['library_helper'],self.config['library_helper_sha256'],pathlib.Path(t['workspace_path']),t['library_file_id'],t['xattrs'],ident,lambda identity,record:self.macro.store.save(ident['call'],{'identity':identity,'original':record}))
+   docs152[t['library_file_id']],proofs152[t['library_file_id']]=preflight152.a152.proof152(t['workspace_path'],t)
+  own152=docs152[base.OWN];version=self._version+(1 if phase_readback else 0)
+  target=pathlib.Path(self.config['writer_binding']['writer_path']).parent/('candidate'+str(version))/'TraceHarbor_V1_checkpoint.json' if phase_readback else self._checkpoint
+  if proofs152[base.OWN]['version']!=version or own152!=base.strict(target.read_bytes()):raise ValueError('Exact current own target whole bytes before every Git create')
+  auth152=preflight152.a152.verify152(own152,docs152,proofs152,self.static152,(ROOT/'manifest.json').read_bytes());self.macro.store.save('authority152/'+scope+'/verify',auth152);self.deadline()
+  request152=base.strict((self.ledger.root/(str(self.ledger.seq)+'.request.original.json')).read_bytes())
+  if time.time()*1000>=request152['deadline_utc_ms']:raise TimeoutError('Whole current152 checks exceeded same original15s frame; no next create')
+  self.authority152_last={'scope':scope,'seq':self.ledger.seq,'own_version':version,'authority':auth152}
  def before_effect(self,id,op,args):
   current=self.current();payload=current['doc'][current['key']]['records'][-1]['payload'];intent=payload.get('phase_intent127');phase=self.macro.active['name']
+  preflight152.a152.require_predecessor152(id,phase,self._version,self.ledger.seq,getattr(self,'authority152_last',None))
   if not intent or intent['phase']!=phase or intent['plan_sha256']!=self.macro.plan_sha or phase not in self.macro.consumed or intent['context']!=self.macro.context or current['doc']['guard']['operation_id']!=self.macro.context['direction_id']:raise ValueError('Same actual consumed whole phase/current authority before EVERY Git effect')
   manifest=base.strict((ROOT/'manifest.json').read_bytes())
   if sha(can(manifest))!=self.manifest_sha:raise ValueError('Manifest drift before effect')
@@ -181,7 +210,8 @@ class NativePort127:
    if ui['source_sha']!=self.source or ui['once_receipt_sha256']!=self.macro.context['once_receipt_sha256']:raise PermissionError('Same source original once, no manual conflict claim')
    url='https://api.github.com/repos/'+g.REPO+'/git/ref/heads/'+args['branch_name']
    absent=self.macro.call('dispatch136/ref-absence','github_ref_absence136',{'url':url})
-   if absent!={'absent':True}:raise ValueError('Genuine absent fresh ref required')
+   if set(absent)!={'absent','current_original152'} or absent['absent'] is not True:raise ValueError('Genuine absent ref plus authentic fresh CURRENT152')
+   self.refresh_authority152(absent['current_original152'],'precreate')
    #138 conservative absolute observation origin BEFORE the one consumed create.
    observation_start=time.monotonic();observation_end=min(observation_start+60,self.phase_mono,self.parent_mono)
    if self.macro.remaining()<15+t146.DISPATCH+t146.ADMIT_MIN:raise TimeoutError('Original146 suffix immediately before sole create')
@@ -372,7 +402,7 @@ def bootstrap127(config_path,provider):
  else:
   script=plan.render_dispatch135(static,context,cutoff)
   cfg['ui_dispatch127']={'master_terminal_no_input_conflict':direction.get('master_terminal_no_input_conflict') is True,'source_sha':context['source_sha'],'once_receipt_sha256':context['once_receipt_sha256'],'script_sha256':sha(script.encode()),'args':{'code':script}}
- host=NativePort127(g._SEAL,cfg,manifest,provider);host.runtime133=runtime;host.static_config133=can(static);clock=ActualClock127();macro=g.Grouped127(host,clock,context,root/'originals',c.DiskOriginalIO127(),host.inventory,'ACTUAL_SOURCE_PRIVATE',g._SEAL)
+ host=NativePort127(g._SEAL,cfg,manifest,provider);host.runtime133=runtime;host.static_config133=can(static);host.static152=copy.deepcopy(static);clock=ActualClock127();macro=g.Grouped127(host,clock,context,root/'originals',c.DiskOriginalIO127(),host.inventory,'ACTUAL_SOURCE_PRIVATE',g._SEAL)
  macro.store.save('runtime132/once-intent-original',once);macro.store.save('runtime132/armed-context-original',{'runtime_context':context,'static_config_sha256':sha(host.static_config133),'phase_template':prepared['phase_template'],'current_whole_snapshot':snap})
  return host,macro
 def main():
