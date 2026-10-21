@@ -52,7 +52,7 @@ class Ledger127(base.FrameLedger):
   if self.seq==1:
    frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'dispatchKind136':port.config['ui_dispatch127'].get('kind','browser135'),'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args']),'manifestSha256':port.macro.context['manifest_sha256'],'onceExpiresUtc':port.macro.context['expires_utc'],'coordinatorCutoffUtc':port.config['coordinator_cutoff_utc']}
   frame['request_digest']=sha(can(frame));raw=can(frame)
-  if len(raw)>base.MAX_FRAME:raise ValueError('Finite complete frame')
+  if len(raw)>min(base.MAX_FRAME,262144):raise ValueError('Finite complete source frame within declared tool-output cap')
   base.put(self.root/(str(self.seq)+'.request.original.json'),raw);self.pending=frame;return frame
 helper128=load('trace128_native_helper',ROOT/'helper_channel128.py')
 class NativePort127:
@@ -81,7 +81,7 @@ class NativePort127:
   base.put=budgeted_put
  def bind(self,macro):self.macro=macro
  def bind_interval(self,phase):
-  self.phase_mono=phase['end_mono'];self.ledger.bind_phase(self.phase_mono)
+  self.phase_mono=min(phase['end_mono'],self.ledger.parent_mono);self.ledger.bind_phase(self.phase_mono)
  def deadline(self):self.macro.guard()
  def invoke(self,id,op,args):
   self.current_id=id;self.chunk=0
