@@ -66,14 +66,14 @@ def produce133(original_path,config,*,_native_reload133=False):
  manifest_bytes=(ROOT/'manifest.json').read_bytes();p.static133(config,manifest_bytes)
  if str(pathlib.Path(original_path))!=config['path_roles']['materialize_original']:raise ValueError('Only fixed caller actual materialize capture')
  original=json.loads(_stable_read133(original_path));result=original['structuredContent'];result=result.get('result',result);ts=result['transfers']
- IDs={'libfile_3ee8270f03d8819188e1de1f75c3d824','libfile_505e4189bc588191bcda811c4a35da79','libfile_6f69ae483b088191a1fffefca617bbd5'}
+ IDs={'libfile_3ee8270f03d8819188e1de1f75c3d824','libfile_f87a6a307f70819194e0af0fa453afd1','libfile_6f69ae483b088191a1fffefca617bbd5'}
  if original.get('isError') or result.get('unavailable_items') or len(ts)!=3 or {t['library_file_id'] for t in ts}!=IDs:raise ValueError('Actual unique full current materialization original')
  docs={};proof={}
  helper=config['path_roles']['library_helper'];helper_sha=config['path_roles']['library_helper_sha256']
  if sha(_stable_read133(helper))!=helper_sha:raise ValueError('Pinned actual helper')
  for i,t in enumerate(ts):
   path=pathlib.Path(t['workspace_path']);raw=_stable_read133(path);d=json.loads(raw);v=copy.deepcopy(d)
-  if t['library_file_id']=='libfile_505e4189bc588191bcda811c4a35da79':h=v['integrity']['canonical_json_sha256'];v['integrity']['canonical_json_sha256']=None
+  if t['library_file_id']=='libfile_f87a6a307f70819194e0af0fa453afd1':h=v['integrity']['canonical_json_sha256'];v['integrity']['canonical_json_sha256']=None
   else:h=v['self_sha256'];v['self_sha256']=None
   if sha(can(v))!=h or len(raw)!=t['size_bytes']:raise ValueError('Actual full bytes/self before helper')
   if not _native_reload133:
@@ -81,8 +81,8 @@ def produce133(original_path,config,*,_native_reload133=False):
   if os.getxattr(path,'user.library-file-id').decode()!=t['library_file_id'] or int(os.getxattr(path,'user.library-file-version').decode())!=t['current_version_number']:raise ValueError('Actual stable Library ID/version')
   for a in t['xattrs']:
    if os.getxattr(path,a['name']).decode()!=a['value']:raise ValueError('ALL current returned attributes')
-  docs[t['library_file_id']]=(d,t,raw);proof[path.name]={'library_file_id':t['library_file_id'],'file_id':t['file_id'],'version':t['current_version_number'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':h,'ALLattrs':'PASS'}
- own,ot,oraw=docs['libfile_3ee8270f03d8819188e1de1f75c3d824'];audit,at,araw=docs['libfile_505e4189bc588191bcda811c4a35da79'];policy,pt,praw=docs['libfile_6f69ae483b088191a1fffefca617bbd5'];key='native'+own['state'].split('_')[0][6:];n=own[key]
+  docs[t['library_file_id']]=(d,t,raw);proof_key='Auditor_V28_checkpoint.json' if t['library_file_id']=='libfile_f87a6a307f70819194e0af0fa453afd1' else path.name;proof[proof_key]={'library_file_id':t['library_file_id'],'file_id':t['file_id'],'version':t['current_version_number'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':h,'ALLattrs':'PASS'}
+ own,ot,oraw=docs['libfile_3ee8270f03d8819188e1de1f75c3d824'];audit,at,araw=docs['libfile_f87a6a307f70819194e0af0fa453afd1'];policy,pt,praw=docs['libfile_6f69ae483b088191a1fffefca617bbd5'];key='native'+own['state'].split('_')[0][6:];n=own[key]
  direction=verify_current133(own,audit,proof,config,manifest_bytes,pt['current_version_number'])
  binding=n['records'][0]['payload']['writer_binding'];number=int(key[6:]);s=importlib.util.spec_from_file_location('trace133_immutable_guard',ROOT/'host_transport118.py');base=importlib.util.module_from_spec(s);s.loader.exec_module(base)
  guard_cfg={'direction_number':number,'writer_binding':binding};current=base.current_binding(ot['workspace_path'],ot['current_version_number'],guard_cfg)
