@@ -8,12 +8,16 @@ import base64,copy,importlib.util,io,json,os,pathlib,runpy,stat,subprocess,sys,t
 ROOT=pathlib.Path(__file__).resolve().parent
 def load(name,path):
  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);sys.modules[name]=m;s.loader.exec_module(m);return m
+t146=load('trace146_native_timing',ROOT/'timing146.py')
 g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
 base=load('trace127_original118',ROOT/'host_transport118.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
  if kind=='github_ref_absence136':return g.p133.g136.absent_original136(original)
+ if kind=='github_fetch_workflow_run_artifacts':
+  if type(original) is not dict or original.get('isError') or type(original.get('structuredContent',{}).get('content')) is not str:raise ValueError('Whole original artifact REST body with total_count')
+  return base.strict(original['structuredContent']['content'])
  if kind!='browser_js':return _normalizer118(original,kind)
  if type(original) is not dict or original.get('isError'):raise ValueError('Actual UI tool error')
  value=original.get('structuredContent')
@@ -48,7 +52,7 @@ class Ledger127(base.FrameLedger):
  def request(self,op,args):
   if self.failed or self.pending is not None or self.remaining()<=0:raise RuntimeError('Source/phase/sequence unavailable')
   port=self.port;self.seq+=1
-  frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'phase_deadline_mono':self.phase_mono,'inventory_call_id':port.current_id,'inventory_sha256':sha(can(port.inventory.plan))}
+  frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+min(15,self.remaining()))*1000)),'phase_deadline_mono':self.phase_mono,'phase_deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'inventory_call_id':port.current_id,'inventory_sha256':sha(can(port.inventory.plan))}
   if self.seq==1:
    frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'dispatchKind136':port.config['ui_dispatch127'].get('kind','browser135'),'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args']),'manifestSha256':port.macro.context['manifest_sha256'],'onceExpiresUtc':port.macro.context['expires_utc'],'coordinatorCutoffUtc':port.config['coordinator_cutoff_utc']}
   frame['request_digest']=sha(can(frame));raw=can(frame)
@@ -132,6 +136,7 @@ class NativePort127:
   for x in metadata.get('xattrs',[]):
    if os.getxattr(path,x['name']).decode()!=x['value']:raise ValueError('ALL returned actual attrs')
  def cas(self,phase,version,payload):
+  cas_start=time.monotonic()
   if version!=self._version or payload['phase_intent127']['plan_sha256']!=self.macro.plan_sha:raise ValueError('Exact whole live typed phase/version')
   current=self.current();self.helper(phase,'guard-before',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(self._checkpoint),str(version)])
   self.macro.store.save(phase+'/writer-input',payload)
@@ -162,6 +167,7 @@ class NativePort127:
   self.macro.store.save(phase+'/readback-verify',{'version':version+1,'file_id':pub['file_id'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'wholebyte_self_allattrs':'PASS'})
   self._checkpoint=path;self._version=version+1
   self.helper(phase,'guard-after',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(path),str(version+1)])
+  if time.monotonic()-cas_start>t146.CAS:raise TimeoutError('Whole146 CAS/readback cutoff; appliedCAS retained no replay')
   return {'version':version+1,'sha256':sha(raw),'wholebyte_self_allattrs':'PASS','intent_sha256':sha(can(payload['phase_intent127']))}
  def dispatch(self):
   ui=self.config['ui_dispatch127']
@@ -173,6 +179,7 @@ class NativePort127:
    if absent!={'absent':True}:raise ValueError('Genuine absent fresh ref required')
    #138 conservative absolute observation origin BEFORE the one consumed create.
    observation_start=time.monotonic();observation_end=min(observation_start+60,self.phase_mono,self.parent_mono)
+   if self.macro.remaining()<15+t146.DISPATCH+t146.ADMIT_MIN:raise TimeoutError('Original146 suffix immediately before sole create')
    created=self.macro.call('dispatch136/create-ref','github_create_dispatch136',args)
    helper.created136(created,args)
    proof=self.macro.call('dispatch136/ref-proof','github_fetch',{'url':url});helper.ref136(proof,args)
@@ -213,8 +220,26 @@ class NativePort127:
  def delay_until(self,target):
   delay=target-time.monotonic()
   if delay<0:return
-  if delay>30 or target>=self.phase_mono or target>=self.parent_mono:raise TimeoutError('Exact finite ordinary observation delay')
-  time.sleep(delay)
+  if delay>300 or target>=self.phase_mono or target>=self.parent_mono:raise TimeoutError('Exact146 finite source-owned idle within unchanged interval')
+  while time.monotonic()<target:
+   self.deadline();time.sleep(min(30,max(0,target-time.monotonic())))
+  self.deadline()
+ def wait_recipient146(self):
+  start=time.monotonic();runid=self.run_id
+  for n,offset in enumerate((0,45,90,135,180,210)):
+   if n:self.inventory.claim('recipient146/delay/'+str(n-1));self.delay_until(start+offset)
+   listed=self.macro.call('recipient146/list/'+str(n),'github_fetch_workflow_run_artifacts',{'repo_full_name':g.REPO,'run_id':runid,'name':'traceharbor-recipient104-'+str(runid)+'-1'})
+   if listed.get('total_count')==1 and len(listed.get('artifacts',[]))==1:return
+   if listed!={'total_count':0,'artifacts':[]}:raise ValueError('Exact bounded recipient availability only')
+  raise g.Pending127('Finite146 recipient readiness exhausted; no repeated counter/dispatch')
+ def collect_failure146(self,packet):
+  run=self.provider_value(packet,'github_fetch');plan=self.provider_plan_failure146();listed=self.packet('failure/list','github_fetch_workflow_run_artifacts',{'repo_full_name':g.REPO,'run_id':run['id'],'name':'traceharbor-failure146-'+str(run['id'])+'-1'});art=self.provider.failure_metadata146(plan,run,self.provider_value(listed,'github_fetch_workflow_run_artifacts'))
+  downloaded=self.packet('failure/download','github_download_workflow_artifact',{'repo_full_name':g.REPO,'artifact_id':art['id'],'file_name':'failure146.zip'});ref=self.provider_value(downloaded,'github_download_workflow_artifact').get('file');destination=self.layout['transfer']/('failure146-'+str(run['id']));destination.mkdir(mode=0o700,exist_ok=False)
+  material=self.packet('failure/materialize','library_materialize',{'items':[{k:ref[k] for k in ('library_file_id','file_id','file_name') if k in ref}],'destination':{'directory':str(destination)}});tr=self.provider_value(material,'library_materialize');tr=tr.get('result',tr)
+  if len(tr['transfers'])!=1 or tr.get('unavailable_items'):raise ValueError('Exact failure artifact transfer')
+  raw=self.artifact_bytes(ref,tr['transfers'][0],art,destination,'failure/file-original',65536);return self.provider.failure_zip146(raw,plan)
+ def provider_plan_failure146(self):
+  x=self.macro.context;return {'run_id':self.run_id,'source_sha':x['source_sha'],'manifest_sha256':x['manifest_sha256'],'once_receipt_sha256':x['once_receipt_sha256'],'dispatch_binding136':g.p133.g136.binding136(self.config['ui_dispatch127']['args'])}
  def prepare_delivery(self):
   current=self.current()
   if 'ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY' not in current['direction']['body']:raise PermissionError('Actual private6 custody independent gate')
@@ -225,11 +250,11 @@ class NativePort127:
   listed=self.macro.call('recipient/list','github_fetch_workflow_run_artifacts',{'repo_full_name':g.REPO,'run_id':runid,'name':'traceharbor-recipient104-'+str(runid)+'-1'})
   if listed['total_count']!=1 or len(listed['artifacts'])!=1:raise ValueError('Exact NAME-FILTERED selected recipient, not total run inventory')
   artifact=listed['artifacts'][0]
-  if artifact['name']!='traceharbor-recipient104-'+str(runid)+'-1' or artifact['workflow_run']['id']!=runid or artifact['workflow_run']['head_sha']!=self.source or artifact['expired'] or not 0<artifact['size_in_bytes']<=8192:raise ValueError('Recipient context/digest cap')
+  if artifact['name']!='traceharbor-recipient104-'+str(runid)+'-1' or artifact['workflow_run']['id']!=runid or artifact['workflow_run']['head_sha']!=self.source or artifact['expired'] or not 0<artifact['size_in_bytes']<=65536:raise ValueError('Recipient context/digest cap')
   downloaded=self.macro.call('recipient/download','github_download_workflow_artifact',{'repo_full_name':g.REPO,'artifact_id':artifact['id'],'file_name':'recipient127.zip'});ref=downloaded.get('file',downloaded)
   destination=self.layout['transfer']/('recipient127-'+str(runid));destination.mkdir(mode=0o700,exist_ok=False)
   transfer=self.macro.call('recipient/materialize','library_materialize',{'items':[{k:ref[k] for k in ('library_file_id','file_id','file_name') if k in ref}],'destination':{'directory':str(destination)}})
-  raw=self.artifact_bytes(ref,transfer,artifact,destination,'recipient/verify',8192)
+  raw=self.artifact_bytes(ref,transfer,artifact,destination,'recipient/verify',65536)
   with zipfile.ZipFile(io.BytesIO(raw)) as archive:
    if archive.namelist()!=['recipient-public.json'] or archive.testzip() is not None:raise ValueError('Exact recipient complete CRC')
    public=base.strict(archive.read('recipient-public.json'))
@@ -307,7 +332,7 @@ def bootstrap127(config_path,provider):
  preflight=load('trace133_native_current_intake',ROOT/'preflight127.py')
  snapshot=preflight.produce133(static['path_roles']['materialize_original'],static,_native_reload133=True);snap=preflight.require_snapshot133(snapshot)
  direction=snap['direction'];manifest_bytes=(ROOT/'manifest.json').read_bytes();manifest=base.strict(manifest_bytes);prepared=plan.release133(direction,static,manifest_bytes)
- markers=('ADMIT_TRACE133_STATIC_TYPED_RUNTIME_V2','ADMIT_NATIVE_SAFE127_PROVIDER_DELIVERY','ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY','ADMIT_CURRENT_ONCE_DISPATCH_API0')
+ markers=('ADMIT_TRACE146_STATIC_TYPED_RUNTIME_V3','ADMIT_NATIVE_SAFE127_PROVIDER_DELIVERY','ADMIT_CURRENT_ENCRYPTED_INPUT_CUSTODY','ADMIT_CURRENT_ONCE_DISPATCH_API0')
  if any(x not in direction['body'] for x in markers) or static['cost_scope']['host_cost_bound']!=0:raise PermissionError('Actual independent security/source/runtime/custody/cost gate absent')
  for name,pin in manifest['source_files'].items():
   path=pathlib.Path(name)
@@ -315,12 +340,20 @@ def bootstrap127(config_path,provider):
   raw=(ROOT.parent/path).read_bytes()
   if len(raw)!=pin['bytes'] or sha(raw)!=pin['sha256']:raise ValueError('Whole exact sources before clock')
  if not os.isatty(0):raise TypeError('Actual directPTY before holder')
+ t146.preallocate146(static)
+ observer_plan=pathlib.Path(static['path_roles']['capture'])/'observer146-plan.json'
+ if not observer_plan.is_file() or observer_plan.is_symlink():raise ValueError('Source issued durable observer plan before holder/clock')
+ observer=load('trace146_native_observer',ROOT/'observer146.py');capture_root=pathlib.Path(static['path_roles']['capture']);issue=base.strict(CanonicalReader127(capture_root).read(capture_root/'observer146-issue-original.json'))
+ if issue.get('exit_code')!=0 or issue.get('session_id') is not None:raise ValueError('Actual issued observer helper terminal before holder')
+ issued=base.strict(issue['output']);_,observed_plan=observer.plan146(capture_root,issued['plan_sha256'])
+ expected_observer={'source_sha':static['source']['commit'],'manifest_sha256':sha(manifest_bytes),'static_config_sha256':sha(can(static)),'inventory_sha256':static['inventory_sha256'],'direction_id':direction['id'],'realm':'SOURCE_ISSUED_CONTROL_DATA'}
+ if observed_plan['binding']!=expected_observer:raise ValueError('Exact current source-produced observer plan, no cloned runtime handle')
  root=pathlib.Path(static['path_roles']['holder_parent'])/'holder';st=root.lstat()
  if root.resolve()!=root or not stat.S_ISDIR(st.st_mode) or st.st_uid!=os.getuid() or st.st_mode&0o077 or list(root.iterdir()):raise ValueError('Fresh owned0700 holder; no restart/adoption')
  # The O_EXCL originals directory consumes the existing holder construction
  # before allocating once. A failed invocation cannot adopt an occupied root.
  (root/'originals').mkdir(mode=0o700,exist_ok=False)
- wall=time.time();mono=time.monotonic();expires=int(wall)+900;cutoff=expires
+ wall=time.time();mono=time.monotonic();expires=int(wall)+t146.PARENT;cutoff=expires
  once={'schema':'TRACE116_ONCE_INTENT_V1','original_writer':'e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436','source_sha':static['source']['commit'],'manifest_sha256':sha(manifest_bytes),'request_sha256':static['request']['sha256'],'request_bytes':4935,'lock_sha256':static['lock']['sha256'],'inputs':copy.deepcopy(static['private6']),'role':'OFFLINE_COUNTER_ONLY','max_counter_invocations':1,'model_calls':0,'spend':0,'nonce':os.urandom(16).hex(),'expires_utc':expires}
  runtime=g._mint_runtime133(g._SEAL,direction,static,manifest_bytes,snap,once,os.urandom(32).hex(),wall,mono,cutoff);context=g.runtime_context133(runtime)
  # Static bytes are never mutated; this separate private runtime configuration

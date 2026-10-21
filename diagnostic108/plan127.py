@@ -4,9 +4,11 @@ Runtime originals are never part of an independently published static preimage.
 import pathlib,json,hashlib,copy,importlib.util,sys,re,math
 ROOT=pathlib.Path(__file__).resolve().parent
 s=importlib.util.spec_from_file_location('trace133_plan_control',ROOT/'control127.py');c=importlib.util.module_from_spec(s);s.loader.exec_module(c)
-can=c.can;sha=c.sha;V2='TRACE133_STATIC_TYPED_RUNTIME_V2';ADMISSION='grouped133_admission'
+can=c.can;sha=c.sha;V2='TRACE146_STATIC_TYPED_RUNTIME_V3';ADMISSION='grouped146_admission'
 g136s=importlib.util.spec_from_file_location('trace136_plan_git',ROOT/'git_dispatch136.py');g136=importlib.util.module_from_spec(g136s);g136s.loader.exec_module(g136)
-STATIC={'source','manifest','request','lock','private6','custody_scope','cost_scope','dispatch_source','path_roles','limits','inventory_sha256','authority_projection_sha256','workflow'}
+_ts146=importlib.util.spec_from_file_location('trace146_timing_'+__name__,pathlib.Path(__file__).resolve().parent/'timing146.py');t146=importlib.util.module_from_spec(_ts146);_ts146.loader.exec_module(t146)
+
+STATIC={'source','manifest','request','lock','private6','custody_scope','cost_scope','dispatch_source','path_roles','limits','inventory_sha256','authority_projection_sha256','workflow','timing_contract','observer_contract','artifact_contract'}
 PATHS={'private','transfer','holder_parent','capture','library_helper','config','materialize_original'}
 def closed(x,keys,label):
  if type(x) is not dict or set(x)!=set(keys):raise ValueError('Closed '+label)
@@ -38,7 +40,9 @@ def projection133(direction):
   walk(p)
  return p
 def static133(config,manifest_bytes,inventory=None):
- x=copy.deepcopy(closed(config,STATIC,'static configuration'));m=json.loads(manifest_bytes);inventory=c.inventory127() if inventory is None else inventory
+ x=copy.deepcopy(closed(config,STATIC,'static configuration'));t146.preallocate146(x);
+ if x['artifact_contract']!={'schema':'TRACE146_THREE_PUBLIC_ARTIFACTS_V1','logical_payload_bytes_each':8192,'provider_zip_bytes_each':65536,'maximum_artifacts':3,'retention_days':1,'billable_grant':None}:raise ValueError('Prospective failure artifact storage/cost contract')
+ m=json.loads(manifest_bytes);inventory=c.inventory127() if inventory is None else inventory
  if inventory!=c.inventory127():raise ValueError('Exact whole source inventory')
  closed(x['source'],{'commit','tree','parent'},'source')
  for v in x['source'].values():hexpin(v,40)
@@ -52,7 +56,7 @@ def static133(config,manifest_bytes,inventory=None):
  if x['custody_scope']['profile']!='nemotron-lightning-input-v1' or type(x['custody_scope']['checkpoint_key']) is not str or re.fullmatch(r'native[1-9][0-9]{0,3}',x['custody_scope']['checkpoint_key']) is None or int(x['custody_scope']['checkpoint_key'][6:])<132:raise ValueError('Exact independently bound source-acquisition checkpoint; no historical rewrite')
  text(x['custody_scope']['root'],'private custody root')
  closed(x['cost_scope'],{'model_calls','spend','host_cost_bound'},'API0 cost')
- if x['cost_scope']['model_calls']!=0 or x['cost_scope']['spend']!=0 or x['cost_scope']['host_cost_bound'] is not None and (type(x['cost_scope']['host_cost_bound']) not in (int,float) or not math.isfinite(x['cost_scope']['host_cost_bound']) or x['cost_scope']['host_cost_bound']<0):raise ValueError('Cost bound, not a grant')
+ if x['cost_scope']!=t146.zero_cost146() or any(type(x['cost_scope'][k]) is not int for k in x['cost_scope']):raise ValueError('Exact146 shared API0 cost contract, not a grant')
  if x['workflow']['path']==g136.WORKFLOW:
   closed(x['dispatch_source'],{'kind','expected_actor_id','actor_proof_sha256','namespace','workflow_path'},'Git create source')
   ds=x['dispatch_source']
@@ -81,16 +85,17 @@ def static133(config,manifest_bytes,inventory=None):
    if 'size' in row and (row['type']!='blob' or type(row['size']) is not int or row['size']<0):raise ValueError('Actual public source blob size')
    if 'url' in row and row['url']!='https://api.github.com/repos/Elinfiny/TraceHarbor/git/'+('trees/' if row['type']=='tree' else 'blobs/')+row['sha']:raise ValueError('Only immutable canonical source URLs')
    seen.add(row['path'])
- if x['workflow']['path']=='.github/workflows/traceharbor-counter135.yml':
+ if x['workflow']['path']=='.github/workflows/traceharbor-counter135.yml':raise ValueError('V3 admits exact Git136 only; historical manual135 unchanged')
+ if False:
   for marker in ('__TRACE_SOURCE135__','__TRACE_MANIFEST135__','__TRACE_ONCE133__','__TRACE_EXPIRES135__','__TRACE_CUTOFF135__','__TRACE_TAB135__'):
    if x['dispatch_source']['script'].count(marker)!=1:raise ValueError('Complete dispatch template before any runtime allocation')
   path=ROOT.parent/x['workflow']['path'];raw=path.read_bytes()
   if m['source_files'].get(x['workflow']['path'])!={'bytes':len(raw),'sha256':sha(raw)}:raise ValueError('Exact active source workflow pin')
   wf=json.loads(raw);job=wf['jobs']['counter']
-  if set(wf['on'])!={'workflow_dispatch'} or set(wf['on']['workflow_dispatch']['inputs'])!=set(('source_sha','manifest_sha256','once_receipt_sha256','once_expires_utc','coordinator_cutoff_utc')) or wf['permissions']!={'contents':'read'} or job['runs-on']!='ubuntu-24.04' or job['timeout-minutes']!=15 or wf['concurrency']['cancel-in-progress'] is not False or [v['name'] for v in job['steps']]!=x['workflow']['step_names']:raise ValueError('Whole source workflow/inputs/steps/runner/concurrency contract')
+  if set(wf['on'])!={'workflow_dispatch'} or set(wf['on']['workflow_dispatch']['inputs'])!=set(('source_sha','manifest_sha256','once_receipt_sha256','once_expires_utc','coordinator_cutoff_utc')) or wf['permissions']!={'contents':'read'} or job['runs-on']!='ubuntu-24.04' or job['timeout-minutes']!=t146.CONTRACT['job_minutes'] or wf['concurrency']['cancel-in-progress'] is not False or [v['name'] for v in job['steps']]!=x['workflow']['step_names']:raise ValueError('Whole source workflow/inputs/steps/runner/concurrency contract')
  if x['workflow']['path']==g136.WORKFLOW:
   raw=(ROOT.parent/g136.WORKFLOW).read_bytes();wf=json.loads(raw);job=wf['jobs']['counter']
-  if m['source_files'].get(g136.WORKFLOW)!={'bytes':len(raw),'sha256':sha(raw)} or wf['on']!={'create':None} or wf['permissions']!={'contents':'read'} or job['runs-on']!='ubuntu-24.04' or job['timeout-minutes']!=15 or wf['concurrency']['cancel-in-progress'] is not False or [a['name'] for a in job['steps']]!=x['workflow']['step_names']:raise ValueError('Whole exact prospective create workflow')
+  if m['source_files'].get(g136.WORKFLOW)!={'bytes':len(raw),'sha256':sha(raw)} or wf['on']!={'create':None} or wf['permissions']!={'contents':'read'} or job['runs-on']!='ubuntu-24.04' or job['timeout-minutes']!=t146.CONTRACT['job_minutes'] or wf['concurrency']['cancel-in-progress'] is not False or [a['name'] for a in job['steps']]!=x['workflow']['step_names']:raise ValueError('Whole exact prospective create workflow')
   guard=job['if']
   for must in ("github.event_name == 'create'","github.event.ref_type == 'branch'","github.actor_id == '273768139'","github.repository_id == '1391430317'","startsWith(github.event.ref, 'traceharbor/once136/v1/')","github.run_attempt == 1"):
    if must not in guard:raise ValueError('Source job namespace/Owner/repository/attempt not weakened')
@@ -144,7 +149,7 @@ def runner_guard135(env,wall):
  if values['source_sha']!=env.get('GITHUB_SHA') or env.get('GITHUB_WORKFLOW_SHA')!=values['source_sha']:raise ValueError('Immutable selected source/workflow')
  if not re.fullmatch('[1-9][0-9]{0,11}',values['once_expires_utc']) or not re.fullmatch('[1-9][0-9]{0,11}',values['coordinator_cutoff_utc']):raise ValueError('Original integer clock inputs')
  end=min(int(values['once_expires_utc']),int(values['coordinator_cutoff_utc']))
- if type(wall) not in (int,float) or not math.isfinite(wall) or not wall<end<=wall+900:raise ValueError('Original future900; no reset')
+ if type(wall) not in (int,float) or not math.isfinite(wall) or not wall<end<=wall+t146.PARENT:raise ValueError('Original future900; no reset')
  return values
 
 def public_payload135(kind,raw,env):
@@ -162,12 +167,14 @@ def public_payload135(kind,raw,env):
   ctx=x.get('context',{})
   if ctx.get('actor_id')!=273768139 or ctx.get('repository_id')!=1391430317 or ctx.get('attempt')!=1 or ctx.get('run_id')!=run or ctx.get('source_sha')!=source or ctx.get('once_receipt_sha256')!=env['TRACE135_ONCE_RECEIPT_SHA256'] or ctx.get('manifest_sha256')!=env['TRACE135_MANIFEST_SHA256'] or ctx.get('expires_utc')!=expiry:raise ValueError('Actual source/once/manifest/public SAFE context')
   v.approved_projection127(raw,{'projection_context':ctx},'SOURCE_PRODUCED_PUBLIC_SAFE_DATA')
- else:raise ValueError('Only two public receipt kinds')
+ elif kind=='failure':
+  s=importlib.util.spec_from_file_location('trace146_public_failure',ROOT/'failure146.py');v=importlib.util.module_from_spec(s);s.loader.exec_module(v);v.validate_failure146(raw,v.binding146(env))
+ else:raise ValueError('Only three explicitly bounded public receipt kinds')
  return x
 
 def artifact_guard135(kind,env):
  import os,stat
- root=pathlib.Path(env['RUNNER_TEMP']);once=hexpin(env['TRACE135_ONCE_RECEIPT_SHA256']);path=root/('traceharbor-counter117-intake-'+once)/'recipient-public.json' if kind=='recipient' else root/'traceharbor-safe127/projection.json'
+ root=pathlib.Path(env['RUNNER_TEMP']);once=hexpin(env['TRACE135_ONCE_RECEIPT_SHA256']);path=root/('traceharbor-counter117-intake-'+once)/'recipient-public.json' if kind=='recipient' else root/('traceharbor-failure146/failure.json' if kind=='failure' else 'traceharbor-safe127/projection.json')
  for parent in (path,*path.parents):
   if parent.is_symlink():raise ValueError('No public upload path aliases')
  st=path.lstat()
@@ -191,10 +198,15 @@ def cli135():
    raw=(ROOT.parent/path).read_bytes()
    if len(raw)!=pinvalue['bytes'] or sha(raw)!=pinvalue['sha256']:raise ValueError('Full exact source closure before recipient')
   print(json.dumps({'guard':'PASS','native_authority':False}))
+ elif mode=='artifact-failure146':
+  path=pathlib.Path(env['RUNNER_TEMP'])/'traceharbor-failure146/failure.json';present=path.exists()
+  if present:artifact_guard135('failure',env)
+  with open(env['GITHUB_OUTPUT'],'a') as f:f.write('present='+str(present).lower()+'\n')
+  print(json.dumps({'failure_only_present':present,'native_authority':False}))
  elif mode in ('artifact-recipient135','artifact-safe135'):print(json.dumps(artifact_guard135('recipient' if mode=='artifact-recipient135' else 'safe',env)))
  else:raise ValueError('Fixed135 source command')
 
 if __name__=='__main__':
- if sys.argv[1] in ('guard135','artifact-recipient135','artifact-safe135'):cli135()
+ if sys.argv[1] in ('guard135','artifact-recipient135','artifact-safe135','artifact-failure146'):cli135()
  else:
   values=json.loads(pathlib.Path(sys.argv[1]).read_bytes());print(json.dumps(prepare127(values['config'],values['direction'],(ROOT/'manifest.json').read_bytes()),sort_keys=True,separators=(',',':')))

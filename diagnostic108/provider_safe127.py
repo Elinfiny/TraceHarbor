@@ -41,7 +41,7 @@ def value127(packet,operation,native,host=None):
   if type(packet) is not SyntheticOriginal127 or packet.operation!=operation:raise TypeError('Explicit synthetic original only')
  if packet.original.get('isError') is True or type(packet.original.get('structuredContent')) is not dict:raise ValueError('Actual complete successful native original required')
  v=packet.original['structuredContent']
- if operation=='github_fetch':
+ if operation=='github_fetch' or operation=='github_fetch_workflow_run_artifacts' and type(v.get('content')) is str:
   if type(v.get('content')) is not str:raise ValueError('Whole provider body')
   return strict(v['content'].encode())
  return v
@@ -77,8 +77,9 @@ def validate_steps127(steps,source_names):
  # GitHub setup/post labels are provider-generated, not reviewed YAML names.
  # Their exact live labels are retained DATA; only explicitly supported roles
  # may wrap the complete ordered YAML chain. Fixtures do not certify live text.
- if not steps or [x.get('number') for x in steps]!=list(range(1,len(steps)+1)):raise ValueError('Complete ordered numbered steps')
- if any(x.get('status')!='completed' or x.get('conclusion')!='success' for x in steps):raise ValueError('Every actual provider step successful')
+ numbers=[x.get('number') for x in steps]
+ if not steps or any(type(n) is not int or n<=0 for n in numbers) or numbers!=sorted(set(numbers)):raise ValueError('Complete ordered unique provider step numbers; reserved post slots may be sparse')
+ if any(x.get('status')!='completed' or (x.get('conclusion')!='success' and not (x.get('name')=='Publish bounded failure-only evidence146' and x.get('conclusion')=='skipped')) for x in steps):raise ValueError('Every actual provider step successful')
  names=[x['name'] for x in steps]
  if names[0]!='Set up job' or names[-1]!='Complete job':raise ValueError('Supported provider setup/completion roles')
  middle=names[1:-1];posts=[]
@@ -88,7 +89,7 @@ def validate_steps127(steps,source_names):
 def metadata127(plan,run,commit,tree,jobs,listed):
  if run['id']!=plan['run_id'] or run['run_attempt']!=1 or run['actor']['id']!=OWNER or run['repository']['id']!=REPOSITORY or not g136.run_event136(run,plan.get('dispatch_binding136')) or run['head_sha']!=plan['source_sha'] or run['path']!=plan['workflow_path'] or run['status']!='completed' or run['conclusion']!='success':raise ValueError('Wrong/pending actual run/source/workflow/Owner/repo/attempt')
  started=datetime.datetime.fromisoformat(run['run_started_at'].replace('Z','+00:00')).timestamp();finished=datetime.datetime.fromisoformat(run['updated_at'].replace('Z','+00:00')).timestamp()
- if not started<finished<=plan['expires_utc']<=started+900:raise ValueError('Actual completed run under ORIGINAL900/once expiry')
+ if not started<finished<=plan['expires_utc']<=started+__import__('json').loads((ROOT/'timing146.json').read_bytes())['parent_s']:raise ValueError('Actual completed run under ORIGINAL900/once expiry')
  if commit['sha']!=plan['source_sha'] or commit['author']['id']!=OWNER or commit['committer']['id']!=OWNER or [p['sha'] for p in commit['parents']]!=[plan['source_parent']] or commit['commit']['tree']['sha']!=plan['source_tree']:raise ValueError('Exact actual reviewedsource/soleparent/tree/Owner')
  if tree.get('truncated') is not False or tree['sha']!=plan['source_tree'] or tree['tree']!=plan['full_tree_entries']:raise ValueError('Entire source tree/pins, not selected-event JSON')
  if jobs['total_count']!=len(jobs['jobs']) or len(jobs['jobs'])!=1:raise ValueError('Firstpage must contain complete exactonejob')
@@ -190,3 +191,20 @@ def decode_public_receipt135(raw_logs,kind,env,job,*,provider_complete=False,tru
 def job_log_contract135(job):
  if type(job.get('id')) is not int or job['id']<=0:raise ValueError('Actual selected job ID required before read')
  return {'tool':'mcp__codex_apps__github_fetch_workflow_job_logs','args':{'repo_full_name':'Elinfiny/TraceHarbor','job_id':job['id']},'status':'AVAILABLE_CONTRACT_ONLY','native_authority':False,'primary_recipient_compatibility':'REJECTED_UNTIL_COMPLETE_IN_PROGRESS_LOG_ORIGIN_EOF_AVAILABLE_WITHOUT_LOSING_SAME_JOB_PRIVATE_KEY','whole_transaction_cost_zero_proved':False}
+
+
+def failure_metadata146(plan,run,listed):
+ if run['id']!=plan['run_id'] or run.get('status')!='completed' or run.get('conclusion')=='success' or run.get('run_attempt')!=1 or run.get('head_sha')!=plan['source_sha'] or run.get('actor',{}).get('id')!=OWNER or run.get('repository',{}).get('id')!=REPOSITORY or not g136.run_event136(run,plan['dispatch_binding136']):raise ValueError('Exact completed failed source run')
+ if listed.get('total_count')!=1 or len(listed.get('artifacts',[]))!=1:raise ValueError('One failure artifact')
+ a=listed['artifacts'][0]
+ if a['name']!='traceharbor-failure146-'+str(plan['run_id'])+'-1' or a.get('expired') is not False or a['workflow_run']['id']!=plan['run_id'] or a['workflow_run']['head_sha']!=plan['source_sha'] or not re.fullmatch('sha256:[a-f0-9]{64}',a['digest']) or not 0<a['size_in_bytes']<=65536:raise ValueError('Failure-only artifact identity')
+ return a
+def failure_zip146(raw,plan):
+ from importlib.util import spec_from_file_location,module_from_spec
+ s=spec_from_file_location('trace146_failure_consumer',ROOT/'failure146.py');m=module_from_spec(s);s.loader.exec_module(m)
+ with zipfile.ZipFile(io.BytesIO(raw)) as z:
+  rows=z.infolist()
+  if len(rows)!=1 or rows[0].filename!='failure.json' or rows[0].file_size>8192 or rows[0].flag_bits&1 or stat.S_ISLNK(rows[0].external_attr>>16) or rows[0].is_dir():raise ValueError('Exact bounded failure-only archive')
+  body=z.read(rows[0]);assert z.testzip() is None
+ context={k:plan[k] for k in ('source_sha','manifest_sha256','once_receipt_sha256')};context.update(run_id=plan['run_id'],attempt=1,actor_id=OWNER,repository_id=REPOSITORY)
+ return m.validate_failure146(body,context)
