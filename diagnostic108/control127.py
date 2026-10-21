@@ -90,6 +90,11 @@ def inventory127():
   for n in range(8,12):
    row('stream143/'+id+'/poll/'+str(n),'native','CONTROLLER',True);row('stream143/'+id+'/poll-original/'+str(n),'local_evidence','CONTROLLER',True)
  for id in ('controller/final146','observer146/run','observer146/issue','observer146/issue-original','observer146/runtime','recipient146/readiness-close','failure/artifact','failure/file-original','failure/file-original/helper-original128'):row(id,'host_start' if id=='observer146/issue' else 'local_evidence','CONTROLLER' if id.startswith(('observer146/','controller/')) else 'HOST',True)
+ for phase in PHASES:
+  prefix='prepared150/'+phase+'/'
+  for id in ('process','prepare','transfer','finalize','metadata','intent','helper-original','receipt','normalize','close'):row(prefix+id,'host_start' if id=='process' else 'reserved_provider_suboperation' if id in ('prepare','transfer','finalize') else 'local_evidence','CONTROLLER',True)
+  for n in range(8):
+   row(prefix+'poll/'+str(n),'native','CONTROLLER',True);row(prefix+'poll-original/'+str(n),'local_evidence','CONTROLLER',True)
  return {'schema':'TRACE127_WHOLE_PRECOMMITTED_INVENTORY_V1','rows':rows,'inclusive_total':len(rows),'current_comparison_cap':48,'current_fit':len(rows)<=48,'proposal_only_cap':len(rows),'authority':False,'reserved_closure':sum(r['closure'] for r in rows),'observer_maximum':40,'immutable_semantic_graph':list(SEMANTIC),'phase_graph':list(PHASES),'remote_ids':remote}
 class Inventory127:
  def __init__(self,plan,realm,admitted_cap=48):
