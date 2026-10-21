@@ -125,7 +125,7 @@ def export_public_projection127(g,plan,directory,manifest_sha256):
  observation=g._SAFE127_OBSERVATION;producer=plan['producer']
  if type(observation) is not NativeSafeObservation127 or observation.seal is not _SEAL or observation.producer is not producer or not observation.phase_receipts.accepts():raise TypeError('Actual original runner SAFE observation only')
  consumed=json.loads(observation.consumed.descriptor);binding=producer.caller.binding
- context={'run_id':int(binding['run_id']),'attempt':1,'actor_id':273768139,'repository_id':1391430317,'source_sha':binding['source_sha'],'manifest_sha256':manifest_sha256,'once_receipt_sha256':binding['once_receipt_sha256'],'expires_utc':producer.clock.end_utc,'admission_sha256':sha(can(producer.caller.receipt)),'custody_binding_sha256':sha(can(consumed['ciphertext_receipt'])),'cost_scope_sha256':sha(can({'role':'OFFLINE_COUNTER_ONLY','model_calls':0,'spend':0}))}
+ context={'run_id':int(binding['run_id']),'attempt':1,'actor_id':273768139,'repository_id':1391430317,'source_sha':binding['source_sha'],'manifest_sha256':manifest_sha256,'once_receipt_sha256':binding['once_receipt_sha256'],'expires_utc':producer.clock.end_utc,'admission_sha256':sha(can(producer.caller.receipt)),'custody_binding_sha256':sha(can(consumed['ciphertext_receipt'])),'cost_scope_sha256':sha(can(public_cost_scope146()))}
  public={'schema':'TRACE127_MINIMAL_SAFE_V1','scope':'SOURCE_PRODUCED_PUBLIC_SAFE_DATA','context':context,'counter':{'verified':True,'T':None,'counter_invocations':1,'model_calls':0},'stop_cleanup':{'consumer_stopped':True,'cleanup_complete':True,'first_unknown':None},'phases':observation.phase_receipts.redacted(),'runner_proof_sha256':sha(observation.proof)}
  raw=can(public)
  if len(raw)>8192:raise ValueError('Minimal redacted projection cap')
@@ -135,7 +135,7 @@ def export_public_projection127(g,plan,directory,manifest_sha256):
  producer.clock.require(0)
  return {'bytes':len(raw),'sha256':sha(raw),'classification':'ORDINARY_POST_SAFE_CLOSEOUT_INSIDE_REMAINING_ORIGINAL900_ONCE_NOT_PROOF15'}
 
-SOURCE_PINS127={'launch127.py': (53409, 'cb68ca0221357d3166c9047bca62fb838fe5117611776bbf95e957434d5a7759'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (50046, 'e2a4b7aeb5697959d7d6154542301d33ffb68ca64a47e5a2ecea909234f52f30')}
+SOURCE_PINS127={'launch127.py': (54299, '57d9540cb2c442829038a4639a36de2b43489ea07a5a3d1f896fd6ac75fda788'), 'counter115.py': (16288, 'cf14a494c743754f0a1aa2a88de22b228e7844500aa73e7dee7686128e8fcd4b'), 'admission116.py': (50534, '9acc7aa4960ef0c7733ae927da64108deba3838ec9198a969ac7ed26283a854b')}
 
 def closeout127(result,output,exporter=None,retain=None):
  """Exactly once ordinary closeout even after projection O_EXCL/write/fsync.
@@ -165,3 +165,6 @@ def closeout127(result,output,exporter=None,retain=None):
     result['close_error127']={'exception_class':type(exc).__name__,'message':message(exc),'status':'UNKNOWN_NO_RETRY'};result['exit_code']=1
  result['closeout127']={'first_original_error':('PRIMARY' if originals['primary'] is not None else 'CLEANUP' if originals['cleanup'] else 'EXPORT' if originals['export_exception'] is not None else 'OUTPUT_CLOSE' if originals['close_exception'] is not None else None),'cleanup_preserved':result.get('cleanup') is originals['cleanup'],'output_close_attempts':int(output is not None),'unknown':originals['export_exception'] is not None or originals['close_exception'] is not None or bool(originals['retention_exceptions']),'retention_error_classes':[type(x).__name__ for x in originals['retention_exceptions']]}
  return originals
+
+def public_cost_scope146():
+ s=importlib.util.spec_from_file_location('trace146_SAFE_cost',pathlib.Path(__file__).with_name('timing146.py'));m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m.zero_cost146()

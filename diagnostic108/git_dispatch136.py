@@ -2,7 +2,8 @@
 No import dispatches, mints authority, reads tokens, or creates native handles.
 Owner actor273768139 remains mandatory; actual connector event identity UNKNOWN.
 """
-import re,json,math,os,pathlib,hashlib
+import re,json,math,os,pathlib,hashlib,importlib.util
+_ts146=importlib.util.spec_from_file_location("trace146_git_timing",pathlib.Path(__file__).with_name("timing146.py"));t146=importlib.util.module_from_spec(_ts146);_ts146.loader.exec_module(t146)
 REPO='Elinfiny/TraceHarbor';OWNER=273768139;RID=1391430317
 PREFIX='traceharbor/once136/v1/'
 WORKFLOW='.github/workflows/traceharbor-counter136.yml'
@@ -66,7 +67,7 @@ def env_values136(env,wall=None):
  if event136(env)!='create':raise ValueError('Create route only')
  v=parse136(env['GITHUB_REF'][11:])
  if any(env.get('TRACE135_'+k.upper())!=val for k,val in v.items()):raise ValueError('No caller edited or stale decoded runtime inputs')
- if wall is not None and (type(wall) not in (int,float) or not math.isfinite(wall) or not wall<int(v['once_expires_utc'])<=wall+900):raise ValueError('Source original expiry never renewed')
+ if wall is not None and (type(wall) not in (int,float) or not math.isfinite(wall) or not wall<int(v['once_expires_utc'])<=wall+t146.PARENT):raise ValueError('Source original expiry never renewed')
  return v
 def run_event136(run,binding=None):
  if run.get('event')=='workflow_dispatch':

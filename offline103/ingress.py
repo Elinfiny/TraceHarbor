@@ -55,8 +55,10 @@ def command(args,timeout=20,trace=None):
     if r.returncode!=0:raise RuntimeError('OpenSSL rejected operation rc='+str(r.returncode))
     return r.stdout
 def context(c):
+    import importlib.util
+    s=importlib.util.spec_from_file_location("trace146_ingress_timing",pathlib.Path(__file__).resolve().parent.parent/"diagnostic108/timing146.py");t=importlib.util.module_from_spec(s);s.loader.exec_module(t)
     require(set(c)==CTX and c['repository']=='Elinfiny/TraceHarbor' and c['repository_id']==1391430317 and c['actor_id']==273768139 and type(c['run_id']) is int and c['run_id']>0 and type(c['attempt']) is int and c['attempt']==1)
-    require(re.fullmatch('[0-9a-f]{40}',c['source_sha']) and re.fullmatch('[0-9a-f]{32}',c['nonce']) and re.fullmatch('[0-9a-f]{64}',c['certificate_sha256']) and type(c['expires_utc']) is int and time.time()<c['expires_utc']<=time.time()+900)
+    require(re.fullmatch('[0-9a-f]{40}',c['source_sha']) and re.fullmatch('[0-9a-f]{32}',c['nonce']) and re.fullmatch('[0-9a-f]{64}',c['certificate_sha256']) and type(c['expires_utc']) is int and time.time()<c['expires_utc']<=time.time()+t.PARENT)
 def fingerprint(pem):return sha(ssl.PEM_cert_to_DER_cert(pem.decode('ascii')))
 def recipient(directory,c,trace=None):
     directory.mkdir(mode=0o700);key=directory/'recipient.key';cert=directory/'recipient.pem'

@@ -58,7 +58,7 @@ function use(c,id,owner){const r=c.rows.get(id);if(!r||r.owner!==owner||c.used.h
 export function prepare127(preloaded,key=null){
  const p=snapshotPlain129(preloaded),rows=p.inventory.rows;
  if(rows.length!==p.inventory.inclusive_total||new Set(rows.map(x=>x.id)).size!==rows.length||p.inventory.authority!==false)throw Error('Whole exact source-produced inventory');
- if(p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(key!==NATIVE_CALLER_SEAL127||p.currentNativeAdmission?.inclusive_cap!==rows.length||p.currentNativeAdmission?.contract!=='TRACE133_STATIC_TYPED_RUNTIME_V2'))throw Error('No native registry from supplied booleans/dicts; actual fixed preflight required');
+ if(p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(key!==NATIVE_CALLER_SEAL127||p.currentNativeAdmission?.inclusive_cap!==rows.length||p.currentNativeAdmission?.contract!=='TRACE146_STATIC_TYPED_RUNTIME_V3'))throw Error('No native registry from supplied booleans/dicts; actual fixed preflight required');
  const h=Object.freeze({realm:p.realm}),c={p,rows:new Map(rows.map(x=>[x.id,x])),used:new Set(),failed:null,nextSeq:1,session:null,observerCell:null,observers:new Set(),lastBlob:null,lastTree:null,lastCommit:null,artifact:null,fileRef:null};HANDLES.set(h,c);return h;
 }
 export async function bootstrapActualCaller127(preloaded){
@@ -77,34 +77,28 @@ export async function bootstrapActualCaller127(preloaded){
  // addressed admission. No executable path/hash/bool supplied by the caller
  // can register a native capability before this source-native check.
  const q=s=>"'"+String(s).replaceAll("'","'\\''")+"'";
- const code=`import pathlib,json,hashlib,runpy,sys\na=json.loads(pathlib.Path(sys.argv[1]).read_bytes())['structuredContent'];a=a.get('result',a);ts=a['transfers'];assert not a.get('unavailable_items') and len(ts)==3\nown=next(x for x in ts if x['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');d=json.loads(pathlib.Path(own['workspace_path']).read_bytes());k='native'+d['state'].split('_')[0][6:];ad=d[k]['direction'].get('grouped133_admission');assert ad and ad.get('contract')=='TRACE133_STATIC_TYPED_RUNTIME_V2' and 'ADMIT_TRACE133_STATIC_TYPED_RUNTIME_V2' in d[k]['direction']['body']\nroot=pathlib.Path(sys.argv[2]);raw=(root/'diagnostic108/manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==ad['manifest_sha256'];m=json.loads(raw)\nfor n,p in m['source_files'].items():\n f=root/n;assert not pathlib.Path(n).is_absolute() and '..' not in pathlib.Path(n).parts;b=f.read_bytes();assert len(b)==p['bytes'] and hashlib.sha256(b).hexdigest()==p['sha256']\nsys.argv=[str(root/'diagnostic108/preflight127.py'),sys.argv[1],sys.argv[3]];runpy.run_path(str(root/'diagnostic108/preflight127.py'),run_name='__main__')`;
+ const code=`import pathlib,json,hashlib,runpy,sys\na=json.loads(pathlib.Path(sys.argv[1]).read_bytes())['structuredContent'];a=a.get('result',a);ts=a['transfers'];assert not a.get('unavailable_items') and len(ts)==3\nown=next(x for x in ts if x['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');d=json.loads(pathlib.Path(own['workspace_path']).read_bytes());k='native'+d['state'].split('_')[0][6:];ad=d[k]['direction'].get('grouped146_admission');assert ad and ad.get('contract')=='TRACE146_STATIC_TYPED_RUNTIME_V3' and 'ADMIT_TRACE146_STATIC_TYPED_RUNTIME_V3' in d[k]['direction']['body']\nroot=pathlib.Path(sys.argv[2]);raw=(root/'diagnostic108/manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==ad['manifest_sha256'];m=json.loads(raw)\nfor n,p in m['source_files'].items():\n f=root/n;assert not pathlib.Path(n).is_absolute() and '..' not in pathlib.Path(n).parts;b=f.read_bytes();assert len(b)==p['bytes'] and hashlib.sha256(b).hexdigest()==p['sha256']\nsys.argv=[str(root/'diagnostic108/preflight127.py'),sys.argv[1],sys.argv[3]];runpy.run_path(str(root/'diagnostic108/preflight127.py'),run_name='__main__')`;
  for(let n=0;n<3;n++)use(c,'preflight/helper-original128/'+n,'CONTROLLER');
  let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
  if(verified.schema!=='TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
  const verifiedPreload={...validated129,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,manifestSha135:verified.manifestSha135,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:262144}};
- const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);return handle;
+ const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);
+ const actual=HANDLES.get(handle);use(actual,'observer146/issue','CONTROLLER');use(actual,'observer146/issue-original','CONTROLLER');
+ const binding={source_sha:verified.sourceSha,manifest_sha256:verified.manifestSha135,static_config_sha256:verified.staticConfigSha256,inventory_sha256:validated129.inventorySha256,direction_id:verified.directionId,realm:'SOURCE_ISSUED_CONTROL_DATA'};
+ const cmd='python3 '+q(validated129.reviewedRoot+'/diagnostic108/observer146.py')+' issue '+q(JSON.stringify({root:verified.captureDirectory,binding,inventory:{observer_maximum:40,authority:false,rows:validated129.inventory.rows.filter(r=>r.owner==='OBSERVER')}}));
+ const issued=await t.exec_command({cmd,yield_time_ms:10000,max_output_tokens:4000});await capture(actual,'observer146-issue-original.json',issued,t);if(issued.exit_code!==0||issued.session_id!=null)throw Error('Durable observer issue required before holder');actual.observer146=JSON.parse(issued.output);return handle;
 }
-export function reserveObserver127(handle,index,cellId){
- const c=HANDLES.get(handle);if(!c||typeof cellId!=='string'||!cellId||!Number.isInteger(index)||index<0||index>=c.p.inventory.observer_maximum||c.observerCell&&c.observerCell!==cellId)throw Error('Exact yielded exec cell; sixteen finite observer tickets');
- c.observerCell=cellId;use(c,'observer/'+index,'OBSERVER');c.observers.add(index);
- // The ACTUAL outer caller must run this source statement before functions.wait
- // and retain that exact tool original with retainObserver127 after it returns.
- // No claim that Python can intercept arbitrary model/platform tool calls.
- return Object.freeze({cell_id:cellId,index,pre_reserved:true,yield_time_ms:1000,max_tokens:2500});
-}
-export async function retainObserver127(handle,ticket,original,tools){
- const c=HANDLES.get(handle);if(!c||ticket.cell_id!==c.observerCell||!c.observers.has(ticket.index))throw Error('Exact preceding wait reservation');
- use(c,'observer/'+ticket.index+'/original','OBSERVER');c.observers.delete(ticket.index);
- await capture(c,'observer-'+ticket.index+'.original.json',{identity:ticket,original},tools);return original;
-}
+export function reserveObserver127(){throw Error('Retired live-handle observer path: use durable outer146 before actual functions.wait');}
+export function retainObserver127(){throw Error('Retired cross-isolate observer path');}
+export function observerPlan146(handle){const c=HANDLES.get(handle);if(!c?.observer146)throw Error('Source issued plan before holder');return {...c.observer146,helper:c.p.reviewedRoot+'/diagnostic108/observer146.py'};}
 async function capture(c,name,value,tools){
  const text=JSON.stringify(value);if(text.length>4194304)throw Error('Bounded whole original, no truncation/retry');
  return await tools.apply_patch('*** Begin Patch\n*** Add File: '+c.p.captureDirectory+'/'+name+'\n+'+text+'\n*** End Patch');
 }
 export function counts127(handle){const c=HANDLES.get(handle);if(!c)throw Error('Exact registry');return {whole_reserved:c.rows.size,controller_used:c.used.size,first_unknown:c.failed,current48_fit:c.rows.size<=48,native_authority:false};}
 export async function launch127(handle,tools){
- const c=HANDLES.get(handle);if(!c||c.session!==null)throw Error('ONE source-bound holder');
+ const c=HANDLES.get(handle);if(!c||c.session!==null||c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&!c.observer146)throw Error('ONE source-bound holder with issued observer plan');
  if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&tools!==PLATFORM_TOOLS127)throw Error('No supplied native tool callback');
  use(c,'holder/start','CONTROLLER');use(c,'holder/start-original','CONTROLLER');
  c.streamCutoff143=Date.now()+15000;
@@ -112,18 +106,18 @@ export async function launch127(handle,tools){
  await capture(c,'holder-start.original.json',original,tools);
  if(!Number.isInteger(original.session_id)||original.exit_code!=null){c.failed={holder_start:original};throw Error('No actual live sameholder; no retry');}c.session=original.session_id;return original;
 }
-function bindSourceRuntime133(c,frame){
+async function bindSourceRuntime133(c,frame,tools){
  // This DATA comes only from the exact source holder's retained start original.
  // No exported function accepts a runtime dict to register native authority.
  const b=frame.runtime_binding133,p=c.p;
- if(c.session===null||frame!==c.nativeFrame||frame.seq!==1||frame.inventory_call_id!=='SOURCE_FREEZE/CAS'||!b||b.schema!=='TRACE133_SOURCE_RUNTIME_FRAME'||b.static_config_sha256!==p.staticConfigSha256||b.sourceSha!==p.sourceSha||b.sourceTree!==p.sourceTree||b.context?.domain!=='TRACE133_TYPED_RUNTIME'||b.context.source_sha!==p.sourceSha||b.context.direction_id!==p.directionId133||!/^[a-f0-9]{64}$/.test(b.context.once_receipt_sha256)||!/^[a-f0-9]{64}$/.test(b.context_sha256)||!same(b.context,frame.context)||!Number.isInteger(b.deadlineUtcMs)||b.deadlineUtcMs<=Date.now()||b.deadlineUtcMs>Date.now()+900000)throw Error('Actual source same invocation runtime binding; original900 only');
+ if(c.session===null||frame!==c.nativeFrame||frame.seq!==1||frame.inventory_call_id!=='SOURCE_FREEZE/CAS'||!b||b.schema!=='TRACE133_SOURCE_RUNTIME_FRAME'||b.static_config_sha256!==p.staticConfigSha256||b.sourceSha!==p.sourceSha||b.sourceTree!==p.sourceTree||b.context?.domain!=='TRACE133_TYPED_RUNTIME'||b.context.source_sha!==p.sourceSha||b.context.direction_id!==p.directionId133||!/^[a-f0-9]{64}$/.test(b.context.once_receipt_sha256)||!/^[a-f0-9]{64}$/.test(b.context_sha256)||!same(b.context,frame.context)||!Number.isInteger(b.deadlineUtcMs)||b.deadlineUtcMs<=Date.now()||b.deadlineUtcMs>Date.now()+2340000)throw Error('Actual source same invocation runtime binding; original900 only');
  if(b.manifestSha256!==p.manifestSha135||b.onceExpiresUtc!==b.deadlineUtcMs/1000||!Number.isInteger(b.coordinatorCutoffUtc)||b.coordinatorCutoffUtc<b.onceExpiresUtc)throw Error('Original source manifest/expiry/cutoff, no reset');
  const values136={source_sha:p.sourceSha,manifest_sha256:p.manifestSha135,once_receipt_sha256:b.context.once_receipt_sha256,once_expires_utc:String(b.onceExpiresUtc),coordinator_cutoff_utc:String(b.coordinatorCutoffUtc)};
  const git136=p.dispatchSource133.kind==='git_create136';
  if(b.dispatchKind136!==(git136?'git_create136':'browser135'))throw Error('Same fixed source dispatch kind');
  const expectedArgs=git136?gitCreateArgs136(p.dispatchSource133,values136):{code:renderDispatch135(p.dispatchSource133,values136)};
  if(!same(b.uiDispatchArgs,expectedArgs))throw Error('Static script plus actual newly produced once only');
- p.context=snapshotPlain129(b.context);p.contextSha256=b.context_sha256;p.deadlineUtcMs=b.deadlineUtcMs;p.uiDispatchArgs=snapshotPlain129(b.uiDispatchArgs);
+ p.context=snapshotPlain129(b.context);p.contextSha256=b.context_sha256;p.deadlineUtcMs=b.deadlineUtcMs;p.uiDispatchArgs=snapshotPlain129(b.uiDispatchArgs);use(c,'observer146/runtime','CONTROLLER');await capture(c,'observer146-runtime.json',{scope:'SOURCE_ORIGINAL_RUNTIME_DATA',source_sha:b.sourceSha,manifest_sha256:b.manifestSha256,once_receipt_sha256:b.context.once_receipt_sha256,deadline_utc_ms:b.deadlineUtcMs,dispatch_args:b.uiDispatchArgs,run_id:null},tools);
 }
 function guardArgs(c,f){
  const a=f.args,p=c.p,repo='Elinfiny/TraceHarbor',id=f.inventory_call_id;
@@ -149,13 +143,13 @@ function guardArgs(c,f){
  if(f.op==='library_replace'&&(a.library_file_id!=='libfile_3ee8270f03d8819188e1de1f75c3d824'||!Number.isInteger(a.expected_current_version)||!a.file.startsWith(p.transferRoot+'/group127-upload-')||!a.file.endsWith('/TraceHarbor_V1_checkpoint.json')))throw Error('Owned conditionalCAS source staging only');
  if(f.op==='library_materialize'&&(!Array.isArray(a.items)||a.items.length!==1||!a.items[0].file_id||!a.destination.directory.startsWith(p.transferRoot+'/')||a.destination.directory.includes('..')))throw Error('Pinned positive disjoint item only');
  if(['github_fetch_workflow_run_jobs','github_fetch_workflow_run_artifacts','github_download_workflow_artifact'].includes(f.op)&&a.repo_full_name!==repo)throw Error('Selected repository');
- if(f.op==='github_fetch_workflow_run_artifacts'&&!new RegExp('^traceharbor-(recipient104|safe127)-'+a.run_id+'-1$').test(a.name))throw Error('Exact name-filtered artifact, not total run inventory');
+ if(f.op==='github_fetch_workflow_run_artifacts'&&!new RegExp('^traceharbor-(recipient104|safe127|failure146)-'+a.run_id+'-1$').test(a.name))throw Error('Exact name-filtered artifact, not total run inventory');
  if(f.op==='github_download_workflow_artifact'&&a.artifact_id!==c.artifact)throw Error('Only actual preceding selected artifact');
 }
 export async function bridge127(handle,frame,tools){
  const c=HANDLES.get(handle);if(!c||c.failed)throw Error('Exact preloaded source registry/no UNKNOWN retry');
  if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&(tools!==PLATFORM_TOOLS127||frame!==c.nativeFrame))throw Error('Only original SAME actual source holder frame; no caller-supplied dict');
- if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&c.p.context===null)bindSourceRuntime133(c,frame);
+ if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&c.p.context===null)await bindSourceRuntime133(c,frame,tools);
  guardArgs(c,frame);
  const id=frame.inventory_call_id;
  for(const s of ['tool','canonical','callback','callback-original'])use(c,id+'/'+s,'CONTROLLER');
@@ -169,7 +163,7 @@ export async function bridge127(handle,frame,tools){
   case 'github_create_commit':original=await tools.mcp__codex_apps__github_create_commit(a);break;
   case 'github_create_ref':original=await tools.mcp__codex_apps__github_create_branch(a);break;
   case 'github_fetch_workflow_run_jobs':original=await tools.mcp__codex_apps__github_fetch_workflow_run_jobs(a);break;
-  case 'github_fetch_workflow_run_artifacts':original=await tools.mcp__codex_apps__github_fetch_workflow_run_artifacts(a);break;
+  case 'github_fetch_workflow_run_artifacts':original=await tools.mcp__codex_apps__github_fetch({url:'https://api.github.com/repos/Elinfiny/TraceHarbor/actions/runs/'+a.run_id+'/artifacts?name='+encodeURIComponent(a.name)+'&per_page=100'});break;
   case 'github_download_workflow_artifact':original=await tools.mcp__codex_apps__github_download_workflow_artifact(a);break;
   case 'library_replace':original=await tools.mcp__codex_apps__library_replace_library_file(a);break;
   case 'library_materialize':original=await tools.mcp__codex_apps__library_prepare_materialize(a);break;
@@ -185,23 +179,29 @@ export async function bridge127(handle,frame,tools){
  const expected404136=frame.op==='github_ref_absence136'&&id==='dispatch136/ref-absence'&&original?.isError===true&&original.structuredContent?.error_code==='NOT_FOUND'&&String(original.structuredContent?.error_data?.status)==='404';
  if(error||late||original?.isError&&!expected404136)c.failed=error||{late,tool_error:original?.isError===true};
  if(!c.failed){const v=original?.structuredContent;
+  if(/^dispatch136\/runs\/[0-3]$/.test(id)){const data=JSON.parse(v.content),matches=data.workflow_runs.filter(r=>r.head_branch===c.p.uiDispatchArgs.branch_name&&r.path==='.github/workflows/traceharbor-counter136.yml');if(matches.length===1){const run=matches[0];if(run.status==='in_progress'&&run.run_attempt===1&&run.head_sha===c.p.sourceSha&&run.actor?.id===273768139&&run.repository?.id===1391430317){use(c,'observer146/run','CONTROLLER');await capture(c,'observer146-run.json',{run_id:run.id,branch:run.head_branch,source_sha:run.head_sha,once_receipt_sha256:c.p.context.once_receipt_sha256,canonical_sequence:frame.seq},tools);}}}
+
   if(frame.op==='github_create_blob')c.lastBlob=v?.sha;
   if(frame.op==='github_create_tree')c.lastTree=v?.sha;
   if(frame.op==='github_create_commit')c.lastCommit=v?.sha;
-  if(frame.op==='github_fetch_workflow_run_artifacts'){if(v?.total_count!==1||v.artifacts?.length!==1||v.artifacts[0].name!==a.name){c.failed={artifact_identity:true};}else c.artifact=v.artifacts[0].id;}
+  if(frame.op==='github_fetch_workflow_run_artifacts'){let av;try{av=JSON.parse(v.content);}catch{c.failed={artifact_body:true};}if(!c.failed){if(id.startsWith('recipient146/')&&av.total_count===0&&Array.isArray(av.artifacts)&&av.artifacts.length===0){}else if(av.total_count!==1||av.artifacts?.length!==1||av.artifacts[0].name!==a.name){c.failed={artifact_identity:true};}else c.artifact=av.artifacts[0].id;}}
  }
  const response={schema:'TRACE118_HOST_RETURN',seq:frame.seq,context:frame.context,op:frame.op,request_digest:frame.request_digest,original_result:original,transport_error:error,late:late||!!c.failed};
- c.streamCutoff143=Math.min(Date.now()+15000,frame.deadline_utc_ms,c.p.deadlineUtcMs);
+ c.streamIdle146=id.startsWith('collection/run/')?310000:id.startsWith('recipient146/')?55000:0;
+ c.streamCutoff143=Math.min(Date.now()+(c.streamIdle146||15000),c.streamIdle146?frame.phase_deadline_utc_ms:frame.deadline_utc_ms,c.p.deadlineUtcMs);
+ // Absolute source phase/parent is additionally bound by the next frame and
+ // native holder; this ordinary collection cannot renew the runtime parent.
  let terminal;try{terminal=await tools.write_stdin({session_id:c.session,chars:JSON.stringify(response)+'\n',yield_time_ms:1000,max_output_tokens:262144});}catch(e){terminal={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};c.failed??=terminal;}
  await capture(c,frame.seq+'.canonical-callback-original.json',terminal,tools);c.nextSeq++;
  if(c.failed)throw Error('First original/exception retained; entire phase non-retriable');return terminal;
 }
-async function collectHolderStream143(handle,first,tools,window){
+export async function collectHolderStream143(handle,first,tools,window){
  const c=HANDLES.get(handle),deadline=c?.streamCutoff143;
  if(!c||c.failed||!['launch',...c.p.inventory.remote_ids].includes(window)||!Number.isInteger(deadline))throw Error('One source-owned original stream window');
  let response=first,output='',verified=null,primary=null;const chunks=new Set(),identities=[];
  try{
-  for(let n=0;n<=8;n++){
+  const maximumReads=c.streamIdle146?12:8;
+  for(let n=0;n<=maximumReads;n++){
    // Initial original was retained by launch/callback. Every additional
    // actual empty-input read is captured BEFORE any parse/deadline guard.
    if(n){use(c,'stream143/'+window+'/poll-original/'+(n-1),'CONTROLLER');await capture(c,'stream143-'+window.replaceAll('/','-')+'-poll-'+(n-1)+'.original.json',response,tools);}
@@ -212,9 +212,9 @@ async function collectHolderStream143(handle,first,tools,window){
    if(response.exit_code!=null){if(response.session_id!=null||response.eof===false)throw Error('Actual terminal plus EOF required');verified={...response,output};return verified;}
    if(response.session_id!==c.session||response.eof===true)throw Error('Only actual SAME live holder; no restart');
    if(output.endsWith('\n')){verified={...response,output};return verified;}
-   if(n===8)throw Error('Eight precommitted source-stream reads exhausted; no retry');
+   if(n===maximumReads)throw Error('Finite precommitted146 source-stream reads exhausted; no retry');
    use(c,'stream143/'+window+'/poll/'+n,'CONTROLLER');
-   try{response=await tools.write_stdin({session_id:c.session,chars:'',yield_time_ms:1000,max_output_tokens:262144});}
+   try{response=await tools.write_stdin({session_id:c.session,chars:'',yield_time_ms:c.streamIdle146?30000:1000,max_output_tokens:262144});}
    catch(error){response={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
   }
  }catch(error){primary={name:error?.name,message:String(error)};c.failed??=primary;throw error;}
@@ -233,6 +233,7 @@ export async function drive127(handle,tools){
   }
   throw Error('Finite complete macro stream exhausted; no retry');
  }catch(error){c.failed??={name:error?.name,message:String(error)};use(c,'controller/failure143','CONTROLLER');await capture(c,'controller-failure143.original.json',{failure:c.failed,error:{name:error?.name,message:String(error)}},tools);throw error;}
+ finally{use(c,'controller/final146','CONTROLLER');await capture(c,'controller-final146.original.json',{plan_sha256:c.observer146?.plan_sha256||null,source_sha:c.p.sourceSha,context:c.p.context,controller_used_ticket_ids:[...c.used],first_unknown:c.failed,native_authority:false},tools);}
 }
 
 // No capability is created by this collector. The native bootstrap alone uses

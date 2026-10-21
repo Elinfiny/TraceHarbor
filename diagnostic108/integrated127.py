@@ -8,6 +8,7 @@ ROOT=pathlib.Path(__file__).resolve().parent
 def load(name,file):
  s=importlib.util.spec_from_file_location(name,ROOT/file);m=importlib.util.module_from_spec(s);sys.modules[name]=m;s.loader.exec_module(m);return m
 c=load('trace127_integrated_control','control127.py');can=c.can;sha=c.sha
+t146=load('trace146_integrated_timing','timing146.py')
 OWNER=273768139;REPO='Elinfiny/TraceHarbor';REPOSITORY=1391430317
 _SEAL=object();_NATIVE={}
 class Pending127(RuntimeError):pass
@@ -87,17 +88,18 @@ class Grouped127:
   if receipt.get('version')!=self.version+1 or receipt.get('wholebyte_self_allattrs')!='PASS' or receipt.get('intent_sha256')!=sha(can(intent)):raise ValueError('Actual guarded original writer/CAS/pinned wholebyte/self/ALLattrs before effect')
   self.phase_receipts[name]=copy.deepcopy(receipt);self.version+=1;self.guard();return intent
  def freeze(self):
-  self.begin('SOURCE_FREEZE');self.phase_intent('SOURCE_FREEZE',[{'role':'exact entire source/inventory/phase-plan freeze','sha256':self.plan_sha}]);self.close()
+  self.begin('SOURCE_FREEZE',t146.CAS);self.phase_intent('SOURCE_FREEZE',[{'role':'exact entire source/inventory/phase-plan freeze','sha256':self.plan_sha}]);self.close()
  def predispatch(self):
-  self.begin('PRE_DISPATCH');self.phase_intent('PRE_DISPATCH',[{'role':'ONCE current fixed source dispatch','source_sha':self.context['source_sha'],'once':self.context['once_receipt_sha256']}]);self.semantic(0,{'consumed_before_dispatch':True})
+  self.begin('PRE_DISPATCH',t146.CAS+15+t146.DISPATCH+15);self.phase_intent('PRE_DISPATCH',[{'role':'ONCE current fixed source dispatch','source_sha':self.context['source_sha'],'once':self.context['once_receipt_sha256']}]);self.semantic(0,{'consumed_before_dispatch':True})
   gitroute=self.context['workflow_path']==p133.g136.WORKFLOW
   if not gitroute:self.close()
+  if self.remaining()<30+t146.DISPATCH+t146.ADMIT_MIN:raise TimeoutError('Complete146 downstream suffix before dispatch; priorCAS retained')
   self.run=self.port.dispatch()
   if gitroute:self.close()
   r=self.run
   if r['head_sha']!=self.context['source_sha'] or r['run_attempt']!=1 or r['actor']['id']!=OWNER or r['repository']['id']!=REPOSITORY or not p133.g136.run_event136(r,p133.g136.binding136(self.port.config['ui_dispatch127']['args']) if gitroute else None) or r['status']!='in_progress':raise ValueError('Actual selected current dispatch original')
   started=datetime.datetime.fromisoformat(r['run_started_at'].replace('Z','+00:00')).timestamp()
-  if not 0<self.parent_wall-started<=900:raise ValueError('Original900 from actual runner start')
+  if not 0<self.parent_wall-started<=t146.PARENT:raise ValueError('Original900 from actual runner start')
  def body(self,phase,resolve=True):
   if phase=='encrypted':return base64.b64decode(self.delivery['ciphertext_base64'],validate=True),'traceharbor-encrypted104-'+self.delivery['context']['nonce']+'.cms'
   body=self.port.admit_descriptor()
@@ -109,9 +111,9 @@ class Grouped127:
  def chain_plan(self,phase,raw,name):
   return [{'identity':sha(can({'plan':self.plan_sha,'phase':phase,'kind':k,'ordinal':n,'nonce':self.context['nonce']})),'role':'github_create_'+k,'body_template_sha256':sha(raw),'body_template_bytes':len(raw),'body_transform':'IDENTITY' if phase=='encrypted' else 'ADD_EXACT_SAME_PHASE_CAS_VERSION_AND_RAW_SHA256','path':name,'source_parent':self.context['source_sha'],'source_tree':self.context['source_tree'],'dependency':None if n==0 else {'preceding_typed_return':n-1,'field':'sha'},'ref':('traceharbor-encrypted104-'+self.delivery['context']['nonce'] if phase=='encrypted' else 'traceharbor-counter116-'+phase+'-'+self.context['once_receipt_sha256'])} for n,k in enumerate(('blob','tree','commit','ref'))]
  def chain(self,phase):
-  phase_name=phase.upper()+'_CHAIN';minimum={'admit':820,'encrypted':550,'consumed':440}[phase]
+  phase_name=phase.upper()+'_CHAIN';minimum={'admit':max(820,t146.ADMIT_MIN),'encrypted':max(550,t146.ENCRYPTED_MIN),'consumed':max(440,t146.CONSUMED_MIN)}[phase]
   if self.remaining()<minimum:raise TimeoutError('Original exact whole phase+reserve admission')
-  self.begin(phase_name,135 if phase=='admit' else 110)
+  self.begin(phase_name,t146.CHAIN)
   template,name=self.body(phase,False);ops=self.chain_plan(phase,template,name);self.phase_intent(phase_name,ops);raw,name=self.body(phase)
   start={'admit':2,'encrypted':6,'consumed':11}[phase]
   if phase in ('admit','consumed'):self.semantic(start-1,{'descriptor_sha256':sha(raw),'phase_intent_sha256':sha(can(ops))})
@@ -145,11 +147,11 @@ class Grouped127:
  def begin_collection(self):
   if self.cursor!=15 or not self.closed or self.closed[-1]!='CONSUMED_CHAIN' or self.active is not None or self.failed is not None:raise ValueError('Timely consumed closure before separate collection')
   # Binding a NEW ORDINARY interval changes no previous phase end/parent once.
-  self.begin('SAFE_COLLECTION',min(150,self.remaining()));self.store.save('collection/begin',self.active)
+  self.begin('SAFE_COLLECTION',min(t146.COLLECTION,self.remaining()));self.store.save('collection/begin',self.active)
  def collect(self):
   if self.active is None or self.active['name']!='SAFE_COLLECTION':raise RuntimeError('Retained consumed110 is never the collection clock')
   start=self.active['begin_mono'];bundle=None
-  for n,offset in enumerate((0,30,60,90)):
+  for n,offset in enumerate(t146.CONTRACT['collection_offsets_s']):
    if n:
     self.inventory.claim('collection/delay/'+str(n-1));self.port.delay_until(start+offset);self.guard()
    packet=self.port.observe_run(n)
@@ -157,19 +159,21 @@ class Grouped127:
    if run.get('status')!='completed':
     if run.get('status') not in ('queued','in_progress','waiting','pending','requested'):raise ValueError('Unsupported actual pending status')
     continue
-   if run.get('conclusion')!='success':raise ValueError('Completed failed whole job cannot mint SAFE')
+   if run.get('conclusion')!='success':
+    failure=self.port.collect_failure146(packet);self.store.save('failure/artifact',failure);raise ValueError('Completed failed whole job; failure-only evidence never SAFE')
    bundle=self.port.collect_bundle(packet);break
   if bundle is None:raise Pending127('Finite4 observations exhausted; actual pending DATA, no UNKNOWN external effect and no repeated consumed/dispatch')
   self.safe=self.port.verify_bundle(bundle);self.guard();self.close();return self.safe
  def terminal(self):
   if self.cursor!=15 or self.safe is None or self.closed[-1]!='SAFE_COLLECTION':raise ValueError('Typed source/provider SAFE required before terminal')
   self.port.require_terminal(self.safe)
-  self.begin('TERMINAL');self.phase_intent('TERMINAL',[{'role':'TERMINAL_ONCE','consumed':self.proofs['consumed'],'safe_projection_sha256':sha(can(self.safe.projection))}]);self.semantic(15,{'SAFE':'SYNTHETIC_ONLY' if self.realm=='SYNTHETIC_SOURCE_ONLY' else 'ACTUAL_SOURCE_PROVIDER_ORIGINAL'});self.close();return self.snapshot()
+  self.begin('TERMINAL',t146.CAS);self.phase_intent('TERMINAL',[{'role':'TERMINAL_ONCE','consumed':self.proofs['consumed'],'safe_projection_sha256':sha(can(self.safe.projection))}]);self.semantic(15,{'SAFE':'SYNTHETIC_ONLY' if self.realm=='SYNTHETIC_SOURCE_ONLY' else 'ACTUAL_SOURCE_PROVIDER_ORIGINAL'});self.close();return self.snapshot()
  def run_complete(self):
   try:
    self.freeze();self.predispatch();self.chain('admit')
    if self.remaining()<680:raise TimeoutError('Actual original allchecks680/hostbegin610 required')
-   self.begin('RECIPIENT',25);self.delivery=self.port.prepare_delivery();self.guard()
+   self.begin('RECIPIENT_READINESS',t146.READINESS);self.port.wait_recipient146();self.store.save('recipient146/readiness-close',self.active);self.guard();self.active=None
+   self.begin('RECIPIENT',t146.RECIPIENT);self.delivery=self.port.prepare_delivery();self.guard()
    # Recipient is bounded separately; its closure is native original custody
    # retained by the existing ingress, not a seventh ownCAS.
    self.port.validate_delivery(self.delivery);self.active=None
@@ -195,17 +199,17 @@ def _mint_runtime133(key,release,config,manifest_bytes,snapshot,once_intent,nonc
  if key not in (_SEAL,_SYNTHETIC133):raise TypeError('Fixed source mint only')
  prepared=p133.release133(release,config,manifest_bytes)
  if type(wall) not in (int,float) or type(mono) not in (int,float) or type(cutoff) not in (int,float) or not all(math.isfinite(v) for v in (wall,mono,cutoff)) or cutoff<=wall:raise ValueError('Original armed clock')
- if type(once_intent.get('expires_utc')) is not int or not wall<once_intent['expires_utc']<=wall+900:raise ValueError('Original once expiry, no extension')
+ if type(once_intent.get('expires_utc')) is not int or not wall<once_intent['expires_utc']<=wall+t146.PARENT:raise ValueError('Original once expiry, no extension')
  if not re.fullmatch('[a-f0-9]{64}',nonce):raise ValueError('Source nonce')
  pin=config['private6'];source=config['source'];manifest_sha=sha(manifest_bytes)
  wanted={'schema':'TRACE116_ONCE_INTENT_V1','original_writer':'e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436','source_sha':source['commit'],'manifest_sha256':manifest_sha,'request_sha256':config['request']['sha256'],'request_bytes':4935,'lock_sha256':config['lock']['sha256'],'inputs':pin,'role':'OFFLINE_COUNTER_ONLY','max_counter_invocations':1,'model_calls':0,'spend':0}
  if set(once_intent)!=set(wanted)|{'nonce','expires_utc'} or any(once_intent[k]!=v for k,v in wanted.items()) or re.fullmatch('[0-9a-f]{32}',once_intent['nonce']) is None:raise ValueError('Exact source-produced once core')
  if snapshot.get('direction')!=release or snapshot.get('auditor_sha256') is None or snapshot.get('ownership')!='TraceHarbor V1':raise ValueError('Same current independently released snapshot')
- end=min(wall+900,once_intent['expires_utc'],cutoff);h=RuntimeBinding133()
+ end=min(wall+t146.PARENT,once_intent['expires_utc'],cutoff);h=RuntimeBinding133()
  _RUNTIME133[h]={'realm':'ACTUAL_SOURCE_PRIVATE' if key is _SEAL else 'SYNTHETIC_SOURCE_ONLY','prepared':prepared,'config_raw':can(config),'manifest_bytes':bytes(manifest_bytes),'snapshot':copy.deepcopy(snapshot),'once':copy.deepcopy(once_intent),'nonce':nonce,'armed_wall':wall,'armed_mono':mono,'end_wall':end,'end_mono':mono+(end-wall),'cutoff':cutoff,'last_wall':wall,'last_mono':mono,'first_unknown':None,'run':None,'run_digest':None,'descriptor':None}
  return h
 def synthetic_runtime133(release,config,manifest_bytes,snapshot,once_intent,wall=1000,mono=50):
- return _mint_runtime133(_SYNTHETIC133,release,config,manifest_bytes,snapshot,once_intent,'5'*64,wall,mono,wall+900)
+ return _mint_runtime133(_SYNTHETIC133,release,config,manifest_bytes,snapshot,once_intent,'5'*64,wall,mono,wall+t146.PARENT)
 def runtime_guard133(handle,wall,mono):
  r=_runtime133(handle)
  if r['first_unknown'] is not None:raise RuntimeError('First UNKNOWN; no restart or clock reset')
@@ -226,9 +230,9 @@ def postdispatch133(handle,run,selected,wall,mono):
  if not r['armed_wall']<=started<=wall:raise ValueError('Actual job start after original arming')
  run_digest=sha(can({'run':run,'selected':selected}))
  if r['run_digest'] is not None and r['run_digest']!=run_digest:raise ValueError('Actual run original mutated')
- r['run_digest']=run_digest;r['run']=copy.deepcopy(run);end=min(r['end_wall'],started+900,r['once']['expires_utc'],r['cutoff'])
+ r['run_digest']=run_digest;r['run']=copy.deepcopy(run);end=min(r['end_wall'],started+t146.PARENT,r['once']['expires_utc'],r['cutoff'])
  if end!=r['end_wall']:raise ValueError('Descriptor cannot reset frozen SOURCE_FREEZE end')
- parent={'schema':'TRACE117_PARENT_CLOCK','run_id':str(run['id']),'run_started_at_utc':started,'workflow_hard_end_utc':started+900,'once_expires_utc':r['once']['expires_utc'],'coordinator_cutoff_utc':r['cutoff'],'end_utc':end,'job_limit_s':900}
+ parent={'schema':'TRACE117_PARENT_CLOCK','run_id':str(run['id']),'run_started_at_utc':started,'workflow_hard_end_utc':started+t146.PARENT,'once_expires_utc':r['once']['expires_utc'],'coordinator_cutoff_utc':r['cutoff'],'end_utc':end,'job_limit_s':t146.PARENT}
  descriptor={'source_sha':x['source']['commit'],'manifest_sha256':sha(r['manifest_bytes']),'once_receipt_sha256':ctx['once_receipt_sha256'],'run_id':str(run['id']),'request_sha256':x['request']['sha256'],'schema':'TRACE116_EXTERNAL_ONCE_V1','phase':'admit','original_writer':r['once']['original_writer'],'own_library_file_id':'libfile_3ee8270f03d8819188e1de1f75c3d824','attempt':1,'role':'OFFLINE_COUNTER_ONLY','request_bytes':4935,'lock_sha256':x['lock']['sha256'],'model_calls':0,'spend':0,'expires_utc':end,'parent_clock':parent,'inputs':copy.deepcopy(x['private6']),'once_intent':copy.deepcopy(r['once'])}
  if r['descriptor'] is not None and r['descriptor']!=descriptor:raise ValueError('Sealed postdispatch descriptor drift')
  r['descriptor']=copy.deepcopy(descriptor);return descriptor

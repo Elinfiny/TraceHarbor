@@ -863,7 +863,7 @@ def execute(x, private, binding, counter_requested=False):
         result['exit_code'] = 1
     return result
 
-def main():
+def _main146():
     parser = argparse.ArgumentParser()
     parser.add_argument('--source-sha',required=True)
     parser.add_argument('--manifest-sha',required=True)
@@ -886,11 +886,15 @@ def main():
         cb=importlib.util.module_from_spec(sp);sp.loader.exec_module(cb)
         p=cb.producer_module(repo);root=temp/('traceharbor-counter117-intake-'+x.once_receipt_sha)
         try:
+            failure=load_failure146();absent=failure.absence146(temp,x.once_receipt_sha)
+            if absent['status']=='OBSERVED_NO_INTAKE':
+                failure.finish_cleanup146(dict(os.environ),absent);print(encoded(absent).decode());return 0
             owner=p.OwnedIntake(root,binding,cb.input_pins(),create=False)
             r=owner.cleanup('workflow_always')
             scalar={'schema':'TRACE117_CLEANUP_SAFE','status':r['status'],'paths_observed':len(r['paths']),'unknown':r['unknown'],'retry':False,'secure_erase':False}
         except BaseException as exc:
             scalar={'schema':'TRACE117_CLEANUP_SAFE','status':'UNKNOWN','paths_observed':None,'unknown':True,'retry':False,'secure_erase':False}
+        load_failure146().finish_cleanup146(dict(os.environ),scalar)
         print(encoded(scalar).decode());return 1 if scalar['unknown'] else 0
     if x.counter116_init:
         # Actual future native init step precedes the existing recipient artifact
@@ -906,5 +910,14 @@ def main():
     print(encoded({'exit_code':result['exit_code'],'primary':result['primary'],'proof_saved':result['proof_saved']}).decode())
     return result['exit_code']
 
+def load_failure146():
+    s=importlib.util.spec_from_file_location('trace146_launch_failure',pathlib.Path(__file__).with_name('failure146.py'));m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+def main():
+    try:return _main146()
+    except Exception as exc:
+        # Retain whole bound original even when NativeProducer was never built.
+        try:load_failure146().retain_exception146(dict(os.environ),exc)
+        except Exception as retention:raise ExceptionGroup('Primary and failure evidence retention',[exc,retention])
+        raise
 if __name__=='__main__':
     sys.exit(main())

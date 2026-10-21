@@ -7,10 +7,12 @@ lease, vendor attestation or financial grant is invented. Nothing runs at import
 import os,pathlib,json,hashlib,time,re,stat,base64,importlib.util
 _NATIVE=object();_CONTRACT=object();_INPUT=object();_PREPARED=object()
 OWNER=273768139;REPO=1391430317;WRITER='e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436'
-INGRESS_SHA='b1510c25cc3763fcc54d014824581ce3d5c8bf4401de88959e85f3c5132bdc2e'
+INGRESS_SHA='3d0a3911f9ab471b858ddfc53b86dc5e600a4f02d920e229e56ee1837b101c33'
 #136 exact source-bound create contract, no authority at import.
 _gs136=importlib.util.spec_from_file_location('trace136_runner_git',pathlib.Path(__file__).resolve().parent/'git_dispatch136.py')
 git136=importlib.util.module_from_spec(_gs136);_gs136.loader.exec_module(git136)
+_ts146=importlib.util.spec_from_file_location('trace146_timing_'+__name__,pathlib.Path(__file__).resolve().parent/'timing146.py');t146=importlib.util.module_from_spec(_ts146);_ts146.loader.exec_module(t146)
+
 
 def sha(b):return hashlib.sha256(b).hexdigest()
 def can(d):return json.dumps(d,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
@@ -111,15 +113,18 @@ class ParentClock:
     def from_run(cls,run,once_expires,cutoff,wall=time.time,mono=time.monotonic):
         now=wall();tick=mono()
         started=datetime.datetime.fromisoformat(run['run_started_at'].replace('Z','+00:00')).timestamp()
-        if started>now or type(once_expires) is not int or type(cutoff) is not int or not now<once_expires<=now+900:raise ValueError('Frozen parent roots')
-        end=min(started+900,once_expires,cutoff)
+        if started>now or type(once_expires) is not int or type(cutoff) is not int or not now<once_expires<=now+t146.PARENT:raise ValueError('Frozen parent roots')
+        end=min(started+t146.PARENT,once_expires,cutoff)
         if end<=now:raise TimeoutError('Expired immutable parent')
-        return cls(str(run['id']),started,started+900,once_expires,cutoff,now,tick,tick+end-now,wall,mono)
+        return cls(str(run['id']),started,started+t146.PARENT,once_expires,cutoff,now,tick,tick+end-now,wall,mono)
     @property
     def end_utc(self):return min(self.hard_end_utc,self.once_expires_utc,self.coordinator_cutoff_utc)
     def require(self,seconds=0):
         # Both clocks constrain; wall rollback cannot extend monotonic authority.
-        if min(self.end_mono-self.mono(),self.end_utc-self.wall())<seconds:raise TimeoutError('Whole parent reserve')
+        u=self.wall();m=self.mono();last=getattr(self,'_last146',(self.observed_utc,self.observed_mono))
+        if u<last[0] or m<last[1]:raise TimeoutError('Original dual clock rollback')
+        object.__setattr__(self,'_last146',(u,m))
+        if min(self.end_mono-m,self.end_utc-u)<seconds:raise TimeoutError('Whole parent reserve')
     def phase(self,maximum,reserve):
         self.require(maximum+reserve)
         return min(self.end_mono-reserve,self.mono()+maximum)
@@ -127,7 +132,7 @@ class ParentClock:
         self.require(reserve)
         if self.mono()>=deadline:raise TimeoutError('Immutable phase deadline')
     def descriptor(self):
-        return {'schema':'TRACE117_PARENT_CLOCK','run_id':self.run_id,'run_started_at_utc':self.started_utc,'workflow_hard_end_utc':self.hard_end_utc,'once_expires_utc':self.once_expires_utc,'coordinator_cutoff_utc':self.coordinator_cutoff_utc,'end_utc':self.end_utc,'job_limit_s':900}
+        return {'schema':'TRACE117_PARENT_CLOCK','run_id':self.run_id,'run_started_at_utc':self.started_utc,'workflow_hard_end_utc':self.hard_end_utc,'once_expires_utc':self.once_expires_utc,'coordinator_cutoff_utc':self.coordinator_cutoff_utc,'end_utc':self.end_utc,'job_limit_s':t146.PARENT}
 
 class LateProviderRead(TimeoutError):
     pass
@@ -409,7 +414,7 @@ class NativeProducer:
         dispatch_binding136=git136.binding136(git136.args136(git136.env_values136(dict(e)))) if e.get('GITHUB_EVENT_NAME')=='create' else None
         if run['id']!=int(e['GITHUB_RUN_ID']) or run['run_attempt']!=1 or run['head_sha']!=x.source_sha or not git136.run_event136(run,dispatch_binding136) or run['actor']['id']!=OWNER or run['repository']['id']!=REPO or run['status']!='in_progress':raise ValueError('Current provider run readback')
         clock=ParentClock.from_run(run,x.once_expires_utc,x.coordinator_cutoff_utc)
-        clock.require(865 if initializing else 565)
+        clock.require(t146.INIT_RESERVE if initializing else 565)
         binding={'source_sha':x.source_sha,'manifest_sha256':x.manifest_sha,'once_receipt_sha256':x.once_receipt_sha,'run_id':e['GITHUB_RUN_ID'],'request_sha256':manifest['request_sha256']}
         caller=NativeCaller(_NATIVE,run,binding,ingress,repo)
         root=pathlib.Path(e['RUNNER_TEMP'])/('traceharbor-counter117-intake-'+x.once_receipt_sha)
@@ -418,7 +423,7 @@ class NativeProducer:
         obj.observation_root=pathlib.Path(e['RUNNER_TEMP'])/('trace118-public-admit-'+x.once_receipt_sha+('-init' if initializing else '-main'))
         obj.observation_root.mkdir(mode=0o700)
         try:
-            receipt=obj.provider_once('admit',maximum=150 if initializing else 45,reserve=685 if initializing else 520,admit_wait=initializing)
+            receipt=obj.provider_once('admit',maximum=t146.RUNNER_ADMIT if initializing else 45,reserve=685 if initializing else 520,admit_wait=initializing)
             caller.receipt=receipt;caller.expires=receipt['expires_utc']
             obj.owner=OwnedIntake(root,binding,pins,create=initializing)
             if not initializing:obj.main_end=min(clock.end_mono,tick+720)

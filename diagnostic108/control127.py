@@ -11,7 +11,7 @@ _s=importlib.util.spec_from_file_location('trace127_accepted_control126',pathlib
 DiskOriginalIO127=accepted.DiskOriginalIO126
 PHASES=('SOURCE_FREEZE','PRE_DISPATCH','ADMIT_CHAIN','ENCRYPTED_CHAIN','CONSUMED_CHAIN','TERMINAL')
 SEMANTIC=('PRE_DISPATCH','ADMIT_DESCRIPTOR','ADMIT_BLOB','ADMIT_TREE','ADMIT_COMMIT','ADMIT_REF','ENCRYPTED_BLOB','ENCRYPTED_TREE','ENCRYPTED_COMMIT','ENCRYPTED_REF','CONSUMED_DESCRIPTOR','CONSUMED_BLOB','CONSUMED_TREE','CONSUMED_COMMIT','CONSUMED_REF','TERMINAL')
-FIXED={'job':900,'main':720,'worker':170,'ready':5,'cleanup':10,'proof':15,'initial_runner_admit':150,'initial_host':135,'encrypted':110,'consumed':110,'main_admit':45,'prequal':200,'recipient':25,'allchecks_reserve':680,'hostbegin_reserve':610,'postprequal_reserve':320,'collection':150}
+FIXED={'job':2340,'main':720,'worker':170,'ready':5,'cleanup':10,'proof':15,'initial_runner_admit':285,'initial_host':210,'encrypted':210,'consumed':210,'main_admit':45,'prequal':200,'recipient':90,'allchecks_reserve':680,'hostbegin_reserve':610,'postprequal_reserve':320,'collection':1020}
 def inventory127():
  rows=[]
  def row(id,kind,owner='HOST',closure=False):rows.append({'id':id,'kind':kind,'owner':owner,'closure':closure})
@@ -44,7 +44,7 @@ def inventory127():
   for kind in ('blob','tree','commit','ref'):row(phase+'/'+kind+'/pre-effect-guard','local_evidence')
  for n in range(3):row('collection/delay/'+str(n),'wait','HOST')
  row('controller/functions-exec','orchestration','CONTROLLER')
- for n in range(16):
+ for n in range(40):
   row('observer/'+str(n),'wait','OBSERVER');row('observer/'+str(n)+'/original','local_evidence','OBSERVER');row('observer/'+str(n)+'/intent','local_evidence','OBSERVER');row('observer/'+str(n)+'/claim-cell','orchestration','OBSERVER');row('observer/'+str(n)+'/original-cell','orchestration','OBSERVER')
  for id in ('preflight/materialize','preflight/materialize-original','preflight/exec','preflight/process','preflight/exec-original','holder/start','holder/start-original','holder/terminal','holder/terminal-original','preload/verify','source/verify','custody/guard','recipient/verify','ingress/source','ingress/openssl/0','ingress/openssl/1','ingress/openssl-original','ingress/proof','collection/begin','collection/close','safe/file-attrs','safe/file-original','safe/verify','stop/original','failure/original','closure/original'):
   row(id,'host_start' if id in ('holder/start','preflight/process','ingress/openssl/0','ingress/openssl/1') else 'native' if id in ('preflight/materialize','preflight/exec') else 'local_evidence','CONTROLLER' if id.startswith(('holder/','preflight/')) else 'HOST',id in ('failure/original','closure/original','holder/terminal','holder/terminal-original'))
@@ -76,7 +76,21 @@ def inventory127():
   row('stream143/'+window+'/close','local_evidence','CONTROLLER',True)
  row('controller/failure143','local_evidence','CONTROLLER',True)
  assert len({r['id'] for r in rows})==len(rows)
- return {'schema':'TRACE127_WHOLE_PRECOMMITTED_INVENTORY_V1','rows':rows,'inclusive_total':len(rows),'current_comparison_cap':48,'current_fit':len(rows)<=48,'proposal_only_cap':len(rows),'authority':False,'reserved_closure':sum(r['closure'] for r in rows),'observer_maximum':16,'immutable_semantic_graph':list(SEMANTIC),'phase_graph':list(PHASES),'remote_ids':remote}
+ 
+ for id in ['recipient146/list/'+str(n) for n in range(6)]+['failure/list','failure/download','failure/materialize']:
+  remote.append(id)
+  for suffix,kind,owner in [('tool','native','CONTROLLER'),('canonical','local_evidence','CONTROLLER'),('callback','callback','CONTROLLER'),('callback-original','local_evidence','CONTROLLER'),('request','local_evidence','HOST'),('return','local_evidence','HOST'),('validated','local_evidence','HOST'),('restore','local_evidence','HOST'),('canonical-reference','local_evidence','HOST')]:row(id+'/'+suffix,kind,owner,True)
+  for n in range(8):row(id+'/chunk/'+str(n),'local_evidence','HOST',True)
+  for suffix in ('failure-partial','failure-status','failure-read','failure-duplicate'):row(id+'/'+suffix,'local_evidence','HOST',True)
+  for n in range(8):
+   row('stream143/'+id+'/poll/'+str(n),'native','CONTROLLER',True);row('stream143/'+id+'/poll-original/'+str(n),'local_evidence','CONTROLLER',True)
+  row('stream143/'+id+'/close','local_evidence','CONTROLLER',True)
+ for n in range(5):row('recipient146/delay/'+str(n),'wait')
+ for id in ['collection/run/'+str(n) for n in range(4)]+['recipient146/list/'+str(n) for n in range(6)]:
+  for n in range(8,12):
+   row('stream143/'+id+'/poll/'+str(n),'native','CONTROLLER',True);row('stream143/'+id+'/poll-original/'+str(n),'local_evidence','CONTROLLER',True)
+ for id in ('controller/final146','observer146/run','observer146/issue','observer146/issue-original','observer146/runtime','recipient146/readiness-close','failure/artifact','failure/file-original','failure/file-original/helper-original128'):row(id,'host_start' if id=='observer146/issue' else 'local_evidence','CONTROLLER' if id.startswith(('observer146/','controller/')) else 'HOST',True)
+ return {'schema':'TRACE127_WHOLE_PRECOMMITTED_INVENTORY_V1','rows':rows,'inclusive_total':len(rows),'current_comparison_cap':48,'current_fit':len(rows)<=48,'proposal_only_cap':len(rows),'authority':False,'reserved_closure':sum(r['closure'] for r in rows),'observer_maximum':40,'immutable_semantic_graph':list(SEMANTIC),'phase_graph':list(PHASES),'remote_ids':remote}
 class Inventory127:
  def __init__(self,plan,realm,admitted_cap=48):
   expected=inventory127()
