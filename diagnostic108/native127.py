@@ -11,7 +11,7 @@ def load(name,path):
 t146=load('trace146_native_timing',ROOT/'timing146.py')
 g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
-base=load('trace127_original118',ROOT/'host_transport118.py')
+base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart154.py')
 p150=load('trace150_publication_protocol',ROOT/'publication150.py')
 preflight152=load('trace152_native_authority_preflight',ROOT/'preflight127.py')
 _normalizer118=base.normalizer
@@ -123,7 +123,7 @@ class NativePort127:
   self.deadline()
   if original['status']!='TERMINAL' or original['returncode']!=0:raise RuntimeError('Helper original retained; never rerun')
   return bytes.fromhex(original['stdout_hex'])
- def current(self):return base.current_binding(self._checkpoint,self._version,self.config)
+ def current(self):return h154.current_binding154(base,self._checkpoint,self._version,self.config)
  def original_reference(self,id):
   self.inventory.claim(id+'/canonical-reference');seq=self.ledger.seq;request=base.strict((self.ledger.root/(str(seq)+'.request.original.json')).read_bytes());path=str(pathlib.Path(self.config['capture_directory'])/(str(seq)+'.canonical-native-original.json'));raw=self.canonical127.io.read(path);d=base.strict(raw)
   expected={'context_sha256':sha(can(self.config['context'])),'operation':request['op'],'seq':seq,'tool':'exec_command' if request['op']=='library_replace' else request['op'],'call_id':request['request_digest']}
@@ -383,11 +383,9 @@ def bootstrap127(config_path,provider):
  issued=base.strict(issue['output']);_,observed_plan=observer.plan146(capture_root,issued['plan_sha256'])
  expected_observer={'source_sha':static['source']['commit'],'manifest_sha256':sha(manifest_bytes),'static_config_sha256':sha(can(static)),'inventory_sha256':static['inventory_sha256'],'direction_id':direction['id'],'realm':'SOURCE_ISSUED_CONTROL_DATA'}
  if observed_plan['binding']!=expected_observer:raise ValueError('Exact current source-produced observer plan, no cloned runtime handle')
- root=pathlib.Path(static['path_roles']['holder_parent'])/'holder';st=root.lstat()
- if root.resolve()!=root or not stat.S_ISDIR(st.st_mode) or st.st_uid!=os.getuid() or st.st_mode&0o077 or list(root.iterdir()):raise ValueError('Fresh owned0700 holder; no restart/adoption')
- # The O_EXCL originals directory consumes the existing holder construction
- # before allocating once. A failed invocation cannot adopt an occupied root.
- (root/'originals').mkdir(mode=0o700,exist_ok=False)
+ # Exact identity was frozen before genuine149RX and checked by preflight
+ # before any registry/start. Recheck through nofollow directory FDs at use.
+ root=h154.consume_child154(snap['holder_preparation154'],static)
  wall=time.time();mono=time.monotonic();expires=int(wall)+t146.PARENT;cutoff=expires
  once={'schema':'TRACE116_ONCE_INTENT_V1','original_writer':'e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436','source_sha':static['source']['commit'],'manifest_sha256':sha(manifest_bytes),'request_sha256':static['request']['sha256'],'request_bytes':4935,'lock_sha256':static['lock']['sha256'],'inputs':copy.deepcopy(static['private6']),'role':'OFFLINE_COUNTER_ONLY','max_counter_invocations':1,'model_calls':0,'spend':0,'nonce':os.urandom(16).hex(),'expires_utc':expires}
  runtime=g._mint_runtime133(g._SEAL,direction,static,manifest_bytes,snap,once,os.urandom(32).hex(),wall,mono,cutoff);context=g.runtime_context133(runtime)
@@ -407,6 +405,6 @@ def bootstrap127(config_path,provider):
  return host,macro
 def main():
  if sys.argv[1]=='guard':
-  static=base.strict(pathlib.Path(sys.argv[2]).read_bytes());doc,_=base.check_checkpoint(sys.argv[3],base.OWN,int(sys.argv[4]));key='native'+doc['state'].split('_')[0][6:];g.p133.release133(doc[key]['direction'],static,(ROOT/'manifest.json').read_bytes());cfg={'direction_number':int(key[6:]),'writer_binding':doc[key]['records'][0]['payload']['writer_binding']};current=base.current_binding(sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
+  static=base.strict(pathlib.Path(sys.argv[2]).read_bytes());doc,_=base.check_checkpoint(sys.argv[3],base.OWN,int(sys.argv[4]));key='native'+doc['state'].split('_')[0][6:];g.p133.release133(doc[key]['direction'],static,(ROOT/'manifest.json').read_bytes());cfg={'direction_number':int(key[6:]),'writer_binding':doc[key]['records'][0]['payload']['writer_binding'],'config_path':sys.argv[2]};current=h154.current_binding154(base,sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
  provider=load('trace127_fixed_provider',ROOT/'provider_safe127.py');host,macro=provider.bootstrap_native_host127(sys.argv[1]);result=macro.run_complete();print(json.dumps(result));return 0
 if __name__=='__main__':sys.exit(main())
