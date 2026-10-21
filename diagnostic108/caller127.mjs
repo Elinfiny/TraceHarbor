@@ -68,7 +68,7 @@ export async function bootstrapActualCaller127(preloaded){
  const preflightDeadline128=Date.now()+PREFLIGHT128.totalMs;
  const preview=prepare127({...validated129,realm:'SYNTHETIC_SOURCE_ONLY'}),c=HANDLES.get(preview),t=PLATFORM_TOOLS127;
  use(c,'preflight/materialize','CONTROLLER');use(c,'preflight/materialize-original','CONTROLLER');
- const original=await t.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_505e4189bc588191bcda811c4a35da79'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'}],destination:{directory:validated129.preflightDirectory}});
+ const original=await t.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_f87a6a307f70819194e0af0fa453afd1'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'}],destination:{directory:validated129.preflightDirectory}});
  await capture(c,'preflight-materialize.original.json',original,t);
  if(original.isError)throw Error('Actual current native read refused');
  use(c,'preflight/exec','CONTROLLER');use(c,'preflight/process','CONTROLLER');// first-original ticket consumed by finite collector below
