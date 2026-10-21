@@ -95,6 +95,19 @@ def inventory127():
   for id in ('process','prepare','transfer','finalize','metadata','intent','helper-original','receipt','normalize','close'):row(prefix+id,'host_start' if id=='process' else 'reserved_provider_suboperation' if id in ('prepare','transfer','finalize') else 'local_evidence','CONTROLLER',True)
   for n in range(8):
    row(prefix+'poll/'+str(n),'native','CONTROLLER',True);row(prefix+'poll-original/'+str(n),'local_evidence','CONTROLLER',True)
+ retired=[r for r in rows if r['id'].startswith(('dispatch/UI/','dispatch/run/','stream143/dispatch/UI/','stream143/dispatch/run/'))]
+ assert len(retired)==76
+ extra=[('preflight/helper-original152/route','local_evidence','CONTROLLER')]
+ for scope in ['precreate']+[phase+'/'+kind+'/proof' for phase in ('admit','encrypted','consumed') for kind in ('blob','tree','commit')]:
+  extra.append(('authority152/'+scope+'/current-tool','native','CONTROLLER'))
+  extra += [('authority152/'+scope+'/helper-original/'+str(i),'local_evidence','HOST') for i in range(4)]
+  extra.append(('authority152/'+scope+'/verify','local_evidence','HOST'))
+ for phase in ('ADMIT_CHAIN','ENCRYPTED_CHAIN','CONSUMED_CHAIN'):
+  extra += [('authority152/'+phase+'/readback/helper-original/'+str(i),'local_evidence','HOST') for i in range(4)]
+  extra.append(('authority152/'+phase+'/readback/verify','local_evidence','HOST'))
+ assert len(extra)==76
+ for oldrow,(id,kind,owner) in zip(retired,extra):oldrow.update(id=id,kind=kind,owner=owner,closure=True)
+ remote=[id for id in remote if id not in ('dispatch/UI','dispatch/run')]
  return {'schema':'TRACE127_WHOLE_PRECOMMITTED_INVENTORY_V1','rows':rows,'inclusive_total':len(rows),'current_comparison_cap':48,'current_fit':len(rows)<=48,'proposal_only_cap':len(rows),'authority':False,'reserved_closure':sum(r['closure'] for r in rows),'observer_maximum':40,'immutable_semantic_graph':list(SEMANTIC),'phase_graph':list(PHASES),'remote_ids':remote}
 class Inventory127:
  def __init__(self,plan,realm,admitted_cap=48):

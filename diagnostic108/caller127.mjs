@@ -68,7 +68,7 @@ export async function bootstrapActualCaller127(preloaded){
  const preflightDeadline128=Date.now()+PREFLIGHT128.totalMs;
  const preview=prepare127({...validated129,realm:'SYNTHETIC_SOURCE_ONLY'}),c=HANDLES.get(preview),t=PLATFORM_TOOLS127;
  use(c,'preflight/materialize','CONTROLLER');use(c,'preflight/materialize-original','CONTROLLER');
- const original=await t.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_f87a6a307f70819194e0af0fa453afd1'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'}],destination:{directory:validated129.preflightDirectory}});
+ const original=await t.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_f87a6a307f70819194e0af0fa453afd1'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'},{library_file_id:'libfile_8377022600088191993dc06bfba93b7b'}],destination:{directory:validated129.preflightDirectory}});
  await capture(c,'preflight-materialize.original.json',original,t);
  if(original.isError)throw Error('Actual current native read refused');
  use(c,'preflight/exec','CONTROLLER');use(c,'preflight/process','CONTROLLER');// first-original ticket consumed by finite collector below
@@ -77,8 +77,8 @@ export async function bootstrapActualCaller127(preloaded){
  // addressed admission. No executable path/hash/bool supplied by the caller
  // can register a native capability before this source-native check.
  const q=s=>"'"+String(s).replaceAll("'","'\\''")+"'";
- const code=`import pathlib,json,hashlib,runpy,sys\ndef read_current133(path):\n import os,stat\n p=pathlib.Path(path)\n if not p.is_absolute() or p.resolve()!=p:raise ValueError('No current path aliases')\n for parent in [*reversed(p.parents),p]:\n  if parent.is_symlink():raise ValueError('No current symlink ancestor')\n before=p.lstat();limit=67108864\n if not stat.S_ISREG(before.st_mode) or before.st_uid!=os.getuid() or before.st_nlink!=1 or before.st_mode&0o022 or before.st_size>limit:raise ValueError('Bounded stable current metadata')\n fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)\n try:\n  opened=os.fstat(fd);chunks=[];total=0\n  while True:\n   b=os.read(fd,1048576)\n   if not b:break\n   total+=len(b)\n   if total>limit:raise ValueError('Whole current metadata64MiB')\n   chunks.append(b)\n  ended=os.fstat(fd)\n finally:os.close(fd)\n after=p.lstat();ident=lambda s:(s.st_dev,s.st_ino,s.st_uid,s.st_mode,s.st_nlink,s.st_size,s.st_mtime_ns)\n if ident(before)!=ident(opened) or ident(opened)!=ident(ended) or ident(ended)!=ident(after):raise ValueError('Current metadata changed during read')\n return b''.join(chunks)\na=json.loads(pathlib.Path(sys.argv[1]).read_bytes())['structuredContent'];a=a.get('result',a);ts=a['transfers'];assert not a.get('unavailable_items') and len(ts)==3\nown=next(x for x in ts if x['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');d=json.loads(read_current133(own['workspace_path']));k='native'+d['state'].split('_')[0][6:];ad=d[k]['direction'].get('grouped146_admission');assert ad and ad.get('contract')=='TRACE146_STATIC_TYPED_RUNTIME_V3' and 'ADMIT_TRACE146_STATIC_TYPED_RUNTIME_V3' in d[k]['direction']['body']\nroot=pathlib.Path(sys.argv[2]);raw=(root/'diagnostic108/manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==ad['manifest_sha256'];m=json.loads(raw)\nfor n,p in m['source_files'].items():\n f=root/n;assert not pathlib.Path(n).is_absolute() and '..' not in pathlib.Path(n).parts;b=f.read_bytes();assert len(b)==p['bytes'] and hashlib.sha256(b).hexdigest()==p['sha256']\nsys.argv=[str(root/'diagnostic108/preflight127.py'),sys.argv[1],sys.argv[3]];runpy.run_path(str(root/'diagnostic108/preflight127.py'),run_name='__main__')`;
- for(let n=0;n<3;n++)use(c,'preflight/helper-original128/'+n,'CONTROLLER');
+ const code=`import pathlib,json,hashlib,runpy,sys\ndef read_current133(path):\n import os,stat\n p=pathlib.Path(path)\n if not p.is_absolute() or p.resolve()!=p:raise ValueError('No current path aliases')\n for parent in [*reversed(p.parents),p]:\n  if parent.is_symlink():raise ValueError('No current symlink ancestor')\n before=p.lstat();limit=67108864\n if not stat.S_ISREG(before.st_mode) or before.st_uid!=os.getuid() or before.st_nlink!=1 or before.st_mode&0o022 or before.st_size>limit:raise ValueError('Bounded stable current metadata')\n fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)\n try:\n  opened=os.fstat(fd);chunks=[];total=0\n  while True:\n   b=os.read(fd,1048576)\n   if not b:break\n   total+=len(b)\n   if total>limit:raise ValueError('Whole current metadata64MiB')\n   chunks.append(b)\n  ended=os.fstat(fd)\n finally:os.close(fd)\n after=p.lstat();ident=lambda s:(s.st_dev,s.st_ino,s.st_uid,s.st_mode,s.st_nlink,s.st_size,s.st_mtime_ns)\n if ident(before)!=ident(opened) or ident(opened)!=ident(ended) or ident(ended)!=ident(after):raise ValueError('Current metadata changed during read')\n return b''.join(chunks)\na=json.loads(pathlib.Path(sys.argv[1]).read_bytes())['structuredContent'];a=a.get('result',a);ts=a['transfers'];assert not a.get('unavailable_items') and len(ts)==4\nown=next(x for x in ts if x['library_file_id']=='libfile_3ee8270f03d8819188e1de1f75c3d824');d=json.loads(read_current133(own['workspace_path']));k='native'+d['state'].split('_')[0][6:];ad=d[k]['direction'].get('grouped146_admission');assert ad and ad.get('contract')=='TRACE146_STATIC_TYPED_RUNTIME_V3' and 'ADMIT_TRACE146_STATIC_TYPED_RUNTIME_V3' in d[k]['direction']['body']\nroot=pathlib.Path(sys.argv[2]);raw=(root/'diagnostic108/manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==ad['manifest_sha256'];m=json.loads(raw)\nfor n,p in m['source_files'].items():\n f=root/n;assert not pathlib.Path(n).is_absolute() and '..' not in pathlib.Path(n).parts;b=f.read_bytes();assert len(b)==p['bytes'] and hashlib.sha256(b).hexdigest()==p['sha256']\nsys.argv=[str(root/'diagnostic108/preflight127.py'),sys.argv[1],sys.argv[3]];runpy.run_path(str(root/'diagnostic108/preflight127.py'),run_name='__main__')`;
+ for(let n=0;n<3;n++)use(c,'preflight/helper-original128/'+n,'CONTROLLER');use(c,'preflight/helper-original152/route','CONTROLLER');
  let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
  if(verified.schema!=='TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
@@ -177,9 +177,19 @@ export async function bridge127(handle,frame,tools){
  for(const s of ['tool','canonical','callback','callback-original'])use(c,id+'/'+s,'CONTROLLER');
  let original=null,error=null;const a=frame.args;
  try{switch(frame.op){
-  case 'github_ref_absence136':original=await tools.mcp__codex_apps__github_fetch(a);break;
+  case 'github_ref_absence136':{
+   use(c,'authority152/precreate/current-tool','CONTROLLER');
+   const settled=await Promise.allSettled([tools.mcp__codex_apps__github_fetch(a),tools.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_f87a6a307f70819194e0af0fa453afd1'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'},{library_file_id:'libfile_8377022600088191993dc06bfba93b7b'}],destination:{directory:c.p.transferRoot+'/authority152-current'}})]);
+   original={schema:'TRACE152_AUTHENTIC_COMPOUND_ORIGINAL',absence:settled[0].status==='fulfilled'?settled[0].value:{tool_throw:{message:String(settled[0].reason)}},current:settled[1].status==='fulfilled'?settled[1].value:{tool_throw:{message:String(settled[1].reason)}},native_authority:false};break;
+  }
   case 'github_create_dispatch136':original=await tools.mcp__codex_apps__github_create_branch(a);break;
-  case 'github_fetch':original=await tools.mcp__codex_apps__github_fetch(a);break;
+  case 'github_fetch':{
+   if(/^(admit|encrypted|consumed)\/(blob|tree|commit)\/proof$/.test(id)){
+    use(c,'authority152/'+id+'/current-tool','CONTROLLER');
+    const pair=await Promise.allSettled([tools.mcp__codex_apps__github_fetch(a),tools.mcp__codex_apps__library_prepare_materialize({items:[{library_file_id:'libfile_3ee8270f03d8819188e1de1f75c3d824'},{library_file_id:'libfile_f87a6a307f70819194e0af0fa453afd1'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'},{library_file_id:'libfile_8377022600088191993dc06bfba93b7b'}],destination:{directory:c.p.transferRoot+'/authority152-'+id.replaceAll('/','-')}})]);
+    original={schema:'TRACE152_AUTHENTIC_READ_PAIR',value:pair[0].status==='fulfilled'?pair[0].value:{tool_throw:{message:String(pair[0].reason)}},current:pair[1].status==='fulfilled'?pair[1].value:{tool_throw:{message:String(pair[1].reason)}},native_authority:false};
+   }else original=await tools.mcp__codex_apps__github_fetch(a);break;
+  }
   case 'github_create_blob':original=await tools.mcp__codex_apps__github_create_blob(a);break;
   case 'github_create_tree':original=await tools.mcp__codex_apps__github_create_tree(a);break;
   case 'github_create_commit':original=await tools.mcp__codex_apps__github_create_commit(a);break;
@@ -188,7 +198,12 @@ export async function bridge127(handle,frame,tools){
   case 'github_fetch_workflow_run_artifacts':original=await tools.mcp__codex_apps__github_fetch({url:'https://api.github.com/repos/Elinfiny/TraceHarbor/actions/runs/'+a.run_id+'/artifacts?name='+encodeURIComponent(a.name)+'&per_page=100'});break;
   case 'github_download_workflow_artifact':original=await tools.mcp__codex_apps__github_download_workflow_artifact(a);break;
   case 'library_replace':original=await publishPrepared150(c,frame,tools);break;
-  case 'library_materialize':original=await tools.mcp__codex_apps__library_prepare_materialize(a);break;
+  case 'library_materialize':{
+   if(/^(ADMIT_CHAIN|ENCRYPTED_CHAIN|CONSUMED_CHAIN)\/readback$/.test(id)){
+    const whole=await tools.mcp__codex_apps__library_prepare_materialize({...a,items:[...a.items,{library_file_id:'libfile_f87a6a307f70819194e0af0fa453afd1'},{library_file_id:'libfile_6f69ae483b088191a1fffefca617bbd5'},{library_file_id:'libfile_8377022600088191993dc06bfba93b7b'}]});
+    original={schema:'TRACE152_AUTHENTIC_PHASE_READBACK',current:whole,native_authority:false};
+   }else original=await tools.mcp__codex_apps__library_prepare_materialize(a);break;
+  }
   case 'browser_js':original=await tools.mcp__codex_apps__browser_js(a);break;
   default:throw Error('No arbitrary tool/new route');
  }}catch(e){error={exception_class:e?.name||'Error',message:String(e?.message||e),status:'UNKNOWN_NO_RETRY'};}
@@ -197,9 +212,11 @@ export async function bridge127(handle,frame,tools){
  // consumers use this exact file/count/hash; equal bytes of othercalls differ.
  if(error&&original===null)original={tool_throw:error,status:'UNKNOWN_NO_RETRY'};
  await capture(c,frame.seq+'.canonical-native-original.json',{identity,original},tools);
+ let bound152=null;
+ if(original?.schema?.startsWith('TRACE152_AUTHENTIC_')){try{utf8ByteCount129(JSON.stringify(original),131072);}catch(e){bound152={status:'UNKNOWN_NO_RETRY',message:String(e),whole_original_retained:true};}}
  const late=Date.now()>=Math.min(frame.deadline_utc_ms,c.p.deadlineUtcMs);
  const expected404136=frame.op==='github_ref_absence136'&&id==='dispatch136/ref-absence'&&original?.isError===true&&original.structuredContent?.error_code==='NOT_FOUND'&&String(original.structuredContent?.error_data?.status)==='404';
- if(error||late||original?.isError&&!expected404136)c.failed=error||{late,tool_error:original?.isError===true};
+ if(error||late||bound152||original?.isError&&!expected404136)c.failed=error||bound152||{late,tool_error:original?.isError===true};
  if(!c.failed){const v=original?.structuredContent;
   if(/^dispatch136\/runs\/[0-3]$/.test(id)){const data=JSON.parse(v.content),matches=data.workflow_runs.filter(r=>r.head_branch===c.p.uiDispatchArgs.branch_name&&r.path==='.github/workflows/traceharbor-counter136.yml');if(matches.length===1){const run=matches[0];if(run.status==='in_progress'&&run.run_attempt===1&&run.head_sha===c.p.sourceSha&&run.actor?.id===273768139&&run.repository?.id===1391430317){use(c,'observer146/run','CONTROLLER');await capture(c,'observer146-run.json',{run_id:run.id,branch:run.head_branch,source_sha:run.head_sha,once_receipt_sha256:c.p.context.once_receipt_sha256,canonical_sequence:frame.seq},tools);}}}
 
