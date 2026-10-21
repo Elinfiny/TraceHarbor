@@ -82,8 +82,9 @@ export async function bootstrapActualCaller127(preloaded){
  let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
  if(verified.schema!=='TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
- if(!/^V28-TRACE-149-/.test(verified.directionId)||verified.prestart154?.schema!=='TRACE154_PRESTART149_PREDECESSOR147_V1'||verified.prestart154.empty!==true||!/^[a-f0-9]{64}$/.test(verified.prestart154.prepared_receipt_sha256))throw Error('Actual exact149 prepared child proof before source registry/start');
- const verifiedPreload={...validated129,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,manifestSha135:verified.manifestSha135,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:262144}};
+ if(!/^V29-TRACE-150-/.test(verified.directionId)||verified.prestart154?.schema!=='TRACE156_PRESTART150_PREDECESSOR149_V1'||verified.prestart154.empty!==true||!/^[a-f0-9]{64}$/.test(verified.prestart154.prepared_receipt_sha256))throw Error('Actual exact149 prepared child proof before source registry/start');
+ requireStartup156(verified.startup156);
+ const verifiedPreload={...validated129,startup156:verified.startup156,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,manifestSha135:verified.manifestSha135,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:262144}};
  const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);
  const actual=HANDLES.get(handle);use(actual,'observer146/issue','CONTROLLER');use(actual,'observer146/issue-original','CONTROLLER');
  const binding={source_sha:verified.sourceSha,manifest_sha256:verified.manifestSha135,static_config_sha256:verified.staticConfigSha256,inventory_sha256:validated129.inventorySha256,direction_id:verified.directionId,realm:'SOURCE_ISSUED_CONTROL_DATA'};
@@ -98,11 +99,17 @@ async function capture(c,name,value,tools){
  return await tools.apply_patch('*** Begin Patch\n*** Add File: '+c.p.captureDirectory+'/'+name+'\n+'+text+'\n*** End Patch');
 }
 export function counts127(handle){const c=HANDLES.get(handle);if(!c)throw Error('Exact registry');return {whole_reserved:c.rows.size,controller_used:c.used.size,first_unknown:c.failed,current48_fit:c.rows.size<=48,native_authority:false};}
+export const STARTUP156=Object.freeze({schema:'TRACE156_FINITE_FIRST_FRAME_STARTUP_V1',startup_max_ms:90000,budget_source:'EXISTING_PREPARE90_WITHIN_OUTER_WORK3000',provider_frame_ms:15000,phase_CAS_ms:75000,parent_ms:2340000,outer_total_s:3600,outer_work_s:3000,outer_reserve_s:600,extra_tickets:0,renewal:false,authority:false});
+export function requireStartup156(value){if(!same(value,STARTUP156))throw Error('Exact source-verified startup contract, no supplied deadline');return STARTUP156;}
+export function requireEmittedFrame156(frame,now){
+ if(!frame||!Number.isInteger(frame.deadline_utc_ms)||!Number.isInteger(frame.phase_deadline_utc_ms)||!frame.runtime_binding133||!Number.isInteger(frame.runtime_binding133.deadlineUtcMs)||now>=Math.min(frame.deadline_utc_ms,frame.phase_deadline_utc_ms,frame.runtime_binding133.deadlineUtcMs))throw Error('Original emitted15s/phase75/parent2340 expired; no parse bypass or reset');
+ return frame;
+}
 export async function launch127(handle,tools){
  const c=HANDLES.get(handle);if(!c||c.session!==null||c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&!c.observer146)throw Error('ONE source-bound holder with issued observer plan');
  if(c.p.realm!=='SYNTHETIC_SOURCE_ONLY'&&tools!==PLATFORM_TOOLS127)throw Error('No supplied native tool callback');
  use(c,'holder/start','CONTROLLER');use(c,'holder/start-original','CONTROLLER');
- c.streamCutoff143=Date.now()+15000;
+ c.startup156=requireStartup156(c.p.startup156);c.startupOrigin156=Date.now();c.streamCutoff143=c.startupOrigin156+c.startup156.startup_max_ms;
  let original;try{original=await tools.exec_command(c.p.holderCommand);}catch(e){original={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};}
  await capture(c,'holder-start.original.json',original,tools);
  if(!Number.isInteger(original.session_id)||original.exit_code!=null){c.failed={holder_start:original};throw Error('No actual live sameholder; no retry');}c.session=original.session_id;return original;
@@ -110,6 +117,7 @@ export async function launch127(handle,tools){
 async function bindSourceRuntime133(c,frame,tools){
  // This DATA comes only from the exact source holder's retained start original.
  // No exported function accepts a runtime dict to register native authority.
+ requireEmittedFrame156(frame,Date.now());
  const b=frame.runtime_binding133,p=c.p;
  if(c.session===null||frame!==c.nativeFrame||frame.seq!==1||frame.inventory_call_id!=='SOURCE_FREEZE/CAS'||!b||b.schema!=='TRACE133_SOURCE_RUNTIME_FRAME'||b.static_config_sha256!==p.staticConfigSha256||b.sourceSha!==p.sourceSha||b.sourceTree!==p.sourceTree||b.context?.domain!=='TRACE133_TYPED_RUNTIME'||b.context.source_sha!==p.sourceSha||b.context.direction_id!==p.directionId133||!/^[a-f0-9]{64}$/.test(b.context.once_receipt_sha256)||!/^[a-f0-9]{64}$/.test(b.context_sha256)||!same(b.context,frame.context)||!Number.isInteger(b.deadlineUtcMs)||b.deadlineUtcMs<=Date.now()||b.deadlineUtcMs>Date.now()+2340000)throw Error('Actual source same invocation runtime binding; original900 only');
  if(b.manifestSha256!==p.manifestSha135||b.onceExpiresUtc!==b.deadlineUtcMs/1000||!Number.isInteger(b.coordinatorCutoffUtc)||b.coordinatorCutoffUtc<b.onceExpiresUtc)throw Error('Original source manifest/expiry/cutoff, no reset');
@@ -122,7 +130,7 @@ async function bindSourceRuntime133(c,frame,tools){
 }
 function guardArgs(c,f){
  const a=f.args,p=c.p,repo='Elinfiny/TraceHarbor',id=f.inventory_call_id;
- if(!p.inventory.remote_ids.includes(id)||f.inventory_sha256!==p.inventorySha256||!same(f.context,p.context)||f.seq!==c.nextSeq||f.schema!=='TRACE118_HOST_REQUEST'||Date.now()>=Math.min(f.deadline_utc_ms,p.deadlineUtcMs))throw Error('Exact source/context/inventory/sequence/original parent');
+ if(!p.inventory.remote_ids.includes(id)||f.inventory_sha256!==p.inventorySha256||!same(f.context,p.context)||f.seq!==c.nextSeq||f.schema!=='TRACE118_HOST_REQUEST'||Date.now()>=Math.min(f.deadline_utc_ms,f.phase_deadline_utc_ms,p.deadlineUtcMs))throw Error('Exact source/context/inventory/sequence/original parent');
  if(f.op.startsWith('github_create_')&&a.repository_full_name!==repo)throw Error('Exact repository');
  if(f.op==='github_create_blob'&&(a.encoding!=='base64'||typeof a.content!=='string'||a.content.length>190000))throw Error('Bounded exact body');
  if(f.op==='github_create_tree'&&(a.base_tree_sha!==p.sourceTree||a.tree_elements?.length!==1||a.tree_elements[0].sha!==c.lastBlob||a.tree_elements[0].mode!=='100644'||a.tree_elements[0].type!=='blob'))throw Error('Actual preceding blob/source tree');
@@ -269,7 +277,7 @@ export async function drive127(handle,tools){
    if(original.exit_code!=null){use(c,'holder/terminal','CONTROLLER');use(c,'holder/terminal-original','CONTROLLER');await capture(c,'holder-terminal.original.json',original,tools);if(original.exit_code!==0)throw Error('Actual source holder nonzero; original retained');return original;}
    if(n===c.p.inventory.remote_ids.length)throw Error('Finite remote schedule exhausted before terminal');
    const lines=original.output.trim().split('\n');if(lines.length!==1)throw Error('One exact complete source frame; no prefix/event selection');
-   const frame=JSON.parse(lines[0]);c.nativeFrame=frame;window=frame.inventory_call_id;original=await bridge127(handle,frame,tools);c.nativeFrame=null;
+   const frame=JSON.parse(lines[0]);if(window==='launch')requireEmittedFrame156(frame,Date.now());c.nativeFrame=frame;window=frame.inventory_call_id;original=await bridge127(handle,frame,tools);c.nativeFrame=null;
   }
   throw Error('Finite complete macro stream exhausted; no retry');
  }catch(error){c.failed??={name:error?.name,message:String(error)};use(c,'controller/failure143','CONTROLLER');await capture(c,'controller-failure143.original.json',{failure:c.failed,error:{name:error?.name,message:String(error)}},tools);throw error;}
