@@ -11,14 +11,15 @@ def load(name,path):
 t146=load('trace146_native_timing',ROOT/'timing146.py')
 g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
-base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart168.py')
+base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart174.py')
 p150=load('trace150_publication_protocol',ROOT/'publication150.py')
 preflight152=load('trace152_native_authority_preflight',ROOT/'preflight127.py')
 r156=load('trace156_sameown_values',ROOT/'references156.py')
 r165=load('trace165_sameown_values',ROOT/'references165.py')
 r168=load('trace168_sameown_values',ROOT/'references168.py')
 m168=load('trace168_metadata_budget',ROOT/'metadata168.py')
-k165=load('trace165_snapshot_compatibility',ROOT/'compatibility168.py')
+k165=load('trace165_snapshot_compatibility',ROOT/'compatibility174.py')
+r174=load('trace174_closed153_refs',ROOT/'references174.py')
 b170=load('trace170_request_bound_blob',ROOT/'blob170.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
@@ -177,7 +178,8 @@ class NativePort127:
   self.authority152_last={'scope':scope,'seq':self.ledger.seq,'own_version':version,'authority':auth152}
  def before_effect(self,id,op,args):
   current=self.current();payload=current['doc'][current['key']]['records'][-1]['payload'];intent=payload.get('phase_intent127');phase=self.macro.active['name']
-  if intent and current['number']==152:intent=r168.expand_intent165(current['doc'],intent,len(current['doc']['native152']['records'])-1)
+  if intent and current['number']==153:intent=r174.expand_intent165(current['doc'],intent,len(current['doc']['native153']['records'])-1)
+  elif intent and current['number']==152:intent=r168.expand_intent165(current['doc'],intent,len(current['doc']['native152']['records'])-1)
   elif intent and current['number']==151:intent=r165.expand_intent165(current['doc'],intent,len(current['doc']['native151']['records'])-1)
   elif intent and current['number']==150:intent=r156.expand_intent156(current['doc'],intent,len(current['doc']['native150']['records'])-1)
   preflight152.a152.require_predecessor152(id,phase,self._version,self.ledger.seq,getattr(self,'authority152_last',None))
@@ -202,7 +204,10 @@ class NativePort127:
   if version!=self._version or payload['phase_intent127']['plan_sha256']!=self.macro.plan_sha:raise ValueError('Exact whole live typed phase/version')
   current=self.current();self.helper(phase,'guard-before',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(self._checkpoint),str(version)])
   stored_payload=copy.deepcopy(payload)
-  if current['number']==152:
+  if current['number']==153:
+   stored_payload['phase_intent127']=r174.compact_intent165(current['doc'],payload['phase_intent127'])
+   if r174.expand_intent165(current['doc'],stored_payload['phase_intent127'],len(current['doc']['native153']['records']))!=payload['phase_intent127']:raise ValueError('Whole153 byte-value expansion before original writer')
+  elif current['number']==152:
    stored_payload['phase_intent127']=r168.compact_intent165(current['doc'],payload['phase_intent127'])
    if r168.expand_intent165(current['doc'],stored_payload['phase_intent127'],len(current['doc']['native152']['records']))!=payload['phase_intent127']:raise ValueError('Whole152 byte-value expansion before original writer')
   elif current['number']==151:
@@ -239,6 +244,7 @@ class NativePort127:
   if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
   self.attrs(phase,'attrs-readback',path,tr);check,observed=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,path,base.OWN,version+1,sha(raw))
   if observed!=raw or check!=d:raise ValueError('Wholebyte/self original producer readback')
+  if current['number']==153 and r174.expand_intent165(check,check['native153']['records'][-1]['payload']['phase_intent127'],len(check['native153']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole153 intent resolved after pinned readback')
   if current['number']==152 and r168.expand_intent165(check,check['native152']['records'][-1]['payload']['phase_intent127'],len(check['native152']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole152 resolved original intent after pinned readback')
   if current['number']==151 and r165.expand_intent165(check,check['native151']['records'][-1]['payload']['phase_intent127'],len(check['native151']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole151 resolved original intent after pinned readback')
   if current['number']==150 and r156.expand_intent156(check,check['native150']['records'][-1]['payload']['phase_intent127'],len(check['native150']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole resolved original intent after pinned readback')
@@ -452,6 +458,9 @@ def bootstrap127(config_path,provider):
  return host,macro
 def main():
  if sys.argv[1]=='guard':
+  if json.loads(pathlib.Path(sys.argv[2]).read_bytes())['prestart154']['direction_number']==153:
+   from guard174 import check174
+   print(json.dumps(check174(sys.argv[3],int(sys.argv[4]),sys.argv[2])));return 0
   static=base.strict(pathlib.Path(sys.argv[2]).read_bytes());doc,_=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,sys.argv[3],base.OWN,int(sys.argv[4]));key='native'+doc['state'].split('_')[0][6:];g.p133.release133(doc[key]['direction'],static,(ROOT/'manifest.json').read_bytes());cfg={'direction_number':int(key[6:]),'writer_binding':doc[key]['records'][0]['payload']['writer_binding'],'config_path':sys.argv[2]};current=h154.current_binding154(base,sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
  provider=load('trace127_fixed_provider',ROOT/'provider_safe127.py');host,macro=provider.bootstrap_native_host127(sys.argv[1]);result=macro.run_complete();print(json.dumps(result));return 0
 if __name__=='__main__':sys.exit(main())
