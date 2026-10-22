@@ -13,7 +13,7 @@ class CurrentSnapshot133:
  __slots__=()
 CURRENT_METADATA_LIMIT133=67108864
 PRIVATE_MEMBER_LIMIT133=33554432
-def _stable_read133(path,expected=None,private=False,*,metadata=False):
+def _stable_read133(path,expected=None,private=False,*,metadata=False,metadata_transfer=None,metadata_original=None):
  import stat
  p=pathlib.Path(path)
  if not p.is_absolute() or p.resolve()!=p:raise ValueError('No path aliases')
@@ -21,7 +21,10 @@ def _stable_read133(path,expected=None,private=False,*,metadata=False):
  for parent in [*reversed(p.parents),p]:
   if parent.is_symlink():raise ValueError('Nofollow every ancestor')
  if type(metadata) is not bool or metadata and private:raise ValueError('Metadata flag cannot enlarge private custody')
- limit=CURRENT_METADATA_LIMIT133 if metadata else PRIVATE_MEMBER_LIMIT133
+ if metadata:
+  if metadata_transfer is None:raise ValueError('Authentic transfer required before selecting metadata envelope')
+  return __import__('runpy').run_path(str(ROOT/'envelope158.py'))['read158'](path,metadata_transfer,original=metadata_original)[1]
+ limit=PRIVATE_MEMBER_LIMIT133
  s=p.lstat()
  if s.st_size>limit:raise ValueError('Whole bounded metadata bytes' if metadata else 'Whole bounded custody bytes')
  if not stat.S_ISREG(s.st_mode) or s.st_uid!=os.getuid() or s.st_nlink!=1 or private and s.st_mode&0o077 or s.st_mode&0o022:raise ValueError('Owned stable regular custody')
@@ -84,12 +87,10 @@ def produce133(original_path,config,*,_native_reload133=False):
  helper=config['path_roles']['library_helper'];helper_sha=config['path_roles']['library_helper_sha256']
  if sha(_stable_read133(helper))!=helper_sha:raise ValueError('Pinned actual helper')
  for i,t in enumerate(ts):
-  path=pathlib.Path(t['workspace_path']);raw=_stable_read133(path,metadata=True);d=json.loads(raw);v=copy.deepcopy(d)
-  if t['library_file_id']=='libfile_f87a6a307f70819194e0af0fa453afd1':h=v['integrity']['canonical_json_sha256'];v['integrity']['canonical_json_sha256']=None
-  else:h=v['self_sha256'];v['self_sha256']=None
-  if sha(can(v))!=h or len(raw)!=t['size_bytes']:raise ValueError('Actual full bytes/self before helper')
+  path=pathlib.Path(t['workspace_path'])
   if not _native_reload133:
    helper128.run_helper128(helper,helper_sha,path,t['library_file_id'],t['xattrs'],{'phase':'PREFLIGHT','run':'STATIC133','source':config['source']['commit'],'call':'preflight/'+t['library_file_id']},lambda ident,record:helper128.retain_private128(config['path_roles']['capture'],ident,record))
+  d,raw,h=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['read158'](path,t,original=original)
   if os.getxattr(path,'user.library-file-id').decode()!=t['library_file_id'] or int(os.getxattr(path,'user.library-file-version').decode())!=t['current_version_number']:raise ValueError('Actual stable Library ID/version')
   for a in t['xattrs']:
    if os.getxattr(path,a['name']).decode()!=a['value']:raise ValueError('ALL current returned attributes')

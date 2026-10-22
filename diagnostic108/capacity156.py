@@ -2,7 +2,7 @@
 Pure RAM model, never writer/runtime/clock/nonce/native factory. Recomputed from
 actual complete ownRX and exact source/config before each first native start.
 Old nodes are not changed. All individual resolved phase bodies <=originalIPC;
-only stored representations are whole metadata documents, bounded64MiB.
+only exactTrace stored representations may use the inactive80MiB candidate; other metadata64MiB.
 """
 from pathlib import Path
 import copy,json,hashlib,runpy
@@ -45,20 +45,21 @@ def append_model156(doc,phase,payload,version):
  n=doc['native150'];n['records'].append({'phase':phase,'payload':payload});n['phase']=phase;n['previous_checkpoint']={'version':version,'raw_sha256':'f'*64,'self_sha256':'f'*64};n['writer_sha256']='f'*64;n['phase_history'].append({'phase':phase,'utc':STAMP,'actual_own_version':version+1});doc['events'].append({'phase':phase,'utc':STAMP,'delivery_id':n['direction']['id'],'own_version':version+1,'source':'CURRENT Auditor'+('9'*max(19,len(str(n['records'][0]['payload']['writer_binding']['auditor_version']))))+' direction150','scope':'SAME_HOST_PRODUCER_COUNTER_CONTRACT_REVIEW_SOURCE'});doc['guard'].update(operation_id=n['direction']['id'],operation_state=phase,epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK');doc['state']='NATIVE150_'+phase;doc['self_sha256']='f'*64
  return doc
 def capacity156(ownRX,cfg):
+ e=__import__('runpy').run_path(str(ROOT/'envelope158.py'));e['contract158'](cfg['envelope158']);cap=e['role158'](ownRX,e['OWN'])
  if ownRX.get('state')!='NATIVE150_RX_START' or len(ownRX.get('native150',{}).get('records',[]))!=1:raise ValueError('Actual complete first150RX only')
  rx=ownRX['native150']['records'][0]['payload'];direction=ownRX['native150']['direction']
  if len(can(rx))>r['CONTRACT']['new_rx_payload_bytes_max'] or len(direction['body'].encode())>r['CONTRACT']['addressed_body_bytes_max'] or len(direction['id'].encode())>r['CONTRACT']['direction_id_bytes_max']:raise ValueError('Fresh actual RX/body admission capacity bound exceeded')
  d=copy.deepcopy(ownRX);actual_version=max([ownRX['guard']['epoch_checkpoint_counter']]+[v['actual_own_version'] for v in ownRX['native150'].get('phase_history',[])])
  version_bound=max(MAXINT,actual_version+32);context=context156(cfg,direction,version_bound);rows=[]
  def pin(label,expanded=0,**extra):
-  raw=can(d);rows.append({'phase':label,'representation_bytes':len(raw),'sha256':sha(raw),'headroom64MiB':67108864-len(raw),'expanded_phase_payload_bytes':expanded,**extra})
+  raw=can(d);rows.append({'phase':label,'representation_bytes':len(raw),'sha256':sha(raw),'headroom_metadata':cap-len(raw),'expanded_phase_payload_bytes':expanded,**extra})
  pin('ACTUAL_WHOLE_RX')
  for i,row in enumerate(FRONTIERS):
   host,native=refs156(row,cfg);name=row['phase'];intent={'schema':'TRACE127_PHASE_INTENT_V1','phase':name,'status':'ENTIRE_PHASE_CONSUMED_BEFORE_FIRST_EFFECT','plan_sha256':'f'*64,'context':context,'expected_current_version':version_bound-16+i,'operations':operations156(name,cfg),'previous_complete_originals':host,'previous_complete_native_canonicals':native,'parent_clock':{'mono':MAXFLOAT,'utc':MAXFLOAT},'additional_closed_phase_envelope_reserve':'X'*4096};full={'phase':'PUBLISH_INTENT','source_sha':cfg['source']['commit'],'operation':'GROUPED_PHASE127','phase_intent127':intent};compact=dict(full,phase_intent127=r['compact_intent156'](d,intent));index=len(d['native150']['records']);resolved=r['expand_intent156'](d,compact['phase_intent127'],index)
   if resolved!=intent or len(can(full))+4096>1048576:raise ValueError('Expanded whole intent exceeds unchanged originalIPC or differs')
   append_model156(d,'PUBLISH_INTENT',compact,version_bound-16+i);pin(name,len(can(full)),stored_phase_payload_bytes=len(can(compact)),HOST_records=len(host),native_canonicals=len(native))
  terminal={'schema':'TRACE156_OUTER_TERMINAL_MAX2MiB','padding':''};terminal['padding']='X'*(2097152-len(can(terminal)));assert len(can(terminal))==2097152;append_model156(d,'TERMINAL',terminal,version_bound-2);pin('OUTER_TERMINAL_MAX2MiB',2097152)
- result={'schema':'TRACE156_ACTUAL_FULL_RX_SIX_PHASE_CAPACITY_V1','phases':rows,'maximum_representation_bytes':max(x['representation_bytes'] for x in rows),'minimum_headroom':min(x['headroom64MiB'] for x in rows),'all_six_and_outer_fit':all(x['headroom64MiB']>0 for x in rows),'metadata_cap':67108864,'private_cap':33554432,'IPC_cap':1048576,'terminal_cap':2097152,'original_frontiers':[{'phase':x['phase'],'HOST':x['HOST_records'],'native':x['native_canonicals']} for x in FRONTIERS],'expansion_scope':'Whole authenticated stored document <=64MiB; individual expanded full phase body <=1MiB. No virtualdocument with all oldvalues duplicated is materialized/adopted. Each ref hash/size/order checked.','native_authority':False}
- if not result['all_six_and_outer_fit']:raise ValueError('Latest complete checkpoint+actualRX+all6+outerterminal does not fit original64MiB; refuse before firststart')
+ result={'schema':'TRACE156_ACTUAL_FULL_RX_SIX_PHASE_CAPACITY_V1','phases':rows,'maximum_representation_bytes':max(x['representation_bytes'] for x in rows),'minimum_headroom':min(x['headroom_metadata'] for x in rows),'all_six_and_outer_fit':all(x['headroom_metadata']>0 for x in rows),'metadata_cap':cap,'private_cap':33554432,'IPC_cap':1048576,'terminal_cap':2097152,'original_frontiers':[{'phase':x['phase'],'HOST':x['HOST_records'],'native':x['native_canonicals']} for x in FRONTIERS],'expansion_scope':'Whole exactTrace authenticated stored document <=80MiB; all other metadata <=64MiB; individual expanded full phase body <=1MiB. No virtualdocument with all oldvalues duplicated is materialized/adopted. Each ref hash/size/order checked.','native_authority':False}
+ if not result['all_six_and_outer_fit']:raise ValueError('Latest complete checkpoint+actualRX+all6+outerterminal does not fit exactTrace80MiB; refuse before firststart')
  return result
 def require_capacity156(ownRX,cfg):return capacity156(ownRX,cfg)

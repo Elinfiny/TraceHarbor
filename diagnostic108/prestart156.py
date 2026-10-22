@@ -65,7 +65,7 @@ def consume_child154(receipt,config):
   if pfd is not None:os.close(pfd)
 def current_binding154(base,path,version,config,require_plan=False,payload=None,_macro122=None):
  if config.get('direction_number')!=150:return old['current_binding154'](base,path,version,config,require_plan=require_plan,payload=payload,_macro122=_macro122)
- doc,raw=base.check_checkpoint(path,base.OWN,version);match=re.fullmatch(r'NATIVE150_([A-Z_]+)',doc['state'])
+ doc,raw=runpy.run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,path,base.OWN,version);match=re.fullmatch(r'NATIVE150_([A-Z_]+)',doc['state'])
  if match is None or match[1]=='TERMINAL':raise ValueError('No mutation of consumed150')
  n=doc['native150'];direction=n['direction'];binding=n['records'][0]['payload']['writer_binding']
  if len(direction['id'].encode())>256 or not direction['id'].startswith('V29-TRACE-150-') or direction.get('native_admission') is not True or len(direction['body'].encode())!=direction['bytes'] or sha(direction['body'].encode())!=direction['sha256'] or n['records'][0]['phase']!='RX_START':raise ValueError('Actual independent150 addressed release required')

@@ -7,7 +7,7 @@ import json,hashlib,copy,re
 OWN='libfile_3ee8270f03d8819188e1de1f75c3d824'
 REF='TRACE156_SAME_CHECKPOINT_VALUE_V1'
 DELTA='TRACE156_SAME_CHECKPOINT_PREFIX_APPEND_V1'
-CONTRACT={'schema':'TRACE156_CLOSED_SAME_OWN_NEW150_VALUES_V1','checkpoint_id':OWN,'new_slot':150,'immutable_inventory_slot':149,'maximum_depth':16,'maximum_nodes':32768,'expanded_value_bytes':1048576,'metadata_representation_bytes':67108864,'new_rx_payload_bytes_max':65536,'addressed_body_bytes_max':16384,'direction_id_bytes_max':256,'authority_fields':'NEVER_REFERENCED','old_nodes':'VALUE_EXACT','external_targets':False}
+CONTRACT={'schema':'TRACE158_CLOSED_SAME_OWN_NEW150_VALUES_V2','checkpoint_id':OWN,'new_slot':150,'immutable_inventory_slot':149,'maximum_depth':16,'maximum_nodes':32768,'expanded_value_bytes':1048576,'metadata_representation_bytes':83886080,'new_rx_payload_bytes_max':65536,'addressed_body_bytes_max':16384,'direction_id_bytes_max':256,'authority_fields':'NEVER_REFERENCED','old_nodes':'VALUE_EXACT','external_targets':False}
 INVENTORY=['native149','records',0,'payload','preparation','preloaded','inventory']
 FIELDS={'context','previous_complete_originals','previous_complete_native_canonicals'}
 can=lambda x:json.dumps(x,sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode()
