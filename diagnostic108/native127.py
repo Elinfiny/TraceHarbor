@@ -11,10 +11,12 @@ def load(name,path):
 t146=load('trace146_native_timing',ROOT/'timing146.py')
 g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
-base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart156.py')
+base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart165.py')
 p150=load('trace150_publication_protocol',ROOT/'publication150.py')
 preflight152=load('trace152_native_authority_preflight',ROOT/'preflight127.py')
 r156=load('trace156_sameown_values',ROOT/'references156.py')
+r165=load('trace165_sameown_values',ROOT/'references165.py')
+k165=load('trace165_snapshot_compatibility',ROOT/'compatibility165.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
  if kind=='library_replace':return p150.normalize150(original)
@@ -152,7 +154,8 @@ class NativePort127:
   self.authority152_last={'scope':scope,'seq':self.ledger.seq,'own_version':version,'authority':auth152}
  def before_effect(self,id,op,args):
   current=self.current();payload=current['doc'][current['key']]['records'][-1]['payload'];intent=payload.get('phase_intent127');phase=self.macro.active['name']
-  if intent and current['number']==150:intent=r156.expand_intent156(current['doc'],intent,len(current['doc']['native150']['records'])-1)
+  if intent and current['number']==151:intent=r165.expand_intent165(current['doc'],intent,len(current['doc']['native151']['records'])-1)
+  elif intent and current['number']==150:intent=r156.expand_intent156(current['doc'],intent,len(current['doc']['native150']['records'])-1)
   preflight152.a152.require_predecessor152(id,phase,self._version,self.ledger.seq,getattr(self,'authority152_last',None))
   if not intent or intent['phase']!=phase or intent['plan_sha256']!=self.macro.plan_sha or phase not in self.macro.consumed or intent['context']!=self.macro.context or current['doc']['guard']['operation_id']!=self.macro.context['direction_id']:raise ValueError('Same actual consumed whole phase/current authority before EVERY Git effect')
   manifest=base.strict((ROOT/'manifest.json').read_bytes())
@@ -173,7 +176,10 @@ class NativePort127:
   if version!=self._version or payload['phase_intent127']['plan_sha256']!=self.macro.plan_sha:raise ValueError('Exact whole live typed phase/version')
   current=self.current();self.helper(phase,'guard-before',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(self._checkpoint),str(version)])
   stored_payload=copy.deepcopy(payload)
-  if current['number']==150:
+  if current['number']==151:
+   stored_payload['phase_intent127']=r165.compact_intent165(current['doc'],payload['phase_intent127'])
+   if r165.expand_intent165(current['doc'],stored_payload['phase_intent127'],len(current['doc']['native151']['records']))!=payload['phase_intent127']:raise ValueError('Whole151 byte-value expansion before original writer')
+  elif current['number']==150:
    stored_payload['phase_intent127']=r156.compact_intent156(current['doc'],payload['phase_intent127'])
    if r156.expand_intent156(current['doc'],stored_payload['phase_intent127'],len(current['doc']['native150']['records']))!=payload['phase_intent127']:raise ValueError('Whole byte-value expansion before original writer')
   self.macro.store.save(phase+'/writer-input',stored_payload)
@@ -204,6 +210,7 @@ class NativePort127:
   if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
   self.attrs(phase,'attrs-readback',path,tr);check,observed=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,path,base.OWN,version+1,sha(raw))
   if observed!=raw or check!=d:raise ValueError('Wholebyte/self original producer readback')
+  if current['number']==151 and r165.expand_intent165(check,check['native151']['records'][-1]['payload']['phase_intent127'],len(check['native151']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole151 resolved original intent after pinned readback')
   if current['number']==150 and r156.expand_intent156(check,check['native150']['records'][-1]['payload']['phase_intent127'],len(check['native150']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole resolved original intent after pinned readback')
   self.macro.store.save(phase+'/readback-verify',{'version':version+1,'file_id':pub['file_id'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'wholebyte_self_allattrs':'PASS'})
   self._checkpoint=path;self._version=version+1
@@ -392,6 +399,7 @@ def bootstrap127(config_path,provider):
  if observed_plan['binding']!=expected_observer:raise ValueError('Exact current source-produced observer plan, no cloned runtime handle')
  # Exact identity was frozen before genuine149RX and checked by preflight
  # before any registry/start. Recheck through nofollow directory FDs at use.
+ k165.validate165(direction,static,manifest_bytes,snap)
  root=h154.consume_child154(snap['holder_preparation154'],static)
  wall=time.time();mono=time.monotonic();expires=int(wall)+t146.PARENT;cutoff=expires
  once={'schema':'TRACE116_ONCE_INTENT_V1','original_writer':'e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436','source_sha':static['source']['commit'],'manifest_sha256':sha(manifest_bytes),'request_sha256':static['request']['sha256'],'request_bytes':4935,'lock_sha256':static['lock']['sha256'],'inputs':copy.deepcopy(static['private6']),'role':'OFFLINE_COUNTER_ONLY','max_counter_invocations':1,'model_calls':0,'spend':0,'nonce':os.urandom(16).hex(),'expires_utc':expires}
