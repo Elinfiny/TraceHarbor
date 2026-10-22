@@ -11,12 +11,14 @@ def load(name,path):
 t146=load('trace146_native_timing',ROOT/'timing146.py')
 g=load('trace127_fixed_integrated',ROOT/'integrated127.py');c=g.c;can=c.can;sha=c.sha
 BASE_SHA='dbec3c2929f09511240924f00f10e2a1fea376a255a8f2790fe9e1a8ca0f671d'
-base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart165.py')
+base=load('trace127_original118',ROOT/'host_transport118.py');h154=load('trace154_explicit149_prestart',ROOT/'prestart168.py')
 p150=load('trace150_publication_protocol',ROOT/'publication150.py')
 preflight152=load('trace152_native_authority_preflight',ROOT/'preflight127.py')
 r156=load('trace156_sameown_values',ROOT/'references156.py')
 r165=load('trace165_sameown_values',ROOT/'references165.py')
-k165=load('trace165_snapshot_compatibility',ROOT/'compatibility165.py')
+r168=load('trace168_sameown_values',ROOT/'references168.py')
+m168=load('trace168_metadata_budget',ROOT/'metadata168.py')
+k165=load('trace165_snapshot_compatibility',ROOT/'compatibility168.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
  if kind=='library_replace':return p150.normalize150(original)
@@ -65,10 +67,19 @@ class CanonicalReader127:
   if extra or len(raw)!=s.st_size or (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns)!=(before.st_dev,before.st_ino,before.st_size,before.st_mtime_ns) or (before.st_dev,before.st_ino,before.st_size,before.st_mtime_ns)!=(after.st_dev,after.st_ino,after.st_size,after.st_mtime_ns) or end.st_ino!=s.st_ino:raise ValueError('Complete stable canonical EOF')
   return raw
 class Ledger127(base.FrameLedger):
+ def remaining(self):
+  left=super().remaining();parts=(getattr(getattr(self,'port',None),'current_id','') or '').split('/')
+  if len(parts)==2 and parts[0] in m168.PHASES and parts[1] in ('CAS','readback'):
+   end=getattr(self,'metadata_pair_deadline_mono168',None)
+   if type(end) not in (int,float):raise ValueError('Source-owned original monotonic metadata pair')
+   left=min(left,end-time.monotonic())
+  return left
  def request(self,op,args):
   if self.failed or self.pending is not None or self.remaining()<=0:raise RuntimeError('Source/phase/sequence unavailable')
   port=self.port;self.seq+=1
+  window168=m168.frame168(port.current_id,op,int(time.time()*1000),self.deadline_ms,min(self.deadline_ms,int((time.time()+self.remaining())*1000)),getattr(self,'metadata_pair_deadline168',None))
   frame={'schema':'TRACE118_HOST_REQUEST','seq':self.seq,'context':self.context,'op':op,'args':args,'deadline_utc_ms':min(self.deadline_ms,int((time.time()+min(15,self.remaining()))*1000)),'phase_deadline_mono':self.phase_mono,'phase_deadline_utc_ms':min(self.deadline_ms,int((time.time()+self.remaining())*1000)),'inventory_call_id':port.current_id,'inventory_sha256':sha(can(port.inventory.plan))}
+  frame.update(window168)
   if self.seq==1:
    frame['runtime_binding133']={'schema':'TRACE133_SOURCE_RUNTIME_FRAME','static_config_sha256':sha(port.static_config133),'context_sha256':sha(can(self.context)),'context':copy.deepcopy(self.context),'deadlineUtcMs':self.deadline_ms,'sourceSha':port.source,'sourceTree':port.macro.context['source_tree'],'dispatchKind136':port.config['ui_dispatch127'].get('kind','browser135'),'uiDispatchArgs':copy.deepcopy(port.config['ui_dispatch127']['args']),'manifestSha256':port.macro.context['manifest_sha256'],'onceExpiresUtc':port.macro.context['expires_utc'],'coordinatorCutoffUtc':port.config['coordinator_cutoff_utc']}
   frame['request_digest']=sha(can(frame));raw=can(frame)
@@ -150,11 +161,13 @@ class NativePort127:
   if proofs152[base.OWN]['version']!=version or own152!=base.strict(target.read_bytes()):raise ValueError('Exact current own target whole bytes before every Git create')
   auth152=preflight152.a152.verify152(own152,docs152,proofs152,self.static152,(ROOT/'manifest.json').read_bytes());self.macro.store.save('authority152/'+scope+'/verify',auth152);self.deadline()
   request152=base.strict((self.ledger.root/(str(self.ledger.seq)+'.request.original.json')).read_bytes())
+  m168.authority_fresh168(request152,int(time.time()*1000))
   if time.time()*1000>=request152['deadline_utc_ms']:raise TimeoutError('Whole current152 checks exceeded same original15s frame; no next create')
   self.authority152_last={'scope':scope,'seq':self.ledger.seq,'own_version':version,'authority':auth152}
  def before_effect(self,id,op,args):
   current=self.current();payload=current['doc'][current['key']]['records'][-1]['payload'];intent=payload.get('phase_intent127');phase=self.macro.active['name']
-  if intent and current['number']==151:intent=r165.expand_intent165(current['doc'],intent,len(current['doc']['native151']['records'])-1)
+  if intent and current['number']==152:intent=r168.expand_intent165(current['doc'],intent,len(current['doc']['native152']['records'])-1)
+  elif intent and current['number']==151:intent=r165.expand_intent165(current['doc'],intent,len(current['doc']['native151']['records'])-1)
   elif intent and current['number']==150:intent=r156.expand_intent156(current['doc'],intent,len(current['doc']['native150']['records'])-1)
   preflight152.a152.require_predecessor152(id,phase,self._version,self.ledger.seq,getattr(self,'authority152_last',None))
   if not intent or intent['phase']!=phase or intent['plan_sha256']!=self.macro.plan_sha or phase not in self.macro.consumed or intent['context']!=self.macro.context or current['doc']['guard']['operation_id']!=self.macro.context['direction_id']:raise ValueError('Same actual consumed whole phase/current authority before EVERY Git effect')
@@ -173,10 +186,15 @@ class NativePort127:
    if os.getxattr(path,x['name']).decode()!=x['value']:raise ValueError('ALL returned actual attrs')
  def cas(self,phase,version,payload):
   cas_start=time.monotonic()
+  self.ledger.metadata_pair_deadline_mono168=min(cas_start+t146.CAS,self.ledger.phase_mono,self.ledger.parent_mono)
+  self.ledger.metadata_pair_deadline168=min(self.ledger.deadline_ms,int((time.time()+min(t146.CAS,self.ledger.remaining()))*1000))
   if version!=self._version or payload['phase_intent127']['plan_sha256']!=self.macro.plan_sha:raise ValueError('Exact whole live typed phase/version')
   current=self.current();self.helper(phase,'guard-before',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(self._checkpoint),str(version)])
   stored_payload=copy.deepcopy(payload)
-  if current['number']==151:
+  if current['number']==152:
+   stored_payload['phase_intent127']=r168.compact_intent165(current['doc'],payload['phase_intent127'])
+   if r168.expand_intent165(current['doc'],stored_payload['phase_intent127'],len(current['doc']['native152']['records']))!=payload['phase_intent127']:raise ValueError('Whole152 byte-value expansion before original writer')
+  elif current['number']==151:
    stored_payload['phase_intent127']=r165.compact_intent165(current['doc'],payload['phase_intent127'])
    if r165.expand_intent165(current['doc'],stored_payload['phase_intent127'],len(current['doc']['native151']['records']))!=payload['phase_intent127']:raise ValueError('Whole151 byte-value expansion before original writer')
   elif current['number']==150:
@@ -210,12 +228,13 @@ class NativePort127:
   if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
   self.attrs(phase,'attrs-readback',path,tr);check,observed=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,path,base.OWN,version+1,sha(raw))
   if observed!=raw or check!=d:raise ValueError('Wholebyte/self original producer readback')
+  if current['number']==152 and r168.expand_intent165(check,check['native152']['records'][-1]['payload']['phase_intent127'],len(check['native152']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole152 resolved original intent after pinned readback')
   if current['number']==151 and r165.expand_intent165(check,check['native151']['records'][-1]['payload']['phase_intent127'],len(check['native151']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole151 resolved original intent after pinned readback')
   if current['number']==150 and r156.expand_intent156(check,check['native150']['records'][-1]['payload']['phase_intent127'],len(check['native150']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole resolved original intent after pinned readback')
   self.macro.store.save(phase+'/readback-verify',{'version':version+1,'file_id':pub['file_id'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'wholebyte_self_allattrs':'PASS'})
   self._checkpoint=path;self._version=version+1
   self.helper(phase,'guard-after',[sys.executable,str(ROOT/'native127.py'),'guard',self.config['config_path'],str(path),str(version+1)])
-  if time.monotonic()-cas_start>t146.CAS:raise TimeoutError('Whole146 CAS/readback cutoff; appliedCAS retained no replay')
+  if time.monotonic()-cas_start>=t146.CAS:raise TimeoutError('Whole146 CAS/readback cutoff; appliedCAS retained no replay')
   return {'version':version+1,'sha256':sha(raw),'wholebyte_self_allattrs':'PASS','intent_sha256':sha(can(payload['phase_intent127']))}
  def dispatch(self):
   ui=self.config['ui_dispatch127']

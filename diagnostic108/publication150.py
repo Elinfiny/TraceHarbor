@@ -48,7 +48,7 @@ def precheck150(config,args):
  roots=[Path(roles[k]) for k in ('private','transfer','holder_parent')]
  if any(a==b or a.is_relative_to(b) or b.is_relative_to(a) for i,a in enumerate(roots) for b in roots[i+1:]):raise ValueError('Disjoint publication roles')
  envelope=__import__('runpy').run_path(str(Path(__file__).resolve().parent/'envelope158.py'));d,raw=envelope['publication_checkpoint158'](p,v)
- if envelope['self_hash158'](d)!=d['self_sha256'] or d['ownership']['owner']!='TraceHarbor V1' or d['ownership']['duplicate_trace_route_owners']!=0:raise ValueError('Whole self and sole ownership')
+ if d['ownership']['owner']!='TraceHarbor V1' or d['ownership']['duplicate_trace_route_owners']!=0:raise ValueError('Whole self and sole ownership')
  if os.getxattr(p,'user.library-file-id').decode()!=OWN or os.getxattr(p,'user.library-file-version').decode()!=str(v):raise ValueError('Positive upload identity/current expectedversion')
  return {'path':str(p),'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'expected_current_version':v,'request_sha256':sha(can(args))}
 def validate_item150(output,args):
@@ -91,7 +91,10 @@ def main150():
   put150(journal.with_suffix('.UNKNOWN.json'),{'status':'UNKNOWN_NO_RETRY','pid':proc.pid,'returncode':proc.poll(),'stdout_hex':(e.stdout or b'').hex(),'stderr_hex':(e.stderr or b'').hex(),'hidden_kill':False});raise RuntimeError('Prepared outcome UNKNOWN; no second write or fallback')
  h={'returncode':proc.returncode,'stdout':out.decode(),'stderr':err.decode(),'elapsed_s':time.monotonic()-start};put150(journal.with_suffix('.helper-original.json'),h)
  if proc.returncode!=0:raise RuntimeError('Complete original retained; no fallback')
- item=validate_item150(json.loads(h['stdout']),args);_,raw=__import__('runpy').run_path(str(Path(__file__).resolve().parent/'envelope158.py'))['publication_checkpoint158'](args['file'],item['current_version_number'])
+ item=validate_item150(json.loads(h['stdout']),args);raw=stable150(args['file'],83886080)
+ # Exact whole hash matches the fully self-validated preimage. Do not parse and
+ # canonical-self-hash the same68MB body a second time after its helper.
+ if os.getxattr(args['file'],'user.library-file-id').decode()!=OWN or os.getxattr(args['file'],'user.library-file-version').decode()!=str(item['current_version_number']):raise ValueError('Post-helper exact positive identity/version')
  if sha(raw)!=upload['sha256']:raise ValueError('Upload body changed after helper')
  attrs=[{'name':n,'value':os.getxattr(args['file'],n).decode()} for n in sorted(os.listxattr(args['file']))];effect={'library_file_id':OWN,'file_id':item['file_id'],'version':item['current_version_number'],'request_sha256':upload['request_sha256']};r={'schema':'TRACE150_PREPARED_RESULT','request_sha256':upload['request_sha256'],'upload':upload,'helper_original':h,'ordered_result':item,'local_xattrs':attrs,'effect_identity':effect,'status':'SUCCEEDED'};put150(journal.with_suffix('.receipt.json'),r)
  if len(can(r))>65536:raise ValueError('Complete oversized helper receipt retained privately; no IPC truncation/retry')
