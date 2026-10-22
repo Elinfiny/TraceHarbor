@@ -19,12 +19,14 @@ r165=load('trace165_sameown_values',ROOT/'references165.py')
 r168=load('trace168_sameown_values',ROOT/'references168.py')
 m168=load('trace168_metadata_budget',ROOT/'metadata168.py')
 k165=load('trace165_snapshot_compatibility',ROOT/'compatibility168.py')
+b170=load('trace170_request_bound_blob',ROOT/'blob170.py')
 _normalizer118=base.normalizer
 def normalizer127(original,kind):
  if kind=='library_replace':return p150.normalize150(original)
  if kind=='github_fetch' and type(original) is dict and original.get('schema')=='TRACE152_AUTHENTIC_READ_PAIR':
   if set(original)!={'schema','value','current','native_authority'} or original['native_authority'] is not False:raise ValueError('Closed authentic current/proof pair')
-  return {'source_value152':_normalizer118(original['value'],kind),'current_original152':original['current']}
+  # Retain original paired value for request-bound projection AFTER ledger IO.
+  return b170.paired170(original)
  if kind=='library_materialize' and type(original) is dict and original.get('schema')=='TRACE152_AUTHENTIC_PHASE_READBACK':
   if set(original)!={'schema','current','native_authority'} or original['native_authority'] is not False:raise ValueError('Closed authentic whole phase current readback')
   ts=original['current'].get('structuredContent',{}).get('transfers',[])
@@ -120,10 +122,19 @@ class NativePort127:
   # dispatch. Shared committed tickets travel with the frame; no second budget.
   if op not in base.OPS:base.OPS=tuple(base.OPS)+(op,)
   value=self.bridge(op,args)
-  if type(value) is dict and set(value)=={'source_value152','current_original152'}:
-   self.refresh_authority152(value['current_original152'],id,phase_readback=id.endswith('/readback'));value=value['source_value152']
   request=base.strict((self.ledger.root/(str(self.ledger.seq)+'.request.original.json')).read_bytes());frame=base.strict((self.ledger.root/(str(self.ledger.seq)+'.return.original.json')).read_bytes())
   self.current_original={'request':request,'frame':frame,'canonical_path':str(pathlib.Path(self.config['capture_directory'])/(str(request['seq'])+'.canonical-native-original.json'))}
+  if type(value) is dict and set(value)=={'source_original170','current_original152'}:
+   original170=value['source_original170'];current170=value['current_original152']
+   if b170.is_blob170(request):
+    prior=self.macro.originals[id.removesuffix('/proof')];self.verify_reference(prior['canonical'])
+    created170=base.strict(self.canonical127.io.read(prior['canonical']['path']))
+    expected170,_=self.macro.body(id.split('/')[0]);pins170={'oid':prior['value']['sha'],'bytes':len(expected170),'sha256':sha(expected170)}
+    value=b170.read170(request,frame,created170,pins170,self.macro.active['name'],int(time.time()*1000))
+   else:value=_normalizer118(original170,'github_fetch')
+   self.refresh_authority152(current170,id,phase_readback=id.endswith('/readback'))
+  elif type(value) is dict and set(value)=={'source_value152','current_original152'}:
+   self.refresh_authority152(value['current_original152'],id,phase_readback=id.endswith('/readback'));value=value['source_value152']
   return value
  def helper(self,phase,role,argv,input=None):
   self.inventory.claim(phase+'/'+role);started=time.monotonic();proc=None
@@ -339,10 +350,12 @@ class NativePort127:
   files={k:pathlib.Path(self.config['private_files127'][k]).read_bytes() for k in wanted_names}
   try:plan=ingress.prepare_from_artifact(public,run,artifact,sha(raw),files,cfg['private_members'],pathlib.Path(self.config['private_output127']),self.config['source_tree'],trace,dispatch_binding136=g.p133.g136.binding136(self.config['ui_dispatch127']['args']) if self.config['ui_dispatch127'].get('kind')=='git_create136' else None)
   finally:self.macro.store.save('ingress/openssl-original',{'trace':trace,'scope':'ACTUAL_EXISTING_INGRESS_ORIGINALS'})
-  delivery={'context':plan['context'],'ciphertext_base64':plan['operations'][0]['body']['content'],'ciphertext_sha256':plan['ciphertext_sha256'],'artifact_digest':sha(raw),'artifact_bytes':len(raw),'retention_days':1,'custody_sha256':sha(can({'pins':cfg['private_members'],'context':plan['context'],'artifact_sha256':sha(raw)}))}
+  delivery=g.w171.delivery171(plan,{'artifact_digest':sha(raw),'artifact_bytes':len(raw),'retention_days':1,'custody_sha256':sha(can({'pins':cfg['private_members'],'context':plan['context'],'artifact_sha256':sha(raw)}))},time.time())
+  self.recipient_context171=copy.deepcopy(public['context'])
   self.macro.store.save('ingress/proof',delivery);return delivery
  def validate_delivery(self,d):
-  raw=base64.b64decode(d['ciphertext_base64'],validate=True);ctx=d['context'];wanted=self.macro.context
+  if d.get('context')!=self.recipient_context171:raise ValueError('Exact original recipient context171 before wire use')
+  wire=g.w171.delivery_wire171(d,time.time());raw=g.w171.decode171(wire,d['context'],time.time());ctx=d['context'];wanted=self.macro.context
   if not 0<len(raw)<=131072 or sha(raw)!=d['ciphertext_sha256'] or not __import__('re').fullmatch('[a-f0-9]{32}',ctx['nonce']) or ctx['source_sha']!=self.source or ctx['run_id']!=self.run_id or ctx['attempt']!=1 or ctx['expires_utc']!=wanted['expires_utc']:raise ValueError('Actual recipient/nonce/source/cipher/custody binding')
  def admit_descriptor(self):
   g.require_native_runtime133(self.runtime133)
@@ -355,7 +368,7 @@ class NativePort127:
   # Match the existing runner admission116 wire schema exactly, using the
   # original encrypted chain and current authenticated custody context.
   ctx=delivery['context'];p=self.macro.proofs['encrypted']
-  return {'phase':'consumed','recipient_context':ctx,'ciphertext_receipt':{'ref':p['ref'],'ciphertext_commit':p['commit'],'ciphertext_sha256':delivery['ciphertext_sha256']},'admit_sha256':sha(self.macro.body('admit')[0])}
+  return {'phase':'consumed','recipient_context':ctx,'ciphertext_receipt':g.w171.receipt171(delivery,p['commit'],p['ref']),'admit_sha256':sha(self.macro.body('admit')[0])}
  def provider_value(self,packet,operation):return self.provider.value127(packet,operation,True,self)
  def packet(self,id,op,args):
   self.macro.call(id,op,args);o=self.current_original;request=o['request'];identity={'context_sha256':sha(can(self.config['context'])),'operation':op,'seq':request['seq'],'tool':'exec_command' if op=='library_replace' else op,'call_id':request['request_digest']};path=o['canonical_path'];raw=self.canonical127.io.read(path)

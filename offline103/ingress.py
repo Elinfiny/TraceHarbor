@@ -8,6 +8,8 @@ CTX={'repository','repository_id','actor_id','run_id','attempt','source_sha','no
 import importlib.util
 _gs136=importlib.util.spec_from_file_location('trace136_ingress_git',pathlib.Path(__file__).resolve().parent.parent/'diagnostic108/git_dispatch136.py')
 git136=importlib.util.module_from_spec(_gs136);_gs136.loader.exec_module(git136)
+_ws171=importlib.util.spec_from_file_location('trace171_ingress_wire',pathlib.Path(__file__).resolve().parent/'wire171.py')
+wire171=importlib.util.module_from_spec(_ws171);_ws171.loader.exec_module(wire171)
 
 def can(d):return json.dumps(d,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()
 def sha(b):return hashlib.sha256(b).hexdigest()
@@ -117,11 +119,12 @@ def api(path,cap=262144,deadline=None,missing=False):
     require(len(b)<=cap);return strict(b)
 def transport(c,cipher,base_tree):
     context(c);require(re.fullmatch('[0-9a-f]{40}',base_tree) and len(cipher)<=131072)
+    wire=wire171.encode171(cipher,c,time.time());wirepins=wire171.pins171(wire,c,time.time())
     name='traceharbor-encrypted104-'+c['nonce']+'.cms';ref='refs/heads/traceharbor-encrypted104-'+c['nonce']
     # Orchestrator maps actual preceding returned IDs to $blob/$tree/$commit.
     # These are symbolic dependencies, not fabricated provider receipts.
-    return {'repository':'Elinfiny/TraceHarbor','expected_repository_id':1391430317,'source_sha':c['source_sha'],'context':c,'ciphertext_sha256':sha(cipher),'ciphertext_bytes':len(cipher),'path':name,'ref':ref,'operations':[
-        {'method':'POST','endpoint':'git/blobs','body':{'content':base64.b64encode(cipher).decode(),'encoding':'base64'}},
+    return {'repository':'Elinfiny/TraceHarbor','expected_repository_id':1391430317,'source_sha':c['source_sha'],'context':c,**wirepins,'ciphertext_base64':base64.b64encode(cipher).decode('ascii'),'wire_base64':base64.b64encode(wire).decode('ascii'),'path':name,'ref':ref,'operations':[
+        {'method':'POST','endpoint':'git/blobs','body':{'content':base64.b64encode(wire).decode('ascii'),'encoding':'base64'}},
         {'method':'POST','endpoint':'git/trees','body':{'base_tree':base_tree,'tree':[{'path':name,'mode':'100644','type':'blob','sha':'$blob'}]}},
         {'method':'POST','endpoint':'git/commits','body':{'message':'TraceHarbor ephemeral ciphertext104','parents':[c['source_sha']],'tree':'$tree'}},
         {'method':'POST','endpoint':'git/refs','body':{'ref':ref,'sha':'$commit'}}], 'mutation_policy':'Reserve attempt with expected own CAS before each write; one write each; verify actual returned immutable IDs; ref preflight ABSENT; create-if-absent only; any UNKNOWN => readonly reconcile, no resend; no force/update/delete'}
@@ -147,8 +150,10 @@ def receive(c,key,cert,pins,out,wait_seconds=360):
     entries=lambda x:{e['path']:{k:e[k] for k in ('mode','type','sha')} for e in x['tree']}
     a=entries(before);b=entries(after);name='traceharbor-encrypted104-'+c['nonce']+'.cms';require(name not in a and set(b)==set(a)|{name} and all(a[k]==b[k] for k in a) and b[name]['mode']=='100644' and b[name]['type']=='blob')
     blob=api(prefix+'git/blobs/'+b[name]['sha'],cap=190000,deadline=deadline);require(blob['encoding']=='base64' and blob['size']<=131072)
-    cipher=base64.b64decode(''.join(blob['content'].split()),validate=True);require(len(cipher)==blob['size'] and hashlib.sha1(b'blob '+str(len(cipher)).encode()+b'\0'+cipher).hexdigest()==b[name]['sha'])
-    result=decrypt(out,c,key,cert,cipher,pins);return result,{'ciphertext_commit':commit_sha,'ciphertext_sha256':sha(cipher),'ref':found['ref']}
+    wire=base64.b64decode(''.join(blob['content'].split()),validate=True);require(len(wire)==blob['size'] and wire171.oid(wire)==b[name]['sha'])
+    # Closed canonical wire and complete recipient context BEFORE decryptCMS.
+    cipher=wire171.decode171(wire,c,time.time());wp=wire171.pins171(wire,c,time.time())
+    result=decrypt(out,c,key,cert,cipher,pins);return result,wire171.receipt171(wp,commit_sha,found['ref'])
 def main():
     p=argparse.ArgumentParser();p.add_argument('mode',choices=['init','receive']);p.add_argument('--source-sha',required=True);p.add_argument('--manifest-sha',required=True);a=p.parse_args();os.umask(0o077)
     kit=pathlib.Path(__file__).parent;raw=read(kit/'transfer.json',65536);require(sha(raw)==a.manifest_sha);m=strict(raw)

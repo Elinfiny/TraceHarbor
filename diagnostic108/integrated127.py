@@ -9,6 +9,8 @@ def load(name,file):
  s=importlib.util.spec_from_file_location(name,ROOT/file);m=importlib.util.module_from_spec(s);sys.modules[name]=m;s.loader.exec_module(m);return m
 c=load('trace127_integrated_control','control127.py');can=c.can;sha=c.sha
 t146=load('trace146_integrated_timing','timing146.py')
+b170=load('trace170_integrated_wholeblob','blob170.py')
+w171=load('trace171_ciphertext_wire','../offline103/wire171.py')
 OWNER=273768139;REPO='Elinfiny/TraceHarbor';REPOSITORY=1391430317
 _SEAL=object();_NATIVE={}
 class Pending127(RuntimeError):pass
@@ -101,7 +103,7 @@ class Grouped127:
   started=datetime.datetime.fromisoformat(r['run_started_at'].replace('Z','+00:00')).timestamp()
   if not 0<self.parent_wall-started<=t146.PARENT:raise ValueError('Original900 from actual runner start')
  def body(self,phase,resolve=True):
-  if phase=='encrypted':return base64.b64decode(self.delivery['ciphertext_base64'],validate=True),'traceharbor-encrypted104-'+self.delivery['context']['nonce']+'.cms'
+  if phase=='encrypted':return w171.delivery_wire171(self.delivery,self.clock.wall()),'traceharbor-encrypted104-'+self.delivery['context']['nonce']+'.cms'
   body=self.port.admit_descriptor()
   if body.get('source_sha')!=self.context['source_sha'] or body.get('manifest_sha256')!=self.context['manifest_sha256'] or body.get('once_receipt_sha256')!=self.context['once_receipt_sha256'] or str(body.get('run_id'))!=str(self.run['id']) or body.get('expires_utc')!=self.parent_wall or body.get('phase')!='admit':raise ValueError('Exact descriptor source/manifest/run/once/expiry before first phase effect')
   if phase=='consumed':body.update(self.port.consumed_descriptor(self.delivery))
@@ -132,8 +134,7 @@ class Grouped127:
    proof=self.call(phase+'/'+kind+'/proof','github_fetch',{'url':'https://api.github.com/repos/'+REPO+'/'+suffix})
    if n<3 and created['sha']!=proof['sha'] or n==3 and created!={'branch':ops[n]['ref']}:raise ValueError('Create return/immediate whole proof differ')
    if n==0:
-    want=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
-    if proof['sha']!=want or proof['size']!=len(raw) or proof['encoding']!='base64' or base64.b64decode(''.join(proof['content'].split()),validate=True)!=raw:raise ValueError('Full body/count/GitSHA')
+    b170.verify170(proof,raw) # explicit locally derived provenance plus original whole body/count/GitSHA
    elif n==1:
     expected={e['path']:e for e in self.context['baseline_entries']}
     if name in expected:raise ValueError('Create-only new leaf')
