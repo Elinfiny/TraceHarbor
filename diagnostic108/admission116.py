@@ -619,7 +619,7 @@ class ExternalCoordinator117:
             self.clock.check(delivery_end,440)
         rb=self.transport.verified_ciphertext_readback(plan,results,self.clock.end_utc)
         self.save({'key':'ciphertext-whole-readback-original','original':rb});self.clock.check(delivery_end,440)
-        receipt={'ciphertext_commit':results[2]['sha'],'ciphertext_sha256':plan['ciphertext_sha256'],'ref':plan['ref']}
+        receipt=ingress.wire171.receipt171(plan,results[2]['sha'],plan['ref'])
         consumed=dict(admit,phase='consumed',recipient_context=c,ciphertext_receipt=receipt,admit_sha256=sha(can(admit)))
         consume_end=self.clock.phase(110,330)
         value=self.stage('consumed',consumed,self.transport.current_checkpoint_version,{'context':c,'receipt':receipt})
