@@ -142,7 +142,7 @@ class NativePort127:
   for i,t in enumerate(ts152):
    ident={'phase':self.macro.active['name'],'run':self.macro.context['once_receipt_sha256'],'source':self.source,'call':'authority152/'+scope+'/helper-original/'+str(i)}
    helper128.run_helper128(self.config['library_helper'],self.config['library_helper_sha256'],pathlib.Path(t['workspace_path']),t['library_file_id'],t['xattrs'],ident,lambda identity,record:self.macro.store.save(ident['call'],{'identity':identity,'original':record}))
-   docs152[t['library_file_id']],proofs152[t['library_file_id']]=preflight152.a152.proof152(t['workspace_path'],t)
+   docs152[t['library_file_id']],proofs152[t['library_file_id']]=preflight152.a152.proof152(t['workspace_path'],t,original=original152)
   own152=docs152[base.OWN];version=self._version+(1 if phase_readback else 0)
   target=pathlib.Path(self.config['writer_binding']['writer_path']).parent/('candidate'+str(version))/'TraceHarbor_V1_checkpoint.json' if phase_readback else self._checkpoint
   if proofs152[base.OWN]['version']!=version or own152!=base.strict(target.read_bytes()):raise ValueError('Exact current own target whole bytes before every Git create')
@@ -187,7 +187,7 @@ class NativePort127:
   raw=target.read_bytes();d=base.strict(raw);wanted=copy.deepcopy(current['doc']);key=current['key'];utc=d['events'][-1]['utc'];n=wanted[key]
   n['records'].append({'phase':'PUBLISH_INTENT','payload':stored_payload});n['phase']='PUBLISH_INTENT';n['previous_checkpoint']={'version':version,'raw_sha256':sha(current['raw']),'self_sha256':wanted['self_sha256']};n['writer_sha256']=current['binding']['writer_sha256'];n['phase_history'].append({'phase':'PUBLISH_INTENT','utc':utc,'actual_own_version':version+1})
   wanted['events'].append({'phase':'PUBLISH_INTENT','utc':utc,'delivery_id':current['direction']['id'],'own_version':version+1,'source':'CURRENT Auditor'+str(current['binding']['auditor_version'])+' direction'+str(current['number']),'scope':'SAME_HOST_PRODUCER_COUNTER_CONTRACT_REVIEW_SOURCE'})
-  wanted['guard'].update(operation_id=current['direction']['id'],operation_state='PUBLISH_INTENT',epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK');wanted['state']='NATIVE'+str(current['number'])+'_PUBLISH_INTENT';wanted['self_sha256']=base.selfhash(wanted)
+  wanted['guard'].update(operation_id=current['direction']['id'],operation_state='PUBLISH_INTENT',epoch_checkpoint_counter=version+1,checkpoint_fresh='EXACT_CAS_AND_PINNED_FULLBYTE_SELF_ALLATTRS_READBACK');wanted['state']='NATIVE'+str(current['number'])+'_PUBLISH_INTENT';wanted['self_sha256']=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['self_hash158'](wanted)
   if r.get('candidate')!=str(target) or r.get('version')!=version+1 or r.get('raw_sha256')!=sha(raw) or r.get('self_sha256')!=d['self_sha256'] or r.get('preservation')!='PASS' or d!=wanted:raise ValueError('Exact original writer/full preservation before CAS')
   self.macro.store.save(phase+'/candidate-verify',{'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'preservation':'PASS'})
   dest=self.layout['transfer']/('group127-upload-'+str(version));dest.mkdir(mode=0o700,exist_ok=False);upload=dest/target.name;c.DiskOriginalIO127().write_once(str(upload),raw)
@@ -202,7 +202,7 @@ class NativePort127:
   if tr['file_id']!=pub['file_id'] or tr['current_version_number']!=version+1 or tr['library_file_id']!=base.OWN or any({a['name']:a['value'] for a in pub['xattrs']}.get(a['name'])!=a['value'] for a in tr['xattrs']):raise ValueError('Pinned peritem current CAS identity')
   path=pathlib.Path(tr['workspace_path']);expected=self.layout['transfer']/('group127-readback-'+str(version+1))/pub['file_name']
   if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
-  self.attrs(phase,'attrs-readback',path,tr);check,observed=base.check_checkpoint(path,base.OWN,version+1,sha(raw))
+  self.attrs(phase,'attrs-readback',path,tr);check,observed=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,path,base.OWN,version+1,sha(raw))
   if observed!=raw or check!=d:raise ValueError('Wholebyte/self original producer readback')
   if current['number']==150 and r156.expand_intent156(check,check['native150']['records'][-1]['payload']['phase_intent127'],len(check['native150']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole resolved original intent after pinned readback')
   self.macro.store.save(phase+'/readback-verify',{'version':version+1,'file_id':pub['file_id'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256'],'wholebyte_self_allattrs':'PASS'})
@@ -412,6 +412,6 @@ def bootstrap127(config_path,provider):
  return host,macro
 def main():
  if sys.argv[1]=='guard':
-  static=base.strict(pathlib.Path(sys.argv[2]).read_bytes());doc,_=base.check_checkpoint(sys.argv[3],base.OWN,int(sys.argv[4]));key='native'+doc['state'].split('_')[0][6:];g.p133.release133(doc[key]['direction'],static,(ROOT/'manifest.json').read_bytes());cfg={'direction_number':int(key[6:]),'writer_binding':doc[key]['records'][0]['payload']['writer_binding'],'config_path':sys.argv[2]};current=h154.current_binding154(base,sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
+  static=base.strict(pathlib.Path(sys.argv[2]).read_bytes());doc,_=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,sys.argv[3],base.OWN,int(sys.argv[4]));key='native'+doc['state'].split('_')[0][6:];g.p133.release133(doc[key]['direction'],static,(ROOT/'manifest.json').read_bytes());cfg={'direction_number':int(key[6:]),'writer_binding':doc[key]['records'][0]['payload']['writer_binding'],'config_path':sys.argv[2]};current=h154.current_binding154(base,sys.argv[3],int(sys.argv[4]),cfg);print(json.dumps({'current':current['number'],'writer':current['binding']['writer_sha256'],'guard':'PASS'}));return 0
  provider=load('trace127_fixed_provider',ROOT/'provider_safe127.py');host,macro=provider.bootstrap_native_host127(sys.argv[1]);result=macro.run_complete();print(json.dumps(result));return 0
 if __name__=='__main__':sys.exit(main())

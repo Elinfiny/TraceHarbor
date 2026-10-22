@@ -8,7 +8,7 @@ can=c.can;sha=c.sha;V2='TRACE146_STATIC_TYPED_RUNTIME_V3';ADMISSION='grouped146_
 g136s=importlib.util.spec_from_file_location('trace136_plan_git',ROOT/'git_dispatch136.py');g136=importlib.util.module_from_spec(g136s);g136s.loader.exec_module(g136)
 _ts146=importlib.util.spec_from_file_location('trace146_timing_'+__name__,pathlib.Path(__file__).resolve().parent/'timing146.py');t146=importlib.util.module_from_spec(_ts146);_ts146.loader.exec_module(t146)
 
-STATIC={'startup156','references156','prestart154','authority152','publication150','source','manifest','request','lock','private6','custody_scope','cost_scope','dispatch_source','path_roles','limits','inventory_sha256','authority_projection_sha256','workflow','timing_contract','observer_contract','artifact_contract'}
+STATIC={'envelope158','startup156','references156','prestart154','authority152','publication150','source','manifest','request','lock','private6','custody_scope','cost_scope','dispatch_source','path_roles','limits','inventory_sha256','authority_projection_sha256','workflow','timing_contract','observer_contract','artifact_contract'}
 PATHS={'private','transfer','holder_parent','capture','library_helper','config','materialize_original'}
 def closed(x,keys,label):
  if type(x) is not dict or set(x)!=set(keys):raise ValueError('Closed '+label)
@@ -40,7 +40,7 @@ def projection133(direction):
   walk(p)
  return p
 def static133(config,manifest_bytes,inventory=None):
- x=copy.deepcopy(closed(config,STATIC,'static configuration'));t146.preallocate146(x);
+ x=copy.deepcopy(closed(config,STATIC,'static configuration'));t146.preallocate146(x);__import__('runpy').run_path(str(ROOT/'envelope158.py'))['contract158'](x['envelope158']);
  __import__('runpy').run_path(str(ROOT/'startup156.py'))['contract156'](x['startup156']);__import__('runpy').run_path(str(ROOT/'references156.py'))['contract156'](x['references156']);
  authority152=__import__('runpy').run_path(str(ROOT/'authority152.py'));authority152['contract152'](x['authority152']);__import__('runpy').run_path(str(ROOT/'prestart156.py'))['contract154'](x['prestart154'])
  pub150=__import__('runpy').run_path(str(ROOT/'publication150.py'));pub150['contract150'](x['publication150'])

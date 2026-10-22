@@ -9,7 +9,7 @@ def prepare156(number,original,roles,original_writer,legacy_preparer):
  ts=original.get('structuredContent',{}).get('transfers',[])
  if original.get('isError') or original['structuredContent'].get('unavailable_items') or len(ts)!=4 or {t['library_file_id'] for t in ts}!=set(a['IDS']):raise ValueError('Authentic whole four-file preparation input')
  docs={};proof={}
- for t in ts:docs[t['library_file_id']],proof[t['library_file_id']]=a['proof152'](t['workspace_path'],t)
+ for t in ts:docs[t['library_file_id']],proof[t['library_file_id']]=a['proof152'](t['workspace_path'],t,original=original)
  boundary=a['boundary152'](docs[a['AUDIT']]);direction=boundary['recipient_outboxes']['TraceHarbor V1']
  if not direction['id'].startswith('V29-TRACE-150-') or direction.get('native_admission') is not True:raise ValueError('Future genuine150 addressed release required; SOURCE154 grants none')
  if len(direction['body'].encode())>16384 or len(direction['id'].encode())>256:raise ValueError('Bounded actual fresh150 addressedbody before RX')

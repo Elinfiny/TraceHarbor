@@ -11,40 +11,17 @@ IDS=(OWN,AUDIT,POLICY,ROUTE)
 AUDIT_CHAT='6ad7ffbf-f990-83eb-8a66-57312f48957f'
 MASTER_CHAT='6ad62106-24c8-83eb-8a6b-d100a31f25cf'
 TRACE_CHAT='6acfe37b-828c-83eb-b466-7670beb64ff2'
-CONTRACT='TRACE152_TWO_AUTHORITY_OBJECTS_V1'
+CONTRACT='TRACE158_TWO_AUTHORITY_OBJECTS_V2'
 can=lambda x:json.dumps(x,sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode()
 sha=lambda b:hashlib.sha256(b).hexdigest()
 def boundary152(doc):
  b=doc['operation']['effect_replay_boundary'];return json.loads(b) if isinstance(b,str) else copy.deepcopy(b)
 def contract152(x):
- expected={'schema':CONTRACT,'admission_snapshot':'IMMUTABLE_BEFORE_RX','current_snapshot':'AUTHENTIC_FRESH_WHOLE_PROVIDER','policy_change':'REFUSE_ANY_WHOLE_POLICY_CHANGE','route_change':'REFUSE_ANY_WHOLE_ROUTE_CHANGE','allowed_auditor_diff':'CLOSED_MASTER_HISTORY_AND_TELEMETRY_ONLY','precreate_refresh':'PARALLEL_WITH_PRECEDING_READ_SAME15S_ALL13_CREATES','metadata_each_max':67108864,'private_each_max':33554432}
+ expected={'schema':CONTRACT,'admission_snapshot':'IMMUTABLE_BEFORE_RX','current_snapshot':'AUTHENTIC_FRESH_WHOLE_PROVIDER','policy_change':'REFUSE_ANY_WHOLE_POLICY_CHANGE','route_change':'REFUSE_ANY_WHOLE_ROUTE_CHANGE','allowed_auditor_diff':'CLOSED_MASTER_HISTORY_AND_TELEMETRY_ONLY','precreate_refresh':'PARALLEL_WITH_PRECEDING_READ_SAME15S_ALL13_CREATES','metadata_each_max':67108864,'private_each_max':33554432,'trace_metadata_envelope':__import__('runpy').run_path(str(pathlib.Path(__file__).resolve().parent/'envelope158.py'))['CONTRACT']}
  if x!=expected:raise ValueError('Exact independently reviewed152 authority contract')
  return copy.deepcopy(expected)
-def proof152(path,transfer,*,private=False):
- p=pathlib.Path(path)
- if not p.is_absolute() or p.resolve()!=p or any(q.is_symlink() for q in [p,*p.parents]):raise ValueError('Unaliased whole authority path')
- s=p.lstat()
- if not stat.S_ISREG(s.st_mode) or s.st_uid!=os.getuid() or s.st_nlink!=1 or s.st_mode&0o022 or private and s.st_mode&0o077 or not 0<s.st_size<=67108864:raise ValueError('Whole authority document64MiB owned EOF')
- fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)
- try:
-  before=os.fstat(fd);chunks=[];total=0
-  while True:
-   b=os.read(fd,1048576)
-   if not b:break
-   total+=len(b)
-   if total>67108864:raise ValueError('Whole authority document bound')
-   chunks.append(b)
-  after=os.fstat(fd)
- finally:os.close(fd)
- end=p.lstat();ident=lambda t:(t.st_dev,t.st_ino,t.st_size,t.st_mtime_ns)
- if ident(s)!=ident(before) or ident(before)!=ident(after) or ident(after)!=ident(end):raise ValueError('Changed authority original during whole read')
- raw=b''.join(chunks);d=json.loads(raw);v=copy.deepcopy(d)
- if transfer['library_file_id']==AUDIT:h=v['integrity']['canonical_json_sha256'];v['integrity']['canonical_json_sha256']=None
- else:h=v['self_sha256'];v['self_sha256']=None
- if sha(can(v))!=h or len(raw)!=transfer['size_bytes'] or os.getxattr(p,'user.library-file-id').decode()!=transfer['library_file_id'] or int(os.getxattr(p,'user.library-file-version').decode())!=transfer['current_version_number']:raise ValueError('Authentic whole raw/self/positiveID/version authority')
- for a in transfer['xattrs']:
-  if os.getxattr(p,a['name']).decode()!=a['value']:raise ValueError('ALL actual authority attrs')
- return d,{'library_file_id':transfer['library_file_id'],'file_id':transfer['file_id'],'version':transfer['current_version_number'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':h,'ALLattrs':'PASS'}
+def proof152(path,transfer,*,private=False,original=None):
+ return __import__('runpy').run_path(str(pathlib.Path(__file__).resolve().parent/'envelope158.py'))['proof158'](path,transfer,private=private,original=original)
 def semantic_diff152(a,b):
  changes=[]
  def walk(x,y,path):
@@ -126,7 +103,7 @@ def admission152(own):
  if original.get('isError') or original['structuredContent'].get('unavailable_items') or {t['library_file_id'] for t in ts}!=set(IDS) or len(ts)!=4:raise ValueError('Whole four A source receipt')
  docs={};proof={}
  for stable,path in ((AUDIT,binding['auditor_path']),(POLICY,a['policy_path']),(ROUTE,a['route_path'])):
-  transfer=next(t for t in ts if t['library_file_id']==stable);docs[stable],proof[stable]=proof152(path,transfer,private=True)
+  transfer=next(t for t in ts if t['library_file_id']==stable);docs[stable],proof[stable]=proof152(path,transfer,private=True,original=original)
  if proof[AUDIT]!=n['source_verification']['Auditor_V28_checkpoint.json'] or proof!=a['proofs']:raise ValueError('Immutable original118 A proof, never current B substitution')
  return docs,proof
 def verify152(own,current_docs,current_proofs,config,manifest_bytes):
