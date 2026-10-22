@@ -204,7 +204,7 @@ def _mint_runtime133(key,release,config,manifest_bytes,snapshot,once_intent,nonc
  pin=config['private6'];source=config['source'];manifest_sha=sha(manifest_bytes)
  wanted={'schema':'TRACE116_ONCE_INTENT_V1','original_writer':'e839e90d6a61ceb21ab32dd8c78f27ab63a346e8e5ec0c4d12a1356db4fe3436','source_sha':source['commit'],'manifest_sha256':manifest_sha,'request_sha256':config['request']['sha256'],'request_bytes':4935,'lock_sha256':config['lock']['sha256'],'inputs':pin,'role':'OFFLINE_COUNTER_ONLY','max_counter_invocations':1,'model_calls':0,'spend':0}
  if set(once_intent)!=set(wanted)|{'nonce','expires_utc'} or any(once_intent[k]!=v for k,v in wanted.items()) or re.fullmatch('[0-9a-f]{32}',once_intent['nonce']) is None:raise ValueError('Exact source-produced once core')
- __import__('runpy').run_path(str(ROOT/'compatibility165.py'))['validate165'](release,config,manifest_bytes,snapshot)
+ __import__('runpy').run_path(str(ROOT/'compatibility168.py'))['validate165'](release,config,manifest_bytes,snapshot)
  end=min(wall+t146.PARENT,once_intent['expires_utc'],cutoff);h=RuntimeBinding133()
  _RUNTIME133[h]={'realm':'ACTUAL_SOURCE_PRIVATE' if key is _SEAL else 'SYNTHETIC_SOURCE_ONLY','prepared':prepared,'config_raw':can(config),'manifest_bytes':bytes(manifest_bytes),'snapshot':copy.deepcopy(snapshot),'once':copy.deepcopy(once_intent),'nonce':nonce,'armed_wall':wall,'armed_mono':mono,'end_wall':end,'end_mono':mono+(end-wall),'cutoff':cutoff,'last_wall':wall,'last_mono':mono,'first_unknown':None,'run':None,'run_digest':None,'descriptor':None}
  return h

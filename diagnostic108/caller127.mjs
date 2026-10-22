@@ -82,7 +82,7 @@ export async function bootstrapActualCaller127(preloaded){
  let r;try{r=await t.exec_command({cmd:'python -c '+q(code)+' '+q(c.p.captureDirectory+'/preflight-materialize.original.json')+' '+q(validated129.reviewedRoot)+' '+q(validated129.configPath),yield_time_ms:1000,max_output_tokens:4000});}catch(error){r={tool_throw:{name:error?.name,message:String(error)},status:'UNKNOWN_NO_RETRY'};}
  const verified=await collectPreflight128(r,{tools:t,deadlineUtcMs:preflightDeadline128,claim:id=>use(c,id,'CONTROLLER'),retain:(name,original)=>capture(c,name,original,t)});
  if(verified.schema!=='TRACE133_NATIVE_PREFLIGHT_ORIGINAL_V2'||verified.inventory_sha256!==validated129.inventorySha256||!same(verified.current_admission,validated129.currentNativeAdmission))throw Error('Actual exact whole inventory/current contract');
- if(!/^V29-TRACE-151-/.test(verified.directionId)||verified.prestart154?.schema!=='TRACE165_PRESTART151_PREDECESSOR150_V1'||verified.prestart154.empty!==true||!/^[a-f0-9]{64}$/.test(verified.prestart154.prepared_receipt_sha256))throw Error('Actual exact151 prepared child proof before source registry/start');
+ if(!/^V29-TRACE-152-/.test(verified.directionId)||verified.prestart154?.schema!=='TRACE168_PRESTART152_PREDECESSOR151_V1'||verified.prestart154.empty!==true||!/^[a-f0-9]{64}$/.test(verified.prestart154.prepared_receipt_sha256))throw Error('Actual exact152 prepared child proof before source registry/start');
  requireStartup156(verified.startup156);
  const verifiedPreload={...validated129,startup156:verified.startup156,context:null,contextSha256:null,deadlineUtcMs:null,uiDispatchArgs:null,sourceSha:verified.sourceSha,sourceTree:verified.sourceTree,captureDirectory:verified.captureDirectory,transferRoot:verified.transferRoot,dispatchSource133:verified.dispatchSource,directionId133:verified.directionId,staticConfigSha256:verified.staticConfigSha256,manifestSha135:verified.manifestSha135,holderCommand:{cmd:'python '+q(validated129.reviewedRoot+'/diagnostic108/native127.py')+' '+q(validated129.configPath),tty:true,yield_time_ms:1000,max_output_tokens:262144}};
  const handle=prepare127(verifiedPreload,NATIVE_CALLER_SEAL127);for(const id of c.used)HANDLES.get(handle).used.add(id);
@@ -101,7 +101,22 @@ async function capture(c,name,value,tools){
 export function counts127(handle){const c=HANDLES.get(handle);if(!c)throw Error('Exact registry');return {whole_reserved:c.rows.size,controller_used:c.used.size,first_unknown:c.failed,current48_fit:c.rows.size<=48,native_authority:false};}
 export const STARTUP156=Object.freeze({schema:'TRACE156_FINITE_FIRST_FRAME_STARTUP_V1',startup_max_ms:90000,budget_source:'EXISTING_PREPARE90_WITHIN_OUTER_WORK3000',provider_frame_ms:15000,phase_CAS_ms:75000,parent_ms:2340000,outer_total_s:3600,outer_work_s:3000,outer_reserve_s:600,extra_tickets:0,renewal:false,authority:false});
 export function requireStartup156(value){if(!same(value,STARTUP156))throw Error('Exact source-verified startup contract, no supplied deadline');return STARTUP156;}
+export function requireFrame168(f,now){
+ const parts=f.inventory_call_id?.split('/')||[],metadata=['SOURCE_FREEZE','PRE_DISPATCH','ADMIT_CHAIN','ENCRYPTED_CHAIN','CONSUMED_CHAIN','TERMINAL'].includes(parts[0])&&parts.length===2&&((parts[1]==='CAS'&&f.op==='library_replace')||(parts[1]==='readback'&&f.op==='library_materialize'));
+ const k=f.frame_contract168,end=Math.min(f.phase_deadline_utc_ms,f.runtime_binding133?.deadlineUtcMs??Infinity);
+ if(!Number.isInteger(f.issued_utc_ms)||!Number.isInteger(f.deadline_utc_ms)||!k||Object.keys(k).sort().join(',')!=='kind,pair_deadline_utc_ms,schema'||k.schema!=='TRACE168_METADATA_PAIR75_V1'||now<f.issued_utc_ms)throw Error('Closed source frame168 origin');
+ const expected=metadata?Math.min(f.issued_utc_ms+(parts[1]==='CAS'?50000:25000),end-(parts[1]==='CAS'?25000:0)):Math.min(f.issued_utc_ms+15000,end);
+ if(k.kind!==(metadata?'METADATA_PAIR':'PROVIDER15')||k.pair_deadline_utc_ms!==(metadata?f.phase_deadline_utc_ms:null)||metadata&&end-f.issued_utc_ms>75000||expected!==f.deadline_utc_ms||expected<=f.issued_utc_ms||now>=expected)throw Error('Original pair75/provider15 cutoff; no renewal');
+ return f;
+}
+export function bindPair168(pairs,f){
+ if(f.frame_contract168.kind!=='METADATA_PAIR')return;
+ const [phase,step]=f.inventory_call_id.split('/'),end=f.frame_contract168.pair_deadline_utc_ms;
+ if(step==='CAS'){if(pairs.has(phase))throw Error('No same-phase metadata reset');pairs.set(phase,end);}
+ else if(!pairs.has(phase)||pairs.get(phase)!==end)throw Error('Readback must share original CAS pair cutoff');
+}
 export function requireEmittedFrame156(frame,now){
+ requireFrame168(frame,now);
  if(!frame||!Number.isInteger(frame.deadline_utc_ms)||!Number.isInteger(frame.phase_deadline_utc_ms)||!frame.runtime_binding133||!Number.isInteger(frame.runtime_binding133.deadlineUtcMs)||now>=Math.min(frame.deadline_utc_ms,frame.phase_deadline_utc_ms,frame.runtime_binding133.deadlineUtcMs))throw Error('Original emitted15s/phase75/parent2340 expired; no parse bypass or reset');
  return frame;
 }
@@ -129,6 +144,8 @@ async function bindSourceRuntime133(c,frame,tools){
  p.context=snapshotPlain129(b.context);p.contextSha256=b.context_sha256;p.deadlineUtcMs=b.deadlineUtcMs;p.uiDispatchArgs=snapshotPlain129(b.uiDispatchArgs);use(c,'observer146/runtime','CONTROLLER');await capture(c,'observer146-runtime.json',{scope:'SOURCE_ORIGINAL_RUNTIME_DATA',source_sha:b.sourceSha,manifest_sha256:b.manifestSha256,once_receipt_sha256:b.context.once_receipt_sha256,deadline_utc_ms:b.deadlineUtcMs,dispatch_args:b.uiDispatchArgs,run_id:null},tools);
 }
 function guardArgs(c,f){
+ requireFrame168(f,Date.now());
+ c.metadataPairs168??=new Map();bindPair168(c.metadataPairs168,f);
  const a=f.args,p=c.p,repo='Elinfiny/TraceHarbor',id=f.inventory_call_id;
  if(!p.inventory.remote_ids.includes(id)||f.inventory_sha256!==p.inventorySha256||!same(f.context,p.context)||f.seq!==c.nextSeq||f.schema!=='TRACE118_HOST_REQUEST'||Date.now()>=Math.min(f.deadline_utc_ms,f.phase_deadline_utc_ms,p.deadlineUtcMs))throw Error('Exact source/context/inventory/sequence/original parent');
  if(f.op.startsWith('github_create_')&&a.repository_full_name!==repo)throw Error('Exact repository');
@@ -160,7 +177,7 @@ async function publishPrepared150(c,frame,tools){
  for(const id of ['process','prepare','transfer','finalize','metadata','intent','helper-original','receipt','normalize','close'])use(c,prefix+id,'CONTROLLER');
  const quote=s=>"'"+String(s).replaceAll("'","'\\''")+"'";
  const cmd='python3 '+quote(c.p.reviewedRoot+'/diagnostic108/publication150.py')+' '+quote(c.p.configPath)+' '+quote(JSON.stringify(frame.args));
- let current;try{current=await tools.exec_command({cmd,yield_time_ms:1000,max_output_tokens:16000});}catch(e){current={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};}
+ let current;try{current=await tools.exec_command({cmd,yield_time_ms:10000,max_output_tokens:16000});}catch(e){current={tool_throw:{name:e?.name,message:String(e)},status:'UNKNOWN_NO_RETRY'};}
  originals.push(current);await capture(c,'prepared150-'+phase+'-exec0.original.json',current,tools);
  const session=current?.session_id;
  for(let n=0;current?.exit_code==null&&n<8;n++){
