@@ -65,11 +65,8 @@ def read158(path,transfer,*,private=False,original=None):
  attributes158(p,transfer)
  return d,raw,h
 def canonical_sha158(value):
- h=hashlib.sha256()
- encoder=json.JSONEncoder(sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False)
- for chunk in encoder.iterencode(value):
-  for offset in range(0,len(chunk),65536):h.update(chunk[offset:offset+65536].encode())
- return h.hexdigest()
+ from snapshot174 import canonical_sha173
+ return canonical_sha173(value)
 def self_hash158(doc,stable=OWN):
  # Shallow root copy changes only the self field. Protected nested values are
  # never mutated, reserialized as a whole buffer, truncated or externalized.
