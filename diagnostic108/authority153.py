@@ -21,7 +21,16 @@ def contract152(x):
  if x!=expected:raise ValueError('Exact independently reviewed152 authority contract')
  return copy.deepcopy(expected)
 def proof152(path,transfer,*,private=False,original=None):
- return __import__('runpy').run_path(str(pathlib.Path(__file__).resolve().parent/'envelope158.py'))['proof158'](path,transfer,private=private,original=original)
+ # Explicit153 caller only. Keep the original whole provider/self/ALLattrs
+ # predicates and seal its physical ancestor chain through their last read.
+ from snapshot174 import Whole173
+ limit=33554432 if private else 83886080 if transfer.get('library_file_id')==OWN else 67108864
+ resource=Whole173(path,limit)
+ try:
+  result=__import__('runpy').run_path(str(pathlib.Path(__file__).resolve().parent/'envelope158.py'))['proof158'](path,transfer,private=private,original=original)
+  if result[1]['sha256']!=resource.raw_sha:raise ValueError('Same physical source proof bytes')
+  resource.reseal173();return result
+ finally:resource.close173()
 def semantic_diff152(a,b):
  changes=[]
  def walk(x,y,path):

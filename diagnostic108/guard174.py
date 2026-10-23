@@ -6,7 +6,7 @@ No cross-invocation cache. Historical original152 timeout is never rerun here.
 """
 import pathlib,runpy,copy,re,ast,json,os,stat,sys,hashlib,time,resource,importlib.util
 ROOT=pathlib.Path(__file__).resolve().parent
-from snapshot174 import Whole173,canonical_sha173,self_sha173
+from snapshot174 import Whole173,canonical_sha173,self_sha173,_Invocation175
 H=runpy.run_path(str(ROOT/'prestart174.py'));history154=H['history154'];binding_selector165=H['binding_selector165'];derive153=H['derive153'];ORIGINAL=H['ORIGINAL'];can=H['can'];sha=H['sha'];derive152=H['old']['derive152']
 spec=importlib.util.spec_from_file_location('source174_exact118',ROOT/'host_transport118.py');base=importlib.util.module_from_spec(spec);spec.loader.exec_module(base)
 E=runpy.run_path(str(ROOT/'envelope158.py'));P=runpy.run_path(str(ROOT/'plan127.py'))
@@ -114,10 +114,10 @@ def _validate153(doc,raw,config,static174,opened,version):
 
 def current_binding174(path,version,config_path):
  if type(path)is not str or type(version)is not int or type(config_path)is not str or version<1:raise TypeError('Only exact physical path/version/config; no supplied parsed snapshot, object subclass, hash, proof or callback')
- resources={}
+ resources={};directory_set175=_Invocation175()
  def opened(path,cap):
   key=str(path)
-  if key not in resources:resources[key]=Whole173(key,cap)
+  if key not in resources:resources[key]=directory_set175.open175(key,cap)
   elif resources[key].identity[5]>cap:raise ValueError('Resource cannot enlarge another role cap')
   return resources[key]
  try:
@@ -147,9 +147,11 @@ def current_binding174(path,version,config_path):
   # Canonical self is NOT duplicated. Physical whole bytes/EOF/identity/attrs
   # are independently re-sealed after all intermediate validations.
   for resource in resources.values():resource.reseal173()
+  directory_set175.reseal175()
   return result
  finally:
   for resource in resources.values():resource.close173()
+  directory_set175.close175()
 def check174(path,version,config_path):
  r=current_binding174(path,version,config_path)
  return {'schema':'TRACE174_SOURCE_GUARD_DATA','guard':'PASS','current':r['number'],'writer':r['binding']['writer_sha256'],'raw_sha256':sha(r['raw']),'bytes':len(r['raw']),'native_authority':False}
