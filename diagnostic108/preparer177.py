@@ -73,6 +73,8 @@ def prepare165(number, original, roles, original_writer, legacy_preparer):
     for name, obj in [('direction154.json', direction), ('source-verification.json', {'Auditor_V28_checkpoint.json': proof[a['AUDIT']]}), ('holder-preparation154.json', holder)]:
         put(root / name, can(obj))
     h['check_child154'](holder, config, empty=True)
+    descriptors=runpy.run_path(str(ROOT/'preparer180.py'))['outer_descriptors180'](config,binding,proof[a['OWN']]['version'])
+    put(root/'outer180-controller-descriptors.json',can(descriptors))
     return {'writer_binding': binding, 'authority_admission152': authority, 'source_verification': {'Auditor_V28_checkpoint.json': proof[a['AUDIT']]}, 'holder_preparation154': holder, 'writer_derivation154': derivation, 'current_sources_before_RX': proof, 'native_authority': False}
 
 def prepare_rx165(own, rx, direction, config):

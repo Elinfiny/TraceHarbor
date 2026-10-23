@@ -28,6 +28,10 @@ def normalizer127(original,kind):
   if set(original)!={'schema','value','current','native_authority'} or original['native_authority'] is not False:raise ValueError('Closed authentic current/proof pair')
   # Retain original paired value for request-bound projection AFTER ledger IO.
   return b170.paired170(original)
+ if kind=='library_materialize' and type(original)is dict and original.get('schema')=='TRACE180_AUTHENTIC_TERMINAL_READBACK':
+  if set(original)!={'schema','current','native_authority'}or original['native_authority']is not False:raise ValueError('Closed actual terminal original')
+  ts=runpy.run_path(str(ROOT/'outer_metadata180.py'))['tuple180'](original['current'])
+  return {'source_value180':next(t for t in ts if t['library_file_id']==base.OWN),'current_original180':original['current']}
  if kind=='library_materialize' and type(original) is dict and original.get('schema')=='TRACE152_AUTHENTIC_PHASE_READBACK':
   if set(original)!={'schema','current','native_authority'} or original['native_authority'] is not False:raise ValueError('Closed authentic whole phase current readback')
   ts=original['current'].get('structuredContent',{}).get('transfers',[])
@@ -134,6 +138,9 @@ class NativePort127:
     value=b170.read170(request,frame,created170,pins170,self.macro.active['name'],int(time.time()*1000))
    else:value=_normalizer118(original170,'github_fetch')
    self.refresh_authority152(current170,id,phase_readback=id.endswith('/readback'))
+  elif type(value)is dict and set(value)=={'source_value180','current_original180'}:
+   if id!='TERMINAL/readback':raise ValueError('Actual terminal ticket only')
+   value=value['source_value180']
   elif type(value) is dict and set(value)=={'source_value152','current_original152'}:
    self.refresh_authority152(value['current_original152'],id,phase_readback=id.endswith('/readback'));value=value['source_value152']
   return value
@@ -198,7 +205,7 @@ class NativePort127:
   for x in metadata.get('xattrs',[]):
    if os.getxattr(path,x['name']).decode()!=x['value']:raise ValueError('ALL returned actual attrs')
  def cas(self,phase,version,payload):
-  cas_start=time.monotonic()
+  cas_start=time.monotonic();cas_utc_start=time.time()
   self.ledger.metadata_pair_deadline_mono168=min(cas_start+t146.CAS,self.ledger.phase_mono,self.ledger.parent_mono)
   self.ledger.metadata_pair_deadline168=min(self.ledger.deadline_ms,int((time.time()+min(t146.CAS,self.ledger.remaining()))*1000))
   if version!=self._version or payload['phase_intent127']['plan_sha256']!=self.macro.plan_sha:raise ValueError('Exact whole live typed phase/version')
@@ -234,6 +241,7 @@ class NativePort127:
   for attr in os.listxattr(target):os.setxattr(upload,attr,os.getxattr(target,attr))
   self.macro.store.save(phase+'/transfer-copy',{'path':str(upload),'bytes':len(raw),'sha256':sha(raw)})
   pub=self.macro.call(phase+'/CAS','library_replace',{'library_file_id':base.OWN,'file':str(upload),'expected_current_version':version,'version_reason':'Actual independently admitted grouped phase consumed before first effect'})
+  ack180_mono=time.monotonic();ack180_utc=time.time()
   if pub.get('status')!='succeeded' or pub.get('library_file_id')!=base.OWN or pub.get('current_version_number')!=version+1:raise ValueError('Actual conditional publication original')
   proof150=pub['publication150']['upload']
   if proof150['sha256']!=sha(raw) or proof150['bytes']!=len(raw) or proof150['self_sha256']!=d['self_sha256'] or proof150['expected_current_version']!=version:raise ValueError('Actual prepared upload fullbody/expectedversion')
@@ -242,7 +250,17 @@ class NativePort127:
   if tr['file_id']!=pub['file_id'] or tr['current_version_number']!=version+1 or tr['library_file_id']!=base.OWN or any({a['name']:a['value'] for a in pub['xattrs']}.get(a['name'])!=a['value'] for a in tr['xattrs']):raise ValueError('Pinned peritem current CAS identity')
   path=pathlib.Path(tr['workspace_path']);expected=self.layout['transfer']/('group127-readback-'+str(version+1))/pub['file_name']
   if path!=expected or path.is_symlink() or path.resolve()!=path:raise ValueError('Only exact selected disjoint readback')
-  self.attrs(phase,'attrs-readback',path,tr);check,observed=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,path,base.OWN,version+1,sha(raw))
+  if phase=='TERMINAL'and current['number']==154:
+   expected180={'version':version+1,'file_id':pub['file_id'],'bytes':len(raw),'sha256':sha(raw),'self_sha256':d['self_sha256']}
+   frame180={'kind':'CAS_READBACK','origin_mono':cas_start,'origin_utc':cas_utc_start,'ack_mono':ack180_mono,'ack_utc':ack180_utc}
+   # Same existing attrs-readback ticket, strict helper5 remains. A late combined
+   # consumer is a real failure, never permission to extend the native budget.
+   receipt180=self.helper(phase,'attrs-readback',[sys.executable,str(ROOT/'outer_complete180.py'),'native-terminal',self.current_original['canonical_path'],str(target),json.dumps(expected180),json.dumps(frame180),self.config['library_helper']])
+   proof180=base.strict(receipt180)
+   if proof180.get('schema')!='TRACE180_COMPLETE_CONSUMER_READBACK_V1'or not proof180.get('official_helpers_all_FD_ancestor_last_seals'):raise ValueError('Whole actual terminal consumer proof')
+   check,observed=d,raw
+  else:
+   self.attrs(phase,'attrs-readback',path,tr);check,observed=__import__('runpy').run_path(str(ROOT/'envelope158.py'))['checkpoint_adapter158'](base,path,base.OWN,version+1,sha(raw))
   if observed!=raw or check!=d:raise ValueError('Wholebyte/self original producer readback')
   if current['number'] in (153,154) and r174.expand_intent165(check,check[current['key']]['records'][-1]['payload']['phase_intent127'],len(check[current['key']]['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole153 intent resolved after pinned readback')
   if current['number']==152 and r168.expand_intent165(check,check['native152']['records'][-1]['payload']['phase_intent127'],len(check['native152']['records'])-1)!=payload['phase_intent127']:raise ValueError('Whole152 resolved original intent after pinned readback')
