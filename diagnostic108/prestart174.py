@@ -3,7 +3,7 @@ SOURCE_ONLY: exact153 contract; registry/mint require independent actual release
 Historical149/150/151/152 contracts/behavior delegate unchanged to prestart168.
 Publication is not native admission; historical consumed152 remains refused.
 """
-import pathlib,runpy,json,copy,re,ast,hashlib
+import pathlib,runpy,json,copy,re,ast,hashlib,os,stat
 ROOT=pathlib.Path(__file__).resolve().parent
 old=runpy.run_path(str(ROOT/'prestart168.py'));can=old['can'];sha=old['sha'];ORIGINAL=old['ORIGINAL']
 TABLE={153:{'predecessor':152,'predecessor_state':'NATIVE152_TERMINAL','reserved_history':148}}
