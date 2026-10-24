@@ -1710,6 +1710,18 @@
     "tools/verify_offline_release175.py": {
       "bytes": 13136,
       "sha256": "c0477891474ae23a0e6f99f67ade8c73d6cb0051e6e09a6b727ae049acd9d052"
+    },
+    "wsgi177.py": {
+      "bytes": 10979,
+      "sha256": "ead8c19464f45a90bf7088a92788aa3bbedd25288272b1125e80d9486fe616e8"
+    },
+    "tests/test_wsgi177.py": {
+      "bytes": 17643,
+      "sha256": "bc2d96223d79b06f01d42d59e3aca2670487fc40cdc78d54358f011e6fd154c2"
+    },
+    "docs/HOSTING177.md": {
+      "bytes": 6559,
+      "sha256": "0689876a7659258638982b7a7678746df22241964cac54b6ba22e4036d9c479d"
     }
   },
   "source_freeze180": {
