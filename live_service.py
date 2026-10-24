@@ -2,7 +2,7 @@
 from core import digest, shape, text
 from service import analyze, verify_dossier
 from verifier import verify_analysis, VerificationError
-from nebius import ENDPOINT
+ENDPOINT = 'https://api.tokenfactory.nebius.com/v1/chat/completions'
 
 LIMITS = ('Quotes and evidence hashes are checked. Semantic entailment is NOT VERIFIED. '
           'Imported provider metadata is an unauthenticated record, not proof of a live call. '
