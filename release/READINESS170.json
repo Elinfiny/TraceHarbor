@@ -1,0 +1,115 @@
+{
+  "schema": "TRACEHARBOR_PUBLIC_DELIVERY_READINESS_V1",
+  "reviewed_date": "2026-10-24",
+  "canonical_source": {
+    "main": "dfd0639d8aec43cc13d4776a19138af3bd626598",
+    "main_tree": "f38d934627f809cd9ff747c0d09df746bd15c739",
+    "qualified_unmerged_head": "3445843b599032b3fe825f3647bd006ea7223f08",
+    "qualified_tree": "ab2ec6d56fd72dcf156001bf641c38a4b29f8da1",
+    "PR": 45,
+    "application_web_fixture_bytes": "Identical between these two versions",
+    "documentation_proposal": "Unpublished; no new commit is claimed"
+  },
+  "status": {
+    "offline_browser_behavior": "27 checks passed on synthetic fixtures at390/1440",
+    "live_platform_model_proof": "MISSING",
+    "persistent_working_demo_URL": null,
+    "video": "UNRECORDED",
+    "submission": "NO_RECEIPT_ESTABLISHED_BY_THIS_KIT",
+    "personal_eligibility": "NOT_CERTIFIED",
+    "full_product_complete": false
+  },
+  "official": {
+    "rules": "https://nebiusglobalaihackathon.devpost.com/rules",
+    "overview": "https://nebiusglobalaihackathon.devpost.com/",
+    "contest": "Nebius x NVIDIA Global AI Hackathon",
+    "deadline_UTC": "2026-10-30T17:00:00Z",
+    "deadline_Bucharest": "2026-10-30T19:00:00+02:00",
+    "video_seconds_strictly_less_than": 180,
+    "planned_video_seconds": 160,
+    "judging_access_until_UTC": "2026-12-15T20:00:00Z",
+    "entry_form_specific_fields": "Not inspected through project creation"
+  },
+  "checklist": [
+    {
+      "item": "English project copy and setup",
+      "state": "DRAFT_READY",
+      "owner": "Project author",
+      "evidence": "START_HERE.md and SUBMISSION_DRAFT.md",
+      "acceptance": "Final factual review on the released source"
+    },
+    {
+      "item": "Browser behavior",
+      "state": "EVIDENCED_WITH_LIMITS",
+      "owner": "Release maintainer",
+      "evidence": "release/QA_EVIDENCE170.md",
+      "acceptance": "Keep two-width synthetic scope explicit"
+    },
+    {
+      "item": "Real Nebius execution with NVIDIA open-source model",
+      "state": "MISSING",
+      "owner": "Integration maintainer",
+      "evidence": null,
+      "acceptance": "A real bounded execution receipt with exact source/model identity and compliant access/cost controls"
+    },
+    {
+      "item": "Working demo or test-build URL",
+      "state": "MISSING",
+      "owner": "Service operator",
+      "evidence": null,
+      "acceptance": "Intended users can access the labelled functioning offline desk; judge access and availability window verified separately"
+    },
+    {
+      "item": "Public repository, license and setup",
+      "state": "CURRENT_PUBLIC_RELEASE_NOT_REVERIFIED",
+      "owner": "Release maintainer",
+      "evidence": "Pinned source versions and local setup guide",
+      "acceptance": "Verified public visibility, license, setup and intended release; proposed docs published only after normal release review"
+    },
+    {
+      "item": "Public YouTube demo",
+      "state": "UNRECORDED",
+      "owner": "Project author",
+      "evidence": "VIDEO_SCRIPT.md",
+      "acceptance": "Actual functioning footage under180seconds, public URL verified"
+    },
+    {
+      "item": "Track and genuine platform feedback",
+      "state": "TRACK_DRAFT_FEEDBACK_UNFILLED",
+      "owner": "Project author",
+      "evidence": "Best Apps and Agents proposed",
+      "acceptance": "Final supported track and truthful feedback"
+    },
+    {
+      "item": "Eligibility, rights, conflicts and significant updates",
+      "state": "FACTS_REQUIRE_VERIFICATION",
+      "owner": "Entrant",
+      "evidence": null,
+      "acceptance": "Actual personal declarations; significant in-period updates documented if applicable"
+    },
+    {
+      "item": "Final entry and judging availability",
+      "state": "UNFINISHED",
+      "owner": "Entrant",
+      "evidence": null,
+      "acceptance": "Required live form fields and assets complete, actual submission receipt preserved, free judge access through2026-12-15T20:00Z"
+    }
+  ],
+  "offline_delivery": {
+    "state": "PROPOSED_NOT_DEPLOYED",
+    "source": "Canonical application bytes; do not treat an unmerged documentation proposal as a release",
+    "isolation": "Non-root process, immutable read-only release, loopback127.0.0.1:8787",
+    "route": "Dedicated HTTPS root virtual host through an authenticated gateway; current app uses absolute root paths",
+    "origin_guard": "Validate exact external Host/Origin, JSON type and body bound before translating to the loopback Host/Origin; do not disable or unconditionally rewrite guards",
+    "inputs": "Synthetic fixtures only; no production records, keys or payload logging",
+    "health": "GET / returns200 with expected interface bytes and CSP; no special health endpoint is claimed",
+    "budget": "Host capacity, cost and bounded resource limits require verification before installation",
+    "acceptance": "Intended-audience HTTPS access, rejected wrongHost/Origin, working fixtures/citations/export, valid reimport200, tamper400, no provider requests, observed availability and rollback",
+    "availability": "A labelled offline desk can be delivered before live-model integration; an entrant-only private service does not by itself provide judge access"
+  },
+  "notes": [
+    "No current GitHub Download ZIP byte proof is supplied.",
+    "A storyboard is not a video; draft copy is not a submission receipt.",
+    "This file records readiness; it grants no permission to execute or publish."
+  ]
+}

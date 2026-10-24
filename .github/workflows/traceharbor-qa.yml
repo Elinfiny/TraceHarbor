@@ -19,14 +19,14 @@ jobs:
       github.event.repository.private == false &&
       github.event.pull_request.draft == false &&
       github.run_attempt == 1 &&
-      github.event.pull_request.base.sha == 'b53d48c3088145faed09038069021e1b145883e2' &&
+      github.event.pull_request.base.sha == 'dfd0639d8aec43cc13d4776a19138af3bd626598' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.head.ref == 'review/traceharbor-v1-browser-qa-fix01-20261015'
+      github.event.pull_request.head.ref == 'review/traceharbor-v1-browser-qa-base180-162-20261023'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
       QA_EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
-      QA_EXPECTED_BASE: b53d48c3088145faed09038069021e1b145883e2
+      QA_EXPECTED_BASE: dfd0639d8aec43cc13d4776a19138af3bd626598
     steps:
       - name: Checkout exact PR head
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # official v4.2.2
