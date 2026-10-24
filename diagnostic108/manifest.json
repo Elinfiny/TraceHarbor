@@ -1702,6 +1702,14 @@
     "workflow_candidates/traceharbor-one94.yml.disabled": {
       "bytes": 706,
       "sha256": "0f58d3e4e2b8a86040fb7aa1383cd6ca645aa92a833cff51555764ea721a8f94"
+    },
+    "tools/build_offline_release175.py": {
+      "bytes": 14853,
+      "sha256": "fb33405885519c4b940f1fa2aafdcd7e473a29323936703732d0e0f66525fd94"
+    },
+    "tools/verify_offline_release175.py": {
+      "bytes": 13136,
+      "sha256": "c0477891474ae23a0e6f99f67ade8c73d6cb0051e6e09a6b727ae049acd9d052"
     }
   },
   "source_freeze180": {
