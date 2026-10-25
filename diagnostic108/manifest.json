@@ -1722,6 +1722,22 @@
     "docs/HOSTING177.md": {
       "bytes": 6559,
       "sha256": "0689876a7659258638982b7a7678746df22241964cac54b6ba22e4036d9c479d"
+    },
+    "tools/app_runtime190.py": {
+      "bytes": 7656,
+      "sha256": "2c4021ec449c871bfab96908e72721b261d5a3a36abcefd7905636c5a893ece9"
+    },
+    "tests/test_app_runtime190.py": {
+      "bytes": 6860,
+      "sha256": "adeac7d7ea6b558c5162169e99b19623b6587b131a82313f2116ceb323664ba7"
+    },
+    ".github/workflows/traceharbor-app-runtime190.yml": {
+      "bytes": 1269,
+      "sha256": "ee0e21c99aff6cd6561646e99f6f2150d9b0508ab42e61d0211d05c2cae51962"
+    },
+    "release/NEBIUS_APP_RUNTIME190.md": {
+      "bytes": 3774,
+      "sha256": "ea86544e6e33f3e6b8fafed9b13f3cf3a6fd3401d06835c48eb593634eb23163"
     }
   },
   "source_freeze180": {
@@ -1965,5 +1981,16 @@
       "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
       "version": "4.16.0"
     }
-  ]
+  ],
+  "ordinary_application_runtime190": {
+    "profile": "APP_RUNTIME_NO_NATIVE_ATTESTATION",
+    "state": "PRIVATE_PROPOSAL_NOT_ADMITTED_OR_ACTIVATED",
+    "legacy_root_model_allowed": "UNCHANGED_NATIVE_DIAGNOSTIC_SCOPE; not waived for oldroutes",
+    "activation": "Requires independent exactsource/credit/outputbound/securecustody/createonlyonce admission; this field does not grant it",
+    "native_custody_or_escrow": false,
+    "request_sha256": "e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2",
+    "owner_free_credit_cap_USD": 1,
+    "new_cash_USD": 0,
+    "once_branch_proposed": "traceharbor/app190/v1/e4b08fa3937e4c83"
+  }
 }
