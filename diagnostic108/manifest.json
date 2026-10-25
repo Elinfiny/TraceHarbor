@@ -107,6 +107,40 @@
   "manifest_self_pin": "EXCLUDED; final bytes/hash require external independent109 admission and fresh once reservation",
   "mode": "PUBLIC_INPUTS_ONLY_PRECOUNTER_DIAGNOSTIC",
   "model_allowed": false,
+  "ordinary_application_diagnostic214": {
+    "base_commit": "1f84a28a26669d1660e0782513e0078050345b84",
+    "known_fix": "Staticallowlistedgranulardiagnosticloss only; realfailedfieldUNKNOWN",
+    "new_ref": "refs/heads/traceharbor/diag214/v1/e4b08fa3937e4c83-15d69a8e12854ff0",
+    "new_tests": "New214diagnosticmethods only; old13notrerun",
+    "nonce": "15d69a8e12854ff0",
+    "old190200": "Consumed/unmodified; no replay/noimplicitfourthcall",
+    "operation": "TRACE180-DIAGNOSTIC214-THIRD-CALL-PROPOSAL",
+    "profile": "APP_RUNTIME_DIAGNOSTIC214",
+    "request_and_acceptance_policy": "UNCHANGED except versionedcalleridentity; ASTproofrecorded",
+    "state": "PRIVATE_PROPOSAL_NOT_ADMITTED_NOT_PUBLISHED_NO_INFERENCE"
+  },
+  "ordinary_application_runtime190": {
+    "activation": "Requires independent exactsource/credit/outputbound/securecustody/createonlyonce admission; this field does not grant it",
+    "legacy_root_model_allowed": "UNCHANGED_NATIVE_DIAGNOSTIC_SCOPE; not waived for oldroutes",
+    "native_custody_or_escrow": false,
+    "new_cash_USD": 0,
+    "once_branch_proposed": "traceharbor/app190/v1/e4b08fa3937e4c83",
+    "owner_free_credit_cap_USD": 1,
+    "profile": "APP_RUNTIME_NO_NATIVE_ATTESTATION",
+    "request_sha256": "e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2",
+    "state": "PRIVATE_PROPOSAL_NOT_ADMITTED_OR_ACTIVATED"
+  },
+  "ordinary_application_runtime200": {
+    "input_sha256": "f57813253ce6f59318354e62d4bee7c6dd133ed33cfc245438d1d5a604cf43a1",
+    "new_cash_USD": 0,
+    "new_proposed_reserve_USD": "0.25",
+    "once_branch_proposed": "traceharbor/app200/v1/e4b08fa3937e4c83",
+    "prior_call_reserved_USD": "0.25",
+    "profile": "APP_RUNTIME_INPUT_BOUND200",
+    "request_sha256": "e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2",
+    "source_and_record_same_input": true,
+    "state": "PRIVATE_NOT_ACCEPTED_ADOPTED_OR_ACTIVATED"
+  },
   "prior107_counter": "UNKNOWN",
   "private_macro122_review": {
     "canonical_baseline": "ffcc7c5223c1232f5f4dd62b96b63287637ed6e7",
@@ -735,6 +769,18 @@
     "whole_inventory_proposal": 1366
   },
   "source_files": {
+    ".github/workflows/traceharbor-app-runtime190.yml": {
+      "bytes": 1269,
+      "sha256": "ee0e21c99aff6cd6561646e99f6f2150d9b0508ab42e61d0211d05c2cae51962"
+    },
+    ".github/workflows/traceharbor-app-runtime200.yml": {
+      "bytes": 1301,
+      "sha256": "4de1c3df54ec88af0f6b049a3b001ee42c3232996600439c6c3f67b641e3f99e"
+    },
+    ".github/workflows/traceharbor-app-runtime214.yml": {
+      "bytes": 1301,
+      "sha256": "e4a29d678c2a9220fb8763f35dfe45c46945d93cb471e64ed7860512dba8beb5"
+    },
     ".github/workflows/traceharbor-counter116.yml.disabled": {
       "bytes": 2635,
       "sha256": "2db5b6b122f3ec4e7426a223583e97357033c52f60422487bffec84c8755aec8"
@@ -1295,6 +1341,10 @@
       "bytes": 4401,
       "sha256": "9c93fc4ea6848f095a3d2d020c347ca941cb2d7358974ac0bf98ea1ae78e6ef9"
     },
+    "docs/HOSTING177.md": {
+      "bytes": 6559,
+      "sha256": "0689876a7659258638982b7a7678746df22241964cac54b6ba22e4036d9c479d"
+    },
     "docs/SOURCE165.md": {
       "bytes": 986,
       "sha256": "b169f26c9d54799e3e354fb7e74b8c3378557796c5340521d7cd9ecf3acd3172"
@@ -1607,6 +1657,14 @@
       "bytes": 9166,
       "sha256": "93e9bff75e91586b0a41f09fd35c383cecb67bb949b35adccecd224e0224c538"
     },
+    "release/DIAGNOSTICS214.md": {
+      "bytes": 3262,
+      "sha256": "2c6a8cb8ee71175cfd179e7f9b49a2be229c754cc2abb40f92a00c37a3f3aef5"
+    },
+    "release/NEBIUS_APP_RUNTIME190.md": {
+      "bytes": 4880,
+      "sha256": "fd223a93a722490cf855ce67b61337d1a3443693b7dfb1a77d78685a2776aa56"
+    },
     "release/QA_EVIDENCE170.md": {
       "bytes": 2271,
       "sha256": "a24c1db3b56159be6b43f58d4b758aa52874ed87f65ed0b9105cb557b0dd0684"
@@ -1622,6 +1680,18 @@
     "tests/test_acceptance.py": {
       "bytes": 8786,
       "sha256": "163faa7ac23362fe4c755dd584798a8e951b77da012161502863d49c6eb73555"
+    },
+    "tests/test_app_runtime190.py": {
+      "bytes": 6860,
+      "sha256": "adeac7d7ea6b558c5162169e99b19623b6587b131a82313f2116ceb323664ba7"
+    },
+    "tests/test_app_runtime200.py": {
+      "bytes": 8531,
+      "sha256": "8880bd4c862505c535ee0a90f236acb7af1122b1fc75c44d5520e26192ef654c"
+    },
+    "tests/test_app_runtime214.py": {
+      "bytes": 10178,
+      "sha256": "21cecfc13df5e8352555c4c66f09c75997b6559849d1d19261b52531dcb4ed19"
     },
     "tests/test_native_auth95.py": {
       "bytes": 13288,
@@ -1663,13 +1733,33 @@
       "bytes": 6644,
       "sha256": "577e3c9fa88d72261d01082c15d17bfe1b15ec7a9a4b24cfffcc7391b3a0f7bd"
     },
+    "tests/test_wsgi177.py": {
+      "bytes": 17643,
+      "sha256": "bc2d96223d79b06f01d42d59e3aca2670487fc40cdc78d54358f011e6fd154c2"
+    },
     "tests/ui_smoke.cjs": {
       "bytes": 3941,
       "sha256": "4efdcd91bb53478f2ea94dbf2b312cdc597c349511885d4f0bc2afd2d9b12cc2"
     },
+    "tools/app_runtime190.py": {
+      "bytes": 12551,
+      "sha256": "67cd8a765bc01c278187e5c7600d39e8cda67a4ba2f46729cc926788db837d52"
+    },
+    "tools/app_runtime214.py": {
+      "bytes": 14595,
+      "sha256": "c7a3ecca411059654500e74776f6d1e6aa2410e046e062999fb63c97262f4785"
+    },
+    "tools/build_offline_release175.py": {
+      "bytes": 14853,
+      "sha256": "fb33405885519c4b940f1fa2aafdcd7e473a29323936703732d0e0f66525fd94"
+    },
     "tools/contest_build82.py": {
       "bytes": 13881,
       "sha256": "42fd98a45b209f0d3e7ce9d9cd59565b24ef4c234e96675f13c04144404ec5a1"
+    },
+    "tools/verify_offline_release175.py": {
+      "bytes": 13136,
+      "sha256": "c0477891474ae23a0e6f99f67ade8c73d6cb0051e6e09a6b727ae049acd9d052"
     },
     "verifier.py": {
       "bytes": 4493,
@@ -1703,49 +1793,9 @@
       "bytes": 706,
       "sha256": "0f58d3e4e2b8a86040fb7aa1383cd6ca645aa92a833cff51555764ea721a8f94"
     },
-    "tools/build_offline_release175.py": {
-      "bytes": 14853,
-      "sha256": "fb33405885519c4b940f1fa2aafdcd7e473a29323936703732d0e0f66525fd94"
-    },
-    "tools/verify_offline_release175.py": {
-      "bytes": 13136,
-      "sha256": "c0477891474ae23a0e6f99f67ade8c73d6cb0051e6e09a6b727ae049acd9d052"
-    },
     "wsgi177.py": {
       "bytes": 10979,
       "sha256": "ead8c19464f45a90bf7088a92788aa3bbedd25288272b1125e80d9486fe616e8"
-    },
-    "tests/test_wsgi177.py": {
-      "bytes": 17643,
-      "sha256": "bc2d96223d79b06f01d42d59e3aca2670487fc40cdc78d54358f011e6fd154c2"
-    },
-    "docs/HOSTING177.md": {
-      "bytes": 6559,
-      "sha256": "0689876a7659258638982b7a7678746df22241964cac54b6ba22e4036d9c479d"
-    },
-    "tools/app_runtime190.py": {
-      "bytes": 12551,
-      "sha256": "67cd8a765bc01c278187e5c7600d39e8cda67a4ba2f46729cc926788db837d52"
-    },
-    "tests/test_app_runtime190.py": {
-      "bytes": 6860,
-      "sha256": "adeac7d7ea6b558c5162169e99b19623b6587b131a82313f2116ceb323664ba7"
-    },
-    ".github/workflows/traceharbor-app-runtime190.yml": {
-      "bytes": 1269,
-      "sha256": "ee0e21c99aff6cd6561646e99f6f2150d9b0508ab42e61d0211d05c2cae51962"
-    },
-    "release/NEBIUS_APP_RUNTIME190.md": {
-      "bytes": 4880,
-      "sha256": "fd223a93a722490cf855ce67b61337d1a3443693b7dfb1a77d78685a2776aa56"
-    },
-    "tests/test_app_runtime200.py": {
-      "bytes": 8531,
-      "sha256": "8880bd4c862505c535ee0a90f236acb7af1122b1fc75c44d5520e26192ef654c"
-    },
-    ".github/workflows/traceharbor-app-runtime200.yml": {
-      "bytes": 1301,
-      "sha256": "4de1c3df54ec88af0f6b049a3b001ee42c3232996600439c6c3f67b641e3f99e"
     }
   },
   "source_freeze180": {
@@ -1989,27 +2039,5 @@
       "url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
       "version": "4.16.0"
     }
-  ],
-  "ordinary_application_runtime190": {
-    "profile": "APP_RUNTIME_NO_NATIVE_ATTESTATION",
-    "state": "PRIVATE_PROPOSAL_NOT_ADMITTED_OR_ACTIVATED",
-    "legacy_root_model_allowed": "UNCHANGED_NATIVE_DIAGNOSTIC_SCOPE; not waived for oldroutes",
-    "activation": "Requires independent exactsource/credit/outputbound/securecustody/createonlyonce admission; this field does not grant it",
-    "native_custody_or_escrow": false,
-    "request_sha256": "e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2",
-    "owner_free_credit_cap_USD": 1,
-    "new_cash_USD": 0,
-    "once_branch_proposed": "traceharbor/app190/v1/e4b08fa3937e4c83"
-  },
-  "ordinary_application_runtime200": {
-    "profile": "APP_RUNTIME_INPUT_BOUND200",
-    "state": "PRIVATE_NOT_ACCEPTED_ADOPTED_OR_ACTIVATED",
-    "input_sha256": "f57813253ce6f59318354e62d4bee7c6dd133ed33cfc245438d1d5a604cf43a1",
-    "request_sha256": "e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2",
-    "source_and_record_same_input": true,
-    "once_branch_proposed": "traceharbor/app200/v1/e4b08fa3937e4c83",
-    "new_cash_USD": 0,
-    "prior_call_reserved_USD": "0.25",
-    "new_proposed_reserve_USD": "0.25"
-  }
+  ]
 }
