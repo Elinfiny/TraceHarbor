@@ -1,3 +1,18 @@
+# Private correction200 — NOT independently accepted, adopted or activated
+Original190 once-ref/run40173365868 is consumed; no rerun/delete/recreate.
+The published194 wrapper bound harbor82/metric82 request evidence to the unrelated
+demo-complete fixture. This proposal uses exact request4935 and reconstructed
+input598B/f57813253ce6f59318354e62d4bee7c6dd133ed33cfc245438d1d5a604cf43a1.
+Both source hashes and normalized events must match before secret access/HTTP.
+Failed product verification retains only bounded safe diagnostics, validated
+model/usage and captured-byte digest; no provider body/reasoning/headers/secrets.
+A distinct app200 once-ref is PROPOSED, not armed. Prior0.25USD remains reserved
+because actual usage/billing is unknown; new0.25USD proposal makes0.50 held
+within existing1USD free-only grant. New source/caller/contract/publication and
+Master ADOPT require actual independent admission. No paid fallback/new credit.
+The original194 response remains unavailable; its exact invalidfield is unknown.
+The unchanged original190 source-design document follows as historical context.
+
 # Proposed application runtime190 — not activated
 
 TraceHarbor turns synthetic incident evidence into a reviewable dossier with

@@ -1724,8 +1724,8 @@
       "sha256": "0689876a7659258638982b7a7678746df22241964cac54b6ba22e4036d9c479d"
     },
     "tools/app_runtime190.py": {
-      "bytes": 7656,
-      "sha256": "2c4021ec449c871bfab96908e72721b261d5a3a36abcefd7905636c5a893ece9"
+      "bytes": 12551,
+      "sha256": "67cd8a765bc01c278187e5c7600d39e8cda67a4ba2f46729cc926788db837d52"
     },
     "tests/test_app_runtime190.py": {
       "bytes": 6860,
@@ -1736,8 +1736,16 @@
       "sha256": "ee0e21c99aff6cd6561646e99f6f2150d9b0508ab42e61d0211d05c2cae51962"
     },
     "release/NEBIUS_APP_RUNTIME190.md": {
-      "bytes": 3774,
-      "sha256": "ea86544e6e33f3e6b8fafed9b13f3cf3a6fd3401d06835c48eb593634eb23163"
+      "bytes": 4880,
+      "sha256": "fd223a93a722490cf855ce67b61337d1a3443693b7dfb1a77d78685a2776aa56"
+    },
+    "tests/test_app_runtime200.py": {
+      "bytes": 8531,
+      "sha256": "8880bd4c862505c535ee0a90f236acb7af1122b1fc75c44d5520e26192ef654c"
+    },
+    ".github/workflows/traceharbor-app-runtime200.yml": {
+      "bytes": 1301,
+      "sha256": "4de1c3df54ec88af0f6b049a3b001ee42c3232996600439c6c3f67b641e3f99e"
     }
   },
   "source_freeze180": {
@@ -1992,5 +2000,16 @@
     "owner_free_credit_cap_USD": 1,
     "new_cash_USD": 0,
     "once_branch_proposed": "traceharbor/app190/v1/e4b08fa3937e4c83"
+  },
+  "ordinary_application_runtime200": {
+    "profile": "APP_RUNTIME_INPUT_BOUND200",
+    "state": "PRIVATE_NOT_ACCEPTED_ADOPTED_OR_ACTIVATED",
+    "input_sha256": "f57813253ce6f59318354e62d4bee7c6dd133ed33cfc245438d1d5a604cf43a1",
+    "request_sha256": "e4b08fa3937e4c8348383a5abf934ffbf3832183fadc2907018adbc4a04a71b2",
+    "source_and_record_same_input": true,
+    "once_branch_proposed": "traceharbor/app200/v1/e4b08fa3937e4c83",
+    "new_cash_USD": 0,
+    "prior_call_reserved_USD": "0.25",
+    "new_proposed_reserve_USD": "0.25"
   }
 }
