@@ -20,7 +20,7 @@ if (!selectedGroups.size || [...selectedGroups].some(g=>!['1','2','3'].includes(
 const effectKey = 'TRACE180_UI_CORRECTED_QUALIFICATION_ATTEMPT2';
 let qualifiedPython;
 async function runtimeConfig282() {
-  const c=JSON.parse(await fs.readFile(path.join(source,'contracts/ui280_admission.json'),'utf8'));
+  const runtime=process.env.TRACE295_RUNTIME_CONFIG; check(runtime&&path.isAbsolute(runtime),'No admitted root runtime context'); const rs=await fs.lstat(runtime); check(rs.isFile()&&!rs.isSymbolicLink()&&rs.uid===0&&(rs.mode&0o777)===0o440,'Runtime context ownership'); check(await fs.realpath(runtime)===runtime,'Runtime path redirect'); const rb=await fs.readFile(runtime); check(rb.length<=16384&&sha(rb)===process.env.TRACE295_RUNTIME_SHA,'Runtime context hash'); const c=JSON.parse(rb);
   check(c.schema==='TRACE_UI282_CONFIGURATION_V1' && c.status==='ADOPTED_SEPARATE_NATIVE_ADMISSION_REQUIRED','SOURCE_ONLY_UNADMITTED');
   // A config is not independent adoption or native effect authority. The caller
   // must prove both before a separately admitted future attempt2.
@@ -33,7 +33,7 @@ async function runtimeConfig282() {
   check(e.chrome.path===expected.chrome_path&&e.chromedriver.path===expected.driver_path,'Browser path drift');
   qualifiedPython=e.python3.path;
 }
-const tag = 'traceharbor-ui280-attempt2';
+const tag = 'review/traceharbor-v1-browser-qa-base180-162-20261023';
 const expected = JSON.parse(await fs.readFile(path.join(here, 'environment.json'), 'utf8'));
 const guards = JSON.parse(await fs.readFile(path.join(here, 'source-guards.json'), 'utf8'));
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
@@ -71,10 +71,10 @@ async function sourceCheck() {
 function eventCheck() {
   check(process.env.GITHUB_ACTIONS === 'true' && process.env.RUNNER_ENVIRONMENT === 'github-hosted', 'No admitted standard hosted CI context.');
   check(os.userInfo().uid !== 0, 'Root browser execution refused; sandbox must remain intact.');
-  check(process.env.GITHUB_EVENT_NAME === 'create' && process.env.GITHUB_RUN_ATTEMPT === '1', 'Only original create attempt is eligible.');
+  check(process.env.GITHUB_EVENT_NAME === 'push' && process.env.GITHUB_RUN_ATTEMPT === '1', 'Only separately admitted push attempt1 is eligible.');
   const ev = JSON.parse(execFileSync(qualifiedPython, ['-B','-c',
     'import json,os;print(json.dumps(json.load(open(os.environ["GITHUB_EVENT_PATH"]))))'], {encoding:'utf8', maxBuffer:262144}));
-  check(ev.ref_type === 'branch' && ev.ref === tag && ev.repository.id === 1391430317 && ev.repository.private === false,
+  check(ev.ref === 'refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023' && process.env.GITHUB_REF===ev.ref && ev.before==='7fc30e33c753b5335b1492a74eb09889d83b479d' && ev.after===process.env.GITHUB_SHA && ev.created===false && ev.deleted===false && ev.forced===false && ev.repository.id === 1391430317 && ev.repository.private === false,
     'Wrong event ref/repository/visibility.');
   check(ev.sender.id === 273768139 && process.env.GITHUB_ACTOR_ID === '273768139', 'Wrong actual event actor.');
   check(process.env.GITHUB_REPOSITORY === 'Elinfiny/TraceHarbor' && /^[0-9a-f]{40}$/.test(process.env.GITHUB_SHA || ''), 'Unpinned source.');

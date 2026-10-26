@@ -1,98 +1,64 @@
 {
   "schema": "TRACE_UI282_CONFIGURATION_V1",
   "status": "SOURCE_ONLY_NOT_ADOPTED",
-  "canonical_base": "cf8c389bb24fe3eb2f9f2f62d55ced5108205951",
-  "capability_branch": "review/traceharbor-v1-browser-qa-base180-162-20261023",
-  "future_ui_branch": "traceharbor-ui280-attempt2",
   "ui_workflow_enabled": false,
   "external_native_admission_required": true,
-  "no_authority_from_config": true,
+  "authority": "Only externalMasterCAS+independentAudit+authenticatednativeGitHubcommit/event rootpublication; no newcredential/MACkeyservice",
+  "parent": "7fc30e33c753b5335b1492a74eb09889d83b479d",
+  "full_ref": "refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023",
+  "new_effect": "NOT_ADMITTED; new distinct correctedUIeffect, never282rearm",
   "runtime_sha256": {
-    "tools/ui267/qualify.mjs": "c25e649a720226607f6ad3dd1024fae2f45e7c49163bbee92974768f845f50a1",
-    "tools/ui280/run_owned_scope.py": "199c45ef03a5140afa8df2be70e68f233f992fd9916ab930ae8b1ee639a2f646",
-    ".github/workflows/traceharbor-ui280.yml": "048e9b7f5f1cc1603a1ba93dca76f30cdf9a801136e6e59865a34037b22aa94a"
+    "tools/ui280/owned_supervisor295.py": "31a0d27d618bd903f8d4a39254d2b6cbd456fdbec1d42d8a8e79aea44e5ec032",
+    "tools/ui280/bootstrap295.py": "66c4fc670d8cc53cf47a70ba48dd5abe76b5f86d687e24fec0891e7206f1ee35",
+    "tools/ui267/qualify.mjs": "a55d74edb3caea4346b86f2e577ecef46c85d3deb81fd991f59c52081c6d2bad"
   },
   "required_executables": {
     "node": {
       "state": "NOT_QUALIFIED",
       "path": null,
-      "sha256": null,
-      "actual_version": null
+      "sha256": null
     },
     "python3": {
       "state": "NOT_QUALIFIED",
       "path": null,
-      "sha256": null,
-      "actual_version": null
+      "sha256": null
     },
     "systemd-run": {
       "state": "NOT_QUALIFIED",
       "path": null,
-      "sha256": null,
-      "actual_version": null
+      "sha256": null
     },
     "systemctl": {
       "state": "NOT_QUALIFIED",
       "path": null,
-      "sha256": null,
-      "actual_version": null
+      "sha256": null
     },
     "chrome": {
       "state": "NOT_QUALIFIED",
       "path": null,
-      "sha256": null,
-      "actual_version": null
+      "sha256": null
     },
     "chromedriver": {
       "state": "NOT_QUALIFIED",
       "path": null,
-      "sha256": null,
-      "actual_version": null
+      "sha256": null
     }
   },
-  "required_manager": "Actual systemd255 compatible fail-create semantics; exact installed behavior/binaries must be independently qualified before future separate UIadmission",
-  "required_native_facts": [
-    "native job setup header",
-    "actual Ubuntu24.04 and exact expected versions",
-    "unique owned nested cgroup with320MiB physical cap/swap0/RO tree",
-    "controller/manager overhead within actualwhole cap",
-    "nonroot Chrome and supported sandbox/usernamespace",
-    "independent exact source/config adoption and native once/CAS admission"
-  ],
+  "future_runtime_config": "Rootreadonlyruntime295.json fromverifiedexternaladmission; no mutation ofSOURCE_ONLYsourceconfig; actualnativepins/budget/manager/sandbox stillrequired",
   "limits": {
-    "kernel_UI_memory_max": 335544320,
-    "swap_max": 0,
-    "capability_stdout_max": 32768,
-    "native_job_log_max": 65536,
-    "job_timeout_s": 180
+    "parent_AS": [
+      67108864,
+      100663296
+    ],
+    "Python_fixture_child_AS": 100663296,
+    "child_s": 5,
+    "overall_fixture_group_s": 60,
+    "manager_call_s": 5,
+    "runtime_s": 180,
+    "stop_s": 5,
+    "physical": 335544320,
+    "swap": 0,
+    "whole": 536870912
   },
-  "source_pins_non_circular": "Exactly three runtime hashes here. Config own hash is in external freeze/manifest, never in itself. No source may be activated by this config alone.",
-  "read_only_is_not_UI_qualification": true,
-  "current_actual_host_facts": "NOT_OBSERVED; this source publication or fake fixture does not fill actual pins",
-  "old_UI_effect": "CONSUMED_KNOWN_FAILURE_UNCHANGED; no replay",
-  "future_cleanup": "No collect; RemainAfterExit exact InvocationID/readback, stop only same-owned invocation; absence or foreign identity UNKNOWN, never cleanup proof",
-  "bounded_startup284": {
-    "parent_AS_soft": 67108864,
-    "parent_AS_hard": 100663296,
-    "child_AS": 100663296,
-    "initial_and_postimports_VmSize_max": 58720256,
-    "one_direct_child": true,
-    "owned_group_aggregate_VmSize_observed_limit": 167772160,
-    "kernel_aggregate_limit": "NOT_PROVED; no8GiB root cgroup relabel",
-    "timeout_child_s": 5,
-    "checkout_bytes_max": 16777216,
-    "source": "FreshPython -I -S -B; Git bootstrap and exec collector remain same bounded process; no Node checkout",
-    "source_only_future_UI": "No new admission. Existing future --wait/RemainAfterExit and fullChrome hashing require independent review before any UIactivation."
-  },
-  "capability_event": {
-    "name": "push",
-    "before": "cf8c389bb24fe3eb2f9f2f62d55ced5108205951",
-    "full_ref": "refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023",
-    "created": false,
-    "deleted": false,
-    "forced": false,
-    "sole_parent": "cf8c389bb24fe3eb2f9f2f62d55ced5108205951",
-    "effect": "TRACE180_READONLY_HOST_CAPABILITY282"
-  },
-  "private_revision289": "SOURCE_ONLY: public bounded Git object read validates full raw commit ID/tree/soleparentcf8c BEFORE checkout; wrapperSHA beforeexec; independentnativepublicationadmission stillrequired; preserve PR45consumer."
+  "default_activation": "No nativecommitadmission/no rootanchor => refuse; currentpublicUIliteralfalse unchanged"
 }
