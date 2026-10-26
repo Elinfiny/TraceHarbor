@@ -1,0 +1,23 @@
+{
+  "schema": "TRACE267_EXISTING_IMAGE_EXPECTATIONS_V1",
+  "runner_label": "ubuntu-24.04",
+  "image_version": "20261023.334.3",
+  "image_source_commit": "aa2d9f91221232debee20fcb34746384a3688579",
+  "image_readme_git_blob": "572b75495a1270994896966fc014316a7cb7a7d0",
+  "image_readme_url": "https://github.com/actions/runner-images/blob/aa2d9f91221232debee20fcb34746384a3688579/images/ubuntu/Ubuntu2404-Readme.md",
+  "availability": "PROVIDER_IMAGE_ADVERTISED_ONLY; actualrunner notallocated or qualified267",
+  "chrome_path": "/usr/bin/google-chrome",
+  "chrome_version": "155.0.8059.39",
+  "driver_path": "/usr/local/share/chromedriver-linux64/chromedriver",
+  "node_version": "v22.23.3",
+  "python_version": "3.12.3",
+  "path_truth": "Expectedstandardpackagepaths forproposedCI; NOTobservedoncurrentcloudruntime. Mustexistandversionmatch beforebrowserlaunch. No install/alternatepath/version fallback.",
+  "limits": {
+    "job_seconds": 300,
+    "driver_seconds": 180,
+    "resident_app_browser_driver_sum_bytes": 335544320,
+    "whole_bytes": 536870912,
+    "newmedia": 0,
+    "cash": 0
+  }
+}

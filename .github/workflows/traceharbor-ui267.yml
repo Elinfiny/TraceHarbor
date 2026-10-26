@@ -1,0 +1,40 @@
+{
+  "name": "TraceHarbor267 one real UI qualification",
+  "on": {
+    "create": null
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "traceharbor-ui267-once-b04e4ac4849f",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "ui": {
+      "if": "github.event_name == 'create' && github.event.ref_type == 'branch' && github.event.ref == 'traceharbor-ui267-b04e4ac4849f' && github.repository_id == '1391430317' && github.repository_owner_id == '273768139' && github.actor_id == '273768139' && github.event.repository.private == false && github.run_attempt == 1 && github.workflow_sha == github.sha",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 5,
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TRACE267_WORKFLOW_SHA": "${{ github.workflow_sha }}"
+      },
+      "steps": [
+        {
+          "name": "Checkout exact natively admitted created-branch source",
+          "uses": "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+          "with": {
+            "ref": "${{ github.sha }}",
+            "fetch-depth": 1,
+            "persist-credentials": false
+          }
+        },
+        {
+          "name": "One actual loopback UI qualification no downloads or provider calls",
+          "shell": "bash",
+          "run": "set -euo pipefail\nnode --max-old-space-size=32 tools/ui267/qualify.mjs --source \"$GITHUB_WORKSPACE\" --out \"$RUNNER_TEMP/trace-ui267\"\n"
+        }
+      ]
+    }
+  }
+}

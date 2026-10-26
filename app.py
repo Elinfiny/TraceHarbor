@@ -7,6 +7,7 @@ import sys
 from core import InputError, MAX_BYTES, parse_json
 from service import analyze
 from live_service import verify_import
+from evolution import evolve, verify_evolution, SCHEMA as EVOLUTION_SCHEMA
 from verifier import VerificationError
 
 ROOT = Path(__file__).resolve().parent
@@ -34,12 +35,14 @@ class Handler(BaseHTTPRequestHandler):
         if not self.allowed(): return self.error(403, 'Loopback Host/Origin required.')
         if self.path in STATIC:
             name, kind = STATIC[self.path]; return self.respond(200, (ROOT/'web'/name).read_bytes(), kind)
+        if self.path == '/scenarios/evolution.json':
+            return self.respond(200, (ROOT/'scenarios'/'evolution.json').read_bytes())
         if self.path.startswith('/fixtures/') and self.path[10:] in {n+'.json' for n in CASES}:
             return self.respond(200, (ROOT/'fixtures'/self.path[10:]).read_bytes())
         self.error(404, 'Not found.')
     def do_POST(self):
         if not self.allowed(): return self.error(403, 'Loopback Host/Origin required.')
-        if self.path not in ('/analyze', '/verify'): return self.error(404, 'Not found.')
+        if self.path not in ('/analyze', '/verify', '/evolution'): return self.error(404, 'Not found.')
         if self.headers.get('Transfer-Encoding'): return self.error(400, 'Chunked uploads are not supported.')
         if self.headers.get_content_type() != 'application/json': return self.error(415, 'JSON required.')
         try: length = int(self.headers.get('Content-Length', '-1'))
@@ -49,7 +52,13 @@ class Handler(BaseHTTPRequestHandler):
         try:
             raw = self.rfile.read(length)
             if len(raw) != length: raise InputError('Truncated upload.')
-            result = verify_import(parse_json(raw)) if self.path == '/verify' else analyze(raw)
+            if self.path == '/evolution':
+                result = evolve(parse_json(raw))
+            elif self.path == '/verify':
+                data = parse_json(raw)
+                result = verify_evolution(data) if isinstance(data, dict) and data.get('schema') == EVOLUTION_SCHEMA else verify_import(data)
+            else:
+                result = analyze(raw)
             self.respond(200, json.dumps(result, ensure_ascii=False, allow_nan=False).encode())
         except (InputError, VerificationError, ValueError) as exc: self.error(400, str(exc))
         except TimeoutError: self.error(408, 'Upload timeout.')

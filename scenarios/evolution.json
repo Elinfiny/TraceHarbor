@@ -1,0 +1,81 @@
+{
+  "schema": "traceharbor.evolution-scenario.v1",
+  "synthetic": true,
+  "before": {
+    "schema": "traceharbor.input.v1",
+    "synthetic": true,
+    "case_id": "relay-evolution265",
+    "title": "Relay-42: from unknown timeout to a reviewable mechanism",
+    "sources": [
+      {
+        "id": "observations",
+        "kind": "log",
+        "title": "Synthetic incident observations; cause not supplied",
+        "events": [
+          {
+            "id": "timeout",
+            "timestamp": "2031-02-19T08:17:01Z",
+            "text": "{\"duration_ms\":120,\"incident\":\"relay-42\",\"outcome\":\"timeout\",\"record\":\"observation\",\"release\":\"r17\",\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\"}"
+          }
+        ]
+      }
+    ]
+  },
+  "expected_before_sha256": "9e69bbcfcbe4eacc6c1e9efdc0af44530cf3bb75099a8589b49369ff4ea3792b",
+  "captured_source": {
+    "id": "verification",
+    "kind": "audit",
+    "title": "Captured synthetic configuration and paired threshold replays",
+    "events": [
+      {
+        "id": "runtime",
+        "timestamp": "2031-02-19T08:17:01Z",
+        "text": "{\"approved_task_deadline_ms\":5000,\"capture_id\":\"worker-a-r17-window42\",\"incident\":\"relay-42\",\"record\":\"configuration\",\"release\":\"r17\",\"task_deadline_ms\":50,\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\"}"
+      },
+      {
+        "id": "replay-short",
+        "timestamp": "2031-02-19T08:17:01Z",
+        "text": "{\"duration_ms\":120,\"harness_sha256\":\"bf2a5a31e58daab441f3255a0cd2cebba65d1f70cd8c0380cae80f62b5747b95\",\"incident\":\"relay-42\",\"outcome\":\"timeout\",\"record\":\"replay\",\"release\":\"r17\",\"task_deadline_ms\":50,\"trial\":\"short\",\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\",\"workload_sha256\":\"1ea5afe1282bed2ef9d785f3e42e18e0a9a6bd3dd4fd27c6ce792b93f3e839da\"}"
+      },
+      {
+        "id": "replay-target",
+        "timestamp": "2031-02-19T08:17:01Z",
+        "text": "{\"duration_ms\":120,\"harness_sha256\":\"bf2a5a31e58daab441f3255a0cd2cebba65d1f70cd8c0380cae80f62b5747b95\",\"incident\":\"relay-42\",\"outcome\":\"completed\",\"record\":\"replay\",\"release\":\"r17\",\"task_deadline_ms\":5000,\"trial\":\"target\",\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\",\"workload_sha256\":\"1ea5afe1282bed2ef9d785f3e42e18e0a9a6bd3dd4fd27c6ce792b93f3e839da\"}"
+      }
+    ]
+  },
+  "contrary_source": {
+    "id": "conflicting-capture",
+    "kind": "configuration",
+    "title": "Contrary synthetic runtime sample for the same incident context",
+    "events": [
+      {
+        "id": "runtime-other",
+        "timestamp": "2031-02-19T08:17:01Z",
+        "text": "{\"approved_task_deadline_ms\":5000,\"capture_id\":\"second-collector-window42\",\"incident\":\"relay-42\",\"record\":\"configuration\",\"release\":\"r17\",\"task_deadline_ms\":5000,\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\"}"
+      }
+    ]
+  },
+  "ground_truth": {
+    "kind": "SIMULATED_SYNTHETIC_REFERENCE_NOT_PROVIDER_OUTPUT",
+    "workload": {
+      "request_count": 1,
+      "simulated_latency_ms": 120,
+      "dependency": "synthetic-constant-120ms"
+    },
+    "workload_sha256": "1ea5afe1282bed2ef9d785f3e42e18e0a9a6bd3dd4fd27c6ce792b93f3e839da",
+    "harness_description": "SYNTHETIC threshold emulator v1: duration_ms > task_deadline_ms gives timeout; otherwise completed. No real network or wall-clock replay.",
+    "harness_sha256": "bf2a5a31e58daab441f3255a0cd2cebba65d1f70cd8c0380cae80f62b5747b95",
+    "controlled_variable": "task_deadline_ms",
+    "values_ms": [
+      50,
+      5000
+    ],
+    "constant_duration_ms": 120,
+    "expected_outcomes": [
+      "timeout",
+      "completed"
+    ],
+    "limits": "A deterministic threshold emulator, not a production experiment. Captures are declared synthetic; real provenance remains unverified."
+  }
+}

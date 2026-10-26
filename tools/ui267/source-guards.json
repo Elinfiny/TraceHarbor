@@ -1,0 +1,157 @@
+{
+  "schema": "TRACE_UI267_SOURCE_GUARDS_V1",
+  "candidate265_sha256": "b04e4ac4849fb5d74cd86b5da050185d5fbc6b3334207767861ccf21e49d8f2a",
+  "baseline_commit": "cf8c389bb24fe3eb2f9f2f62d55ced5108205951",
+  "exact_runtime_files": [
+    {
+      "path": "EVIDENCE_EVOLUTION.md",
+      "bytes": 4075,
+      "sha256": "1564a0cdabe6eee666a1b8e38bf8c0b11054c11e1b947cb247e7df481aa5c02b",
+      "git_blob": "c4126bb89fe3d9e9de765b08c21a06e9ec6f2bfb"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1081,
+      "sha256": "2b7b8c54f44d0332b027baf0d0c8df4042d315516645266649bdb355a218004b",
+      "git_blob": "5fd6e0433878a3202ffe231344b0e8fabd4fe6fb"
+    },
+    {
+      "path": "README.md",
+      "bytes": 16295,
+      "sha256": "62cd149d49d077ebc61902f50340f78783868052c551fc803f3f9fe00c9dfc0b",
+      "git_blob": "4a681bb1e5fcfc83f064c1bcdd360a4c58de7437"
+    },
+    {
+      "path": "adapters.py",
+      "bytes": 4015,
+      "sha256": "8f43a7277cd68d19eeba081b1ba2d9370ae608e6b3a332d0246d2b0969e08cd1",
+      "git_blob": "30943982158a0fe376682ad3362b8cc8c4d9a5bc"
+    },
+    {
+      "path": "app.py",
+      "bytes": 5152,
+      "sha256": "a6fa8b2c2294db094b7cfe2173e77cccce426bbebc5f83201a91576fb32b50c7",
+      "git_blob": "86596444e22542b8a4c42248b65b8753f426c2f4"
+    },
+    {
+      "path": "core.py",
+      "bytes": 7606,
+      "sha256": "fd82f5ef30590b251954e17e9b179678c610b4b2b4349e28ba0340d4f48ab816",
+      "git_blob": "9fbfac2f3d1c4d02a847835e6c3a0aaed156b408"
+    },
+    {
+      "path": "evolution.py",
+      "bytes": 11770,
+      "sha256": "ecba16d8a1782e19670306c1eab4bea5318b4ec9bea3b97423d409b25c95b5b2",
+      "git_blob": "8132cc48de8805c69a4261c82aa6dd3c75c64d37"
+    },
+    {
+      "path": "examples/recorded/provider_record228.json",
+      "bytes": 6426,
+      "sha256": "49fda59baa5c0dfeadfd64a12fc28ff4c208da9e01881c68587ef62d259bfc47",
+      "git_blob": "c3a172aebda0b3cadbfd899ceb5f4a2ef93c0dd1"
+    },
+    {
+      "path": "fixtures/complete.json",
+      "bytes": 1719,
+      "sha256": "b0abb0e5d42b8508e4fd8ebf92289a9576b94c27003fd77399ad0ff5288f06f6",
+      "git_blob": "c69567289ed45fe2afb07bf2bf82f36f802c8ca6"
+    },
+    {
+      "path": "fixtures/contradictory.json",
+      "bytes": 2683,
+      "sha256": "9ae9b920e93037914bf05fcd4954bb5ec6504c376f74fb0e65f6b94f83f4b330",
+      "git_blob": "a8a734643b966f31ec8deebb6507a29277faf574"
+    },
+    {
+      "path": "fixtures/missing.json",
+      "bytes": 1393,
+      "sha256": "b96afa3a7ce4837771b03f742b09a7582c9e0d86f648e74115ef88b1a31d67f3",
+      "git_blob": "01ad3c3b97071ee2cd01a7d0e0c527d3116e591c"
+    },
+    {
+      "path": "live_service.py",
+      "bytes": 4121,
+      "sha256": "93671023e6727184217c29faad2b3ba2c04dbc66e57841cfba2b8c5fd9deae56",
+      "git_blob": "0311bd2bc2d8693788977edffe358502af9a671e"
+    },
+    {
+      "path": "output.schema.json",
+      "bytes": 17189,
+      "sha256": "a7b4ce73a452c3530533b3c713d016f1157df672907d2f16687bdfe6d0e3c513",
+      "git_blob": "6877a794514bc0d234bd25f1a80e9c0614c3d45d"
+    },
+    {
+      "path": "references/expectations.json",
+      "bytes": 1308,
+      "sha256": "20997989f5e5c7c37fa80ed032e27d8012036f26719d2291c1c805889dc9a163",
+      "git_blob": "0bf48ed7e6a9121f1d4d5bcd34d6bec2cad2d286"
+    },
+    {
+      "path": "scenarios/evolution.json",
+      "bytes": 3851,
+      "sha256": "1a43f4fe3f57a3432a90c51589dbe51a06d3d0b2e74f839b4242e94d128ab723",
+      "git_blob": "4e07f3ae80db4f4299ad8ae0fcba52c0419c5c90"
+    },
+    {
+      "path": "service.py",
+      "bytes": 4693,
+      "sha256": "de05c2a3cc0ac6afd2e98b867dea4617c52534c69d15b5d9bbfaf490c85f94c4",
+      "git_blob": "c58be8b923818a87fe5cc2f544b2ddaefbde8edc"
+    },
+    {
+      "path": "tests/test_evolution265.py",
+      "bytes": 8378,
+      "sha256": "8a9ffa19ec6628564b35fdbebb0900fb40a3e549ccd5562ba5fddf6602abcc24",
+      "git_blob": "0861ce30628f1b8003e402c89ac297d560f489b6"
+    },
+    {
+      "path": "verifier.py",
+      "bytes": 4493,
+      "sha256": "6ef90062e4d6e8af7c81457965d5f36c2905815e25685ccb316ba01b7b23a290",
+      "git_blob": "8a0ac08f3a4e476d7c56e23cfebe0ef793e50dd8"
+    },
+    {
+      "path": "web/app.js",
+      "bytes": 14832,
+      "sha256": "3489d94c5cb35f42a6364a6219691b75ce4f20e036bfc5aebdbb98bccac0b416",
+      "git_blob": "44b75482f709f07cd53eb120f96d0fcec1817f27"
+    },
+    {
+      "path": "web/index.html",
+      "bytes": 2571,
+      "sha256": "fdc47f08025804953218c616bed8cb1c34cee95bac0583723f9e5adb5fc46a18",
+      "git_blob": "edcccff0c6d82afcdcc84f9c018d8789085c853a"
+    },
+    {
+      "path": "web/style.css",
+      "bytes": 4540,
+      "sha256": "eace51942db0496cffb28959f141bcf104bf0183727b30dde8725b1d896a760e",
+      "git_blob": "c59213dc2f412c605009ce3305021a1b0ae3e9dd"
+    }
+  ],
+  "extra_repository_paths": "Allowed unchangedcanonicalrepo paths; onlymanifestedruntime loaded. No dynamicnetwork transport invocation.",
+  "fixture": {
+    "incident_id": "relay-evolution265",
+    "title": "Relay-42: from unknown timeout to a reviewable mechanism",
+    "support_quotes": [
+      "{\"duration_ms\":120,\"incident\":\"relay-42\",\"outcome\":\"timeout\",\"record\":\"observation\",\"release\":\"r17\",\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\"}",
+      "{\"approved_task_deadline_ms\":5000,\"capture_id\":\"worker-a-r17-window42\",\"incident\":\"relay-42\",\"record\":\"configuration\",\"release\":\"r17\",\"task_deadline_ms\":50,\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\"}",
+      "{\"duration_ms\":120,\"harness_sha256\":\"bf2a5a31e58daab441f3255a0cd2cebba65d1f70cd8c0380cae80f62b5747b95\",\"incident\":\"relay-42\",\"outcome\":\"timeout\",\"record\":\"replay\",\"release\":\"r17\",\"task_deadline_ms\":50,\"trial\":\"short\",\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\",\"workload_sha256\":\"1ea5afe1282bed2ef9d785f3e42e18e0a9a6bd3dd4fd27c6ce792b93f3e839da\"}",
+      "{\"duration_ms\":120,\"harness_sha256\":\"bf2a5a31e58daab441f3255a0cd2cebba65d1f70cd8c0380cae80f62b5747b95\",\"incident\":\"relay-42\",\"outcome\":\"completed\",\"record\":\"replay\",\"release\":\"r17\",\"task_deadline_ms\":5000,\"trial\":\"target\",\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\",\"workload_sha256\":\"1ea5afe1282bed2ef9d785f3e42e18e0a9a6bd3dd4fd27c6ce792b93f3e839da\"}"
+    ],
+    "contrary_quote": "{\"approved_task_deadline_ms\":5000,\"capture_id\":\"second-collector-window42\",\"incident\":\"relay-42\",\"record\":\"configuration\",\"release\":\"r17\",\"task_deadline_ms\":5000,\"window\":\"2031-02-19T08:17:00Z\",\"worker\":\"worker-a\"}",
+    "contrary_source": "conflicting-capture",
+    "before": "UNKNOWN",
+    "after": "SUPPORTED SYNTHETIC RULE",
+    "after_analysis_status": "uncertain",
+    "conflict": "CONFLICTED",
+    "original_source_mode": "DETERMINISTIC_SYNTHETIC_RULES_NO_AI"
+  },
+  "acceptance_groups": [
+    "desktop realrender/start+add<=2 ordinaryactions and30sec",
+    "conflict/exactcitations/sourcefocus/keyboard/exportreimport",
+    "360px mobile anddesktop readable/nooverflow"
+  ],
+  "no_old_backend_campaign": true
+}
