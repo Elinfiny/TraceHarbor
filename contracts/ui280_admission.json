@@ -1,0 +1,98 @@
+{
+  "schema": "TRACE_UI282_CONFIGURATION_V1",
+  "status": "SOURCE_ONLY_NOT_ADOPTED",
+  "canonical_base": "cf8c389bb24fe3eb2f9f2f62d55ced5108205951",
+  "capability_branch": "review/traceharbor-v1-browser-qa-base180-162-20261023",
+  "future_ui_branch": "traceharbor-ui280-attempt2",
+  "ui_workflow_enabled": false,
+  "external_native_admission_required": true,
+  "no_authority_from_config": true,
+  "runtime_sha256": {
+    "tools/ui267/qualify.mjs": "c25e649a720226607f6ad3dd1024fae2f45e7c49163bbee92974768f845f50a1",
+    "tools/ui280/run_owned_scope.py": "199c45ef03a5140afa8df2be70e68f233f992fd9916ab930ae8b1ee639a2f646",
+    ".github/workflows/traceharbor-ui280.yml": "048e9b7f5f1cc1603a1ba93dca76f30cdf9a801136e6e59865a34037b22aa94a"
+  },
+  "required_executables": {
+    "node": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null,
+      "actual_version": null
+    },
+    "python3": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null,
+      "actual_version": null
+    },
+    "systemd-run": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null,
+      "actual_version": null
+    },
+    "systemctl": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null,
+      "actual_version": null
+    },
+    "chrome": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null,
+      "actual_version": null
+    },
+    "chromedriver": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null,
+      "actual_version": null
+    }
+  },
+  "required_manager": "Actual systemd255 compatible fail-create semantics; exact installed behavior/binaries must be independently qualified before future separate UIadmission",
+  "required_native_facts": [
+    "native job setup header",
+    "actual Ubuntu24.04 and exact expected versions",
+    "unique owned nested cgroup with320MiB physical cap/swap0/RO tree",
+    "controller/manager overhead within actualwhole cap",
+    "nonroot Chrome and supported sandbox/usernamespace",
+    "independent exact source/config adoption and native once/CAS admission"
+  ],
+  "limits": {
+    "kernel_UI_memory_max": 335544320,
+    "swap_max": 0,
+    "capability_stdout_max": 32768,
+    "native_job_log_max": 65536,
+    "job_timeout_s": 180
+  },
+  "source_pins_non_circular": "Exactly three runtime hashes here. Config own hash is in external freeze/manifest, never in itself. No source may be activated by this config alone.",
+  "read_only_is_not_UI_qualification": true,
+  "current_actual_host_facts": "NOT_OBSERVED; this source publication or fake fixture does not fill actual pins",
+  "old_UI_effect": "CONSUMED_KNOWN_FAILURE_UNCHANGED; no replay",
+  "future_cleanup": "No collect; RemainAfterExit exact InvocationID/readback, stop only same-owned invocation; absence or foreign identity UNKNOWN, never cleanup proof",
+  "bounded_startup284": {
+    "parent_AS_soft": 67108864,
+    "parent_AS_hard": 100663296,
+    "child_AS": 100663296,
+    "initial_and_postimports_VmSize_max": 58720256,
+    "one_direct_child": true,
+    "owned_group_aggregate_VmSize_observed_limit": 167772160,
+    "kernel_aggregate_limit": "NOT_PROVED; no8GiB root cgroup relabel",
+    "timeout_child_s": 5,
+    "checkout_bytes_max": 16777216,
+    "source": "FreshPython -I -S -B; Git bootstrap and exec collector remain same bounded process; no Node checkout",
+    "source_only_future_UI": "No new admission. Existing future --wait/RemainAfterExit and fullChrome hashing require independent review before any UIactivation."
+  },
+  "capability_event": {
+    "name": "push",
+    "before": "cf8c389bb24fe3eb2f9f2f62d55ced5108205951",
+    "full_ref": "refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023",
+    "created": false,
+    "deleted": false,
+    "forced": false,
+    "sole_parent": "cf8c389bb24fe3eb2f9f2f62d55ced5108205951",
+    "effect": "TRACE180_READONLY_HOST_CAPABILITY282"
+  },
+  "private_revision289": "SOURCE_ONLY: public bounded Git object read validates full raw commit ID/tree/soleparentcf8c BEFORE checkout; wrapperSHA beforeexec; independentnativepublicationadmission stillrequired; preserve PR45consumer."
+}
