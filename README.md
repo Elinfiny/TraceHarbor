@@ -4,6 +4,117 @@ An incident evidence desk for synthetic cases. Inspect a timeline, compare hypot
 follow exact citations, see what remains unknown, and export a verifiable dossier.
 Remediation is always a proposal; this application cannot execute it.
 
+## Current delivery — 25 October 2026
+
+TraceHarbor has two distinct paths:
+
+- **Offline evidence desk:** complete, missing and conflicting synthetic cases,
+  timelines, exact quotations, dossier export and verified reimport. This path is
+  deterministic, makes no model calls and needs no key, account or payment.
+- **Recorded NVIDIA/Nebius result:** the first verified provider record came from
+  one separately admitted runtime call to `nvidia/Nemotron-3_5-Lightning` through
+  Nebius Token Factory. Its result is **unknown**, with empty hypotheses and empty
+  remediation. That is valid abstention and an inconclusive result, not a proven
+  cause or a deterministic reference verdict.
+
+The exact integration source is commit
+`b6ba287704350a304dc6a57760a4103def57d2eb`:
+https://github.com/Elinfiny/TraceHarbor/tree/b6ba287704350a304dc6a57760a4103def57d2eb.
+The actual native execution is
+https://github.com/Elinfiny/TraceHarbor/actions/runs/40206978963,
+job https://github.com/Elinfiny/TraceHarbor/actions/runs/40206978963/job/121209913696.
+The create event used the repository owner, attempt 1 and that exact source commit.
+The job passed its eight pre-secret contract checks, made one request and finished
+successfully. HTTP 200 returned 10,630 bytes; reported usage was 1,929 prompt and 1,046
+completion tokens, 2,975 total. These are execution facts, not a general model-quality
+or causal-validity claim. The four admitted requests are consumed. **Do not rerun
+the 190, 200, 214 or 220 workflows/profiles or the archived three-request probe.**
+No further inference is part of installation, importing or testing the recorded result.
+
+### Download and run the key-free test build
+
+For installation, use the **delivery commit containing [this README](README.md)
+and the [bundled record](examples/recorded/provider_record228.json)**. In that
+immutable delivery commit view, choose **Code → Download ZIP**, extract into an
+empty directory and change into the directory containing `app.py`, `fixtures/`,
+`references/`, `web/` and `examples/`. The earlier `b6ba287…` source link documents
+runtime provenance; that commit does not contain the bundled recorded-result file
+and is not the delivery download. Obtain the delivery commit hash and its
+immutable raw/archive URLs from the actual published commit, never a prospective
+self-hash. Use Python 3.12 or later; no package installation, SDK, model weights,
+API key or provider payment is needed.
+The repository archive is source, not a hosted inference endpoint. Its bytes have
+not been newly downloaded or installation-qualified for this update. The separately
+accepted `TraceHarbor_OFFLINE_Testbuild175.zip` is a different archive
+(102,974 bytes; SHA-256
+`e6eb713a79483a41872e8e19bb04898b25a7f6e0f2367169f061d504f962218f`).
+Do not present that ZIP as identical to GitHub's source archive; its exact public
+binary download URL has not been verified. At the accepted integration commit above, all 19 offline source files match the
+accepted175 build. This documentation correction changes the README hash; the
+other 18 whole-file hashes remain unchanged. The original README is recoverable
+from its archived content and the retained preimage.
+
+In a separately permitted browser environment:
+
+```sh
+python3 -B app.py serve --port 8787
+```
+
+Open `http://127.0.0.1:8787`, select Full, Missing or Conflicting, inspect exact
+citations and export/reimport a dossier. This is a user installation instruction,
+not evidence of a new preview, visual QA or permission to bypass a host restriction.
+The existing offline CLI also works without starting a server:
+
+```sh
+python3 -B app.py analyze fixtures/missing.json
+```
+
+For a create-only file export, add `--out` with an absent output filename. Existing
+files are intentionally not overwritten. Unknown or contradictory evidence must
+remain visible; remediation stays a proposal and cannot execute changes.
+
+### Inspect the real recorded result without another API call
+
+Use the [unchanged provider record](examples/recorded/provider_record228.json) in
+this source tree. The relative link resolves within the selected commit; use the
+same immutable commit view when downloading the source and record.
+The record is 6,426 bytes with SHA-256
+`49fda59baa5c0dfeadfd64a12fc28ff4c208da9e01881c68587ef62d259bfc47`.
+Save the original bytes, then choose **Verify imported dossier** in the desk.
+The existing `/verify` path applies `live_service.verify_import`; importing the
+saved result makes no inference call and needs no expiring provider credit.
+For an offline terminal check with the unchanged application verifier:
+
+```sh
+python3 -B -c 'import json; from pathlib import Path; from live_service import verify_import; d=verify_import(json.loads(Path("examples/recorded/provider_record228.json").read_text(encoding="utf-8"))); print(json.dumps({"mode":d["mode"],"status":d["analysis"]["status"],"semantic_reference":d["verification"]["semantic_reference"]},sort_keys=True,separators=(",",":")))'
+```
+
+Expected declarations are `PROVIDER_RESPONSE_RECORD`, `unknown` and `NOT_VERIFIED`.
+The record's unkeyed hashes check integrity; the JSON alone does not authenticate
+a provider call. Use the separate native job/source/event evidence above for the
+runtime claim. Original HTTP-body SHA-256 is
+`d909b9f24b69e3b76df74a30c0a8557b4569c59ace75c8b423a0bb784189c214`;
+the provider metadata's canonical parsed-response digest is
+`fc5179459d2855c1379010b1f56fe43d9ad28589998207b8a840e49c3541ce5c`.
+They identify different representations and must not be forced equal.
+Raw response bodies, reasoning, credentials and headers are not distributed.
+
+The promised offline functions and recorded-result import have no model-credit
+expiry or judge-key requirement. A continuously available inference endpoint is
+not promised. These distribution instructions do not establish final contest
+eligibility. Application-GUI/video review, final entrant/rights review, video
+publication and submission remain open; no final contest entry is claimed.
+
+## Archived 27 September delivery snapshot
+
+The collapsed snapshot below is retained as history. Its date-specific current,
+inactive-integration and not-yet-live statements describe 27 September, not the
+25 October result above. Its probe/admission examples are historical documentation,
+**not current testing instructions or authority to reset consumed operations**.
+
+<details>
+<summary>Historical README content — not a current run procedure</summary>
+
 ## Current delivery: public source, 27 September 2026
 
 Public source is available at https://github.com/Elinfiny/TraceHarbor. The verified
@@ -159,3 +270,5 @@ Official sources inspected on 23 September 2026:
 - https://docs.tokenfactory.nebius.com/ai-models-inference/json
 - https://docs.tokenfactory.nebius.com/other-capabilities/billing-new
 - https://nebiusglobalaihackathon.devpost.com/rules
+
+</details>

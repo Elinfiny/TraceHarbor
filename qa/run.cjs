@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const assert = require('node:assert/strict');
-const {spawn, execFileSync} = require('node:child_process');
-const {chromium} = require('playwright');
+const {spawn, execFileSync, ChildProcess} = require('node:child_process');
+const net = require('node:net');
 const root = path.resolve(__dirname, '..');
 const origin = 'http://127.0.0.1:8787';
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -13,7 +13,75 @@ const report = {schema:'traceharbor.browser-qa.v1', synthetic_only:true,
   outcome:'NOT_RUN', started_utc:new Date().toISOString(), checks:[], downloads:{},
   console:[], pageerrors:[], requests:[], rejected_external:[], failures:[],
   provider_requests:0, artifact_uploads:0, retries:0};
-let server, browser;
+let server, browser, ownedListener;
+const contexts = new Set();
+// One monotonic deadline covers all teardown phases. The only signal target
+// is the exact ChildProcess returned by this invocation's spawn.
+async function cleanupOwned({child, browser, contexts, listener, budgetMs=5000}) {
+  assert.ok(Number.isInteger(budgetMs) && budgetMs>=1000 && budgetMs<=5000);
+  assert.ok(child===undefined || (child instanceof ChildProcess && Number.isInteger(child.pid) && child.pid>0));
+  assert.ok(listener===undefined || (child && listener.host==='127.0.0.1' && Number.isInteger(listener.port) && listener.port>0 && listener.port<=65535));
+  const started=performance.now(), deadline=started+budgetMs;
+  const receipt={schema:'traceharbor.owned-cleanup.v1',budget_ms:budgetMs,errors:[],contexts_closed:0,browser_closed:!browser,child_pid:child?.pid??null,child_exited:!child,signals:[],listener:listener?{...listener,absent:false}:{state:'NOT_CREATED'},fallback:false};
+  const remaining=()=>Math.max(0,deadline-performance.now());
+  const failure=(phase,error)=>receipt.errors.push({phase,message:error instanceof Error?error.message:String(error)});
+  async function bounded(phase, operation, cap) {
+    let timer;
+    try {
+      const ms=Math.min(remaining(),cap);
+      if(ms<=0) throw new Error('Overall cleanup deadline exhausted');
+      await Promise.race([Promise.resolve().then(operation),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Cleanup phase deadline: '+phase)),ms);})]);
+      return true;
+    } catch(error) {failure(phase,error);return false;}
+    finally {clearTimeout(timer);}
+  }
+  const exited=()=>child.exitCode!==null || child.signalCode!==null;
+  async function waitExit(ms) {
+    if(exited()) return true;
+    return new Promise(resolve=>{
+      let timer;
+      const done=()=>{clearTimeout(timer);child.removeListener('exit',onExit);resolve(exited());};
+      const onExit=()=>done();child.once('exit',onExit);
+      timer=setTimeout(done,Math.max(0,Math.min(ms,remaining())));
+      if(exited()) done();
+    });
+  }
+  async function closeUI() {
+    await bounded('contexts-close',async()=>{
+      const results=await Promise.allSettled([...contexts].map(async context=>{await context.close();contexts.delete(context);receipt.contexts_closed++;}));
+      for(const r of results)if(r.status==='rejected')failure('context-close',r.reason);
+    },1200);
+    if(browser) receipt.browser_closed=await bounded('browser-close',()=>browser.close(),1200);
+  }
+  async function stopChild() {
+    if(child) {
+      if(!exited()) {
+        try {receipt.signals.push({signal:'SIGTERM',sent:child.kill('SIGTERM')});}catch(error){failure('SIGTERM',error);}
+        if(!await waitExit(Math.min(800,Math.max(0,remaining()-400)))) {
+          failure('SIGTERM','Owned child did not exit before TERM deadline');receipt.fallback=true;
+          if(!exited())try {receipt.signals.push({signal:'SIGKILL',sent:child.kill('SIGKILL')});}catch(error){failure('SIGKILL',error);}
+          await waitExit(Math.max(0,remaining()-250));
+        }
+      }
+      receipt.child_exited=exited();receipt.exit_code=child.exitCode;receipt.exit_signal=child.signalCode;
+      if(!receipt.child_exited) failure('child-exit','Owned child exit not observed within overall deadline');
+    }
+    if(listener) {
+      let socket;
+      const ok=await bounded('listener-absence',()=>new Promise((resolve,reject)=>{
+        socket=net.createConnection(listener);
+        socket.once('connect',()=>reject(new Error('Created listener still accepts connections')));
+        socket.once('error',error=>{receipt.listener.probe_error=error.code;if(error.code==='ECONNREFUSED'){receipt.listener.absent=true;resolve();}else reject(error);});
+      }),200);
+      socket?.destroy();if(!ok)receipt.listener.absent=false;
+    }
+  }
+  await Promise.all([closeUI(),stopChild()]);
+  receipt.elapsed_ms=performance.now()-started;
+  receipt.first_error=receipt.errors[0]??null;
+  receipt.outcome=receipt.errors.length===0 && receipt.child_exited && receipt.browser_closed && (!listener || receipt.listener.absent)?'PASS':'FAIL';
+  return receipt;
+}
 const check = (name, details) => report.checks.push({name, outcome:'PASS', ...details});
 const readStream = async stream => { const chunks=[]; for await (const x of stream) chunks.push(x); return Buffer.concat(chunks); };
 async function overflow(page, label, width) {
@@ -43,6 +111,7 @@ async function main() {
   assert.equal(process.env.GITHUB_REPOSITORY,'Elinfiny/TraceHarbor');
   assert.equal(process.env.GITHUB_RUN_ATTEMPT,'1','No reruns');
   assert.equal(process.env.GITHUB_EVENT_NAME,'pull_request');
+  const {chromium} = require('playwright');
   const event=JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
   assert.equal(event.repository.id,1391430317); assert.equal(event.repository.private,false);
   assert.equal(event.pull_request.base.sha,process.env.QA_EXPECTED_BASE);
@@ -64,8 +133,9 @@ async function main() {
     const timeout=setTimeout(()=>reject(new Error('Fixture server startup deadline')),10000);
     server.once('error',e=>{clearTimeout(timeout);reject(e);});
     server.once('exit',code=>{clearTimeout(timeout);reject(new Error('Fixture server exit '+code));});
-    server.stdout.once('data',chunk=>{clearTimeout(timeout);assert.ok(chunk.toString().includes('DEMO_NO_AI'));resolve();});
+    server.stdout.once('data',chunk=>{clearTimeout(timeout);if(!chunk.toString().includes('DEMO_NO_AI'))reject(new Error('Unexpected fixture server startup'));else resolve();});
   });
+  ownedListener={host:'127.0.0.1',port:8787};
   browser=await chromium.launch({headless:true});
   const browserSession=await browser.newBrowserCDPSession();
   const {arguments:browserArguments}=await browserSession.send('Browser.getBrowserCommandLine');
@@ -76,6 +146,7 @@ async function main() {
   const statuses={complete:'supported_reference',missing:'uncertain',contradictory:'conflicted'};
   for (const width of [1440,390]) {
     const context=await browser.newContext({viewport:{width,height:1000},acceptDownloads:true,reducedMotion:'reduce'});
+    contexts.add(context);
     await context.route('**/*',route=>{
       const url=route.request().url();
       if (new URL(url).origin===origin) return route.continue();
@@ -144,6 +215,7 @@ async function main() {
         download_sha256:digest,download_bytes:bytes.length,verify_status:200,tamper_status:400,tamper_error:refusal.error});
     }
     await context.close();
+    contexts.delete(context);
   }
   assert.deepEqual(report.pageerrors,[]);assert.deepEqual(report.rejected_external,[]);
   // Retain every console entry. Only the deliberate verifier 400 and the
@@ -157,9 +229,12 @@ async function main() {
   check('console-network-boundary',{unexpected_errors:0,pageerrors:0,external_requests:0});
   report.outcome='PASS';
 }
+if(require.main===module) {
 main().catch(error=>{report.outcome='FAIL';report.failures.push({message:error.message,stack:error.stack});process.exitCode=1;}).finally(async()=>{
-  if(browser) try {await browser.close();} catch(error) {report.failures.push({cleanup:error.message});process.exitCode=1;report.outcome='FAIL';}
-  if(server) server.kill('SIGTERM');
+  try {
+    report.cleanup=await cleanupOwned({child:server,browser,contexts,listener:ownedListener});
+    if(report.cleanup.outcome!=='PASS') {report.failures.push({cleanup:report.cleanup.first_error});process.exitCode=1;report.outcome='FAIL';}
+  } catch(error) {report.failures.push({cleanup:error.message});process.exitCode=1;report.outcome='FAIL';}
   report.finished_utc=new Date().toISOString();
   const bytes=Buffer.from(JSON.stringify(report));assert.ok(bytes.length<=25*1024*1024,'Evidence bound');
   fs.writeFileSync(path.join(__dirname,'browser-evidence.json'),bytes);
@@ -169,3 +244,7 @@ main().catch(error=>{report.outcome='FAIL';report.failures.push({message:error.m
   if(process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
     'TraceHarbor synthetic browser QA: '+report.outcome+'\n\nHead: '+report.head+'\n\nEvidence SHA-256: '+hash(bytes)+' ('+bytes.length+' bytes). JSON is in job logs; no paid artifact storage.\n');
 });
+} else {
+  assert.equal(process.env.TRACE_QA_DATA_ONLY,'1','Explicit DATA_ONLY cleanup qualification seam only');
+  module.exports=Object.freeze({cleanupOwned});
+}
