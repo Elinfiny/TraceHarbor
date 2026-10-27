@@ -4,13 +4,13 @@
   "ui_workflow_enabled": false,
   "external_native_admission_required": true,
   "authority": "Only externalMasterCAS+independentAudit+authenticatednativeGitHubcommit/event rootpublication; no newcredential/MACkeyservice",
-  "parent": "7fc30e33c753b5335b1492a74eb09889d83b479d",
+  "parent": "d502e3b79735ff065b7d9d936c8330ff14bd21a0",
   "full_ref": "refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023",
   "new_effect": "NOT_ADMITTED; new distinct correctedUIeffect, never282rearm",
   "runtime_sha256": {
-    "tools/ui280/owned_supervisor295.py": "31a0d27d618bd903f8d4a39254d2b6cbd456fdbec1d42d8a8e79aea44e5ec032",
-    "tools/ui280/bootstrap295.py": "66c4fc670d8cc53cf47a70ba48dd5abe76b5f86d687e24fec0891e7206f1ee35",
-    "tools/ui267/qualify.mjs": "a55d74edb3caea4346b86f2e577ecef46c85d3deb81fd991f59c52081c6d2bad"
+    "tools/ui280/owned_supervisor295.py": "e9e47850acd1e72b8892563ef185ca4485b9a13428dbe235c1c998f57d352373",
+    "tools/ui280/bootstrap295.py": "354cbdbba2ac247315be27adbad3f10b3cc2a4dfc7525f331d67f23ee66c06c5",
+    "tools/ui267/qualify.mjs": "a1d16a20c950f819cca16814fddd1df33f59f3ce765e23ecf27c22cf45c3e51a"
   },
   "required_executables": {
     "node": {

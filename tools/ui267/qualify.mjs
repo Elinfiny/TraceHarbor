@@ -74,7 +74,7 @@ function eventCheck() {
   check(process.env.GITHUB_EVENT_NAME === 'push' && process.env.GITHUB_RUN_ATTEMPT === '1', 'Only separately admitted push attempt1 is eligible.');
   const ev = JSON.parse(execFileSync(qualifiedPython, ['-B','-c',
     'import json,os;print(json.dumps(json.load(open(os.environ["GITHUB_EVENT_PATH"]))))'], {encoding:'utf8', maxBuffer:262144}));
-  check(ev.ref === 'refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023' && process.env.GITHUB_REF===ev.ref && ev.before==='7fc30e33c753b5335b1492a74eb09889d83b479d' && ev.after===process.env.GITHUB_SHA && ev.created===false && ev.deleted===false && ev.forced===false && ev.repository.id === 1391430317 && ev.repository.private === false,
+  check(ev.ref === 'refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023' && process.env.GITHUB_REF===ev.ref && ev.before==='d502e3b79735ff065b7d9d936c8330ff14bd21a0' && ev.after===process.env.GITHUB_SHA && ev.created===false && ev.deleted===false && ev.forced===false && ev.repository.id === 1391430317 && ev.repository.private === false,
     'Wrong event ref/repository/visibility.');
   check(ev.sender.id === 273768139 && process.env.GITHUB_ACTOR_ID === '273768139', 'Wrong actual event actor.');
   check(process.env.GITHUB_REPOSITORY === 'Elinfiny/TraceHarbor' && /^[0-9a-f]{40}$/.test(process.env.GITHUB_SHA || ''), 'Unpinned source.');

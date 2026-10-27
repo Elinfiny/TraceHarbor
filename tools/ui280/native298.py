@@ -13,7 +13,7 @@ def receipt(x,stable):
  for k in ['raw_sha256','self_sha256']:need(re.fullmatch('[0-9a-f]{64}',x.get(k,''))is not None,'RECEIPT_HASH')
 def verify_external(a,pins):
  need(a.get('schema')=='TRACE298_PREPUBLICATION_V1'and a.get('state')=='ADMITTED_ONCE','PREPUBLICATION_NOT_ADMITTED')
- need(a.get('source_pins')==pins and a.get('parent')=='7fc30e33c753b5335b1492a74eb09889d83b479d','SOURCE_VECTOR_PARENT')
+ need(a.get('source_pins')==pins and a.get('parent')=='d502e3b79735ff065b7d9d936c8330ff14bd21a0','SOURCE_VECTOR_PARENT')
  e=a.get('evidence',{});receipt(e.get('master'),MASTER);receipt(e.get('auditor_current'),AUDITOR_CURRENT)
  need(e.get('auditor_identity_anchor')==AUDITOR_ANCHOR,'AUDITOR_CHAIN')
  need(e['auditor_current'].get('source_vector_sha256')==digest(pins)and e['master'].get('source_vector_sha256')==digest(pins),'CURRENT_ADOPTION_VECTOR')
@@ -41,11 +41,32 @@ def safe_file(filename,limit=268435456,read=False):
 class NativeFacts:
  def __init__(self,env):self.env=env
  def identity(self):
-  u=int(self.env['TRACE298_CALLER_UID']);g=int(self.env['TRACE298_CALLER_GID']);p=pwd.getpwuid(u);need(u>0 and p.pw_gid==g,'PWD_IDENTITY');return {'uid':u,'gid':g,'image':self.env.get('ImageVersion'),'os':self.env.get('ImageOS'),'parent_netns':os.readlink('/proc/self/ns/net'),'parent_mntns':os.readlink('/proc/self/ns/mnt')}
+  u=int(self.env['TRACE298_CALLER_UID']);g=int(self.env['TRACE298_CALLER_GID']);p=pwd.getpwuid(u);need(u>0 and p.pw_gid==g,'PWD_IDENTITY');return {'uid':u,'gid':g,'image':self.env.get('ImageVersion'),'os':self.env.get('ImageOS'),'image_present':'ImageVersion'in self.env,'os_present':'ImageOS'in self.env,'parent_netns':os.readlink('/proc/self/ns/net'),'parent_mntns':os.readlink('/proc/self/ns/mnt')}
  def file(self,path,read=False):return safe_file(path,read=read)
+def image_identity_diagnostic(native,expected,env,manifest_sha256):
+ # Only the two exact identity inputs; no environment dump or coercion.
+ def field(value,present):
+  ty=type(value);name={str:'str',type(None):'NoneType',bool:'bool',int:'int',float:'float',list:'list',dict:'dict',tuple:'tuple',bytes:'bytes'}.get(ty,'UNSUPPORTED')
+  result={'present':present is True,'type':name,'length':len(value)if ty in[str,list,dict,tuple,bytes]else None}
+  if ty is str:
+   if len(value)<=128:result['value']=value
+   else:result.update(oversize=True,sha256=hashlib.sha256(value.encode('utf-8','surrogatepass')).hexdigest())
+  elif value is None:result['value']=None
+  else:result['unsupported_type']=True
+  return result
+ run=env.get('GITHUB_RUN_ID','');commit=env.get('GITHUB_SHA','')
+ need(isinstance(run,str)and re.fullmatch('[0-9]{1,20}',run)is not None and isinstance(commit,str)and re.fullmatch('[0-9a-f]{40}',commit)is not None,'NATIVE_JOB_TYPED')
+ need(type(expected['image'])is str and len(expected['image'])<=128 and re.fullmatch('[0-9a-f]{64}',manifest_sha256)is not None,'IDENTITY_DIAGNOSTIC_SOURCE')
+ diag={'event':'IMAGE_IDENTITY302','ImageVersion':field(native['image'],native.get('image_present')),'ImageOS':field(native['os'],native.get('os_present')),'expectedimage':expected['image'],'requiredImageOS':'ubuntu24','image_matches':native['image']==expected['image'],'os_matches':native['os']=='ubuntu24','run':run,'commit':commit,'manifest_sha256':manifest_sha256}
+ need(len(json.dumps(diag,ensure_ascii=True,separators=(',',':')).encode())<=2048,'IDENTITY_DIAGNOSTIC_BOUND')
+ return diag
 def materialize(a,pins,env,event,source,stage,expected,facts):
  verify_external(a,pins);need(a.get('source')in[source,'__NATIVE_CHECKOUT__']and os.path.realpath(source)==source,'SOURCE_REDIRECT');native=facts.identity();safeint(native['uid']);safeint(native['gid'])
- need(native['uid']==expected['uid']and native['gid']==expected['gid'],'UID_GID_DRIFT');need(native['image']==expected['image']and native['os']=='ubuntu24','IMAGE_DRIFT')
+ need(native['uid']==expected['uid']and native['gid']==expected['gid'],'UID_GID_DRIFT')
+ diagnostic=image_identity_diagnostic(native,expected,env,pins['contracts/host298.json']);native['identity_diagnostic']=diagnostic
+ try:need(native['image']==expected['image']and native['os']=='ubuntu24','IMAGE_DRIFT')
+ except RuntimeError as error:
+  error.identity_diagnostic=diagnostic;raise
  need(re.fullmatch(r'net:\[[0-9]+\]',native['parent_netns'])is not None and re.fullmatch(r'mnt:\[[0-9]+\]',native['parent_mntns'])is not None,'NAMESPACE_NATIVE')
  for rel,pin in pins.items():
   need(not os.path.isabs(rel)and'..'not in rel.split('/'),'PIN_SELECTOR');obs=facts.file(source+'/'+rel);need(obs['sha256']==pin,'SOURCE_DRIFT')

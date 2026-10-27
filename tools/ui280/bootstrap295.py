@@ -4,7 +4,7 @@ External authenticated Master CAS/Auditor + Owner GitHub commit/event supply
 authority; JSON flags or a hash argument alone are not provider authority.
 """
 import os,sys,json,hashlib,stat,argparse,importlib.util,resource
-PARENT='7fc30e33c753b5335b1492a74eb09889d83b479d'
+PARENT='d502e3b79735ff065b7d9d936c8330ff14bd21a0'
 REF='refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023'
 MASTER='libfile_f67b07d0a4288191b60f3469d264f99c'
 AUDITOR='libfile_f87a6a307f70819194e0af0fa453afd1'

@@ -19,11 +19,11 @@ async function preparePublication298(api, pins, sourceTree, adoptionSelector, sh
   const policy=await current('libfile_6f69ae483b088191a1fffefca617bbd5');
   const canonical=x=>JSON.stringify(x,(_,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);const vector=await sha256(canonical(pins));
   const review=adoptionSelector.split('/').reduce((v,k)=>v?.[k],auditor.object);
-  const once=master.object.native298_publication_once;
+  const once=master.object.native302_publication_once;
   if(!review||review.source_vector_sha256!==vector||review.state!=='ADOPTED_EXACT_SOURCE_ONLY')throw Error('ACTUAL_CURRENT_ADOPTION_MISSING');
-  if(!once||once.state!=='RESERVED'||once.source_vector_sha256!==vector||once.source_tree!==sourceTree||once.policy_raw_sha256!==policy.raw_sha256)throw Error('ACTUAL_MASTER_ONCE_CAS_MISSING');
+  if(!once||once.state!=='RESERVED'||Object.prototype.hasOwnProperty.call(once,'consumption')||once.source_vector_sha256!==vector||once.source_tree!==sourceTree||once.policy_raw_sha256!==policy.raw_sha256)throw Error('ACTUAL_MASTER_ONCE_CAS_MISSING');
   // No CAS here: actual provider CAS/readback reservation precedes these reads.
   // Never relabel compact bytes as the historical giant Auditor anchor.
   delete master.object;delete auditor.object;delete policy.object;
-  if(!/^[0-9a-f]{40}$/.test(sourceTree))throw Error('EXACT_SOURCE_TREE');return {schema:'TRACE298_PREPUBLICATION_V1',state:'ADMITTED_ONCE',source:'__NATIVE_CHECKOUT__',parent:'7fc30e33c753b5335b1492a74eb09889d83b479d',tree:sourceTree,source_pins:pins,evidence:{master:{...master,source_vector_sha256:vector,once_state:'RESERVED'},auditor_identity_anchor:'libfile_f87a6a307f70819194e0af0fa453afd1',auditor_current:{...auditor,source_vector_sha256:vector,review_selector:adoptionSelector,body_sha256:await sha256(canonical(review))},policy},effect_id:once.effect_id,budget:once.budget,free_existing_host:once.free_existing_host,sandbox_required:true};
+  if(!/^[0-9a-f]{40}$/.test(sourceTree))throw Error('EXACT_SOURCE_TREE');return {schema:'TRACE298_PREPUBLICATION_V1',state:'ADMITTED_ONCE',source:'__NATIVE_CHECKOUT__',parent:'d502e3b79735ff065b7d9d936c8330ff14bd21a0',tree:sourceTree,source_pins:pins,evidence:{master:{...master,source_vector_sha256:vector,once_state:'RESERVED'},auditor_identity_anchor:'libfile_f87a6a307f70819194e0af0fa453afd1',auditor_current:{...auditor,source_vector_sha256:vector,review_selector:adoptionSelector,body_sha256:await sha256(canonical(review))},policy},effect_id:once.effect_id,budget:once.budget,free_existing_host:once.free_existing_host,sandbox_required:true};
 }

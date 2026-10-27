@@ -167,7 +167,7 @@ def prepare(verified):
  for key in ['source','out','home','gate_path','control','controller']:path(a.get(key))
  need(a['home']==a['out']+'/home' and a['gate_path']==a['control']+'/release294.json','OWNED_STAGE_BINDING')
  need(len({a['source'],a['out'],a['control'],a['controller']})==4 and all(not x.startswith(y+'/') for x in [a['source'],a['out'],a['control'],a['controller']] for y in [a['source'],a['out'],a['control'],a['controller']] if x!=y),'OWNED_PATH_SEPARATION')
- ev=a.get('runtime_event',{});need(ev.get('ref')=='refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023' and ev.get('before')=='7fc30e33c753b5335b1492a74eb09889d83b479d' and ev.get('after')==a['source_commit'] and all(ev.get(k)is False for k in ['created','deleted','forced']) and ev.get('repository',{}).get('id')==1391430317 and ev.get('repository',{}).get('private')is False and ev.get('sender',{}).get('id')==273768139 and a.get('native_hosted_context')is True,'QUALIFIER_NATIVE_EVENT_INTERFACE')
+ ev=a.get('runtime_event',{});need(ev.get('ref')=='refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023' and ev.get('before')=='d502e3b79735ff065b7d9d936c8330ff14bd21a0' and ev.get('after')==a['source_commit'] and all(ev.get(k)is False for k in ['created','deleted','forced']) and ev.get('repository',{}).get('id')==1391430317 and ev.get('repository',{}).get('private')is False and ev.get('sender',{}).get('id')==273768139 and a.get('native_hosted_context')is True,'QUALIFIER_NATIVE_EVENT_INTERFACE')
  need(re.fullmatch(r'net:\[[0-9]+\]',a.get('parent_netns','')),'PARENT_NETNS_NATIVE_FACT')
  need(set(a.get('binaries',{}))=={'systemd-run','systemctl','python3','node','chrome','chromedriver'},'BINARY_SLOTS')
  for x in a['binaries'].values():
