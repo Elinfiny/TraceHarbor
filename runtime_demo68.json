@@ -1,0 +1,1 @@
+{"case_id":"recovery334","schema":"traceharbor.input.v1","sources":[{"events":[{"id":"event334","text":"Synthetic queue became amber; no cause is supplied.","timestamp":"2031-04-01T12:00:00Z"}],"id":"audit334","kind":"audit","title":"Synthetic observation"}],"synthetic":true,"title":"New bounded runtime bridge fixture"}
