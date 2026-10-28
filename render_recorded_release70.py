@@ -8,15 +8,15 @@ from pathlib import Path
 import release_integration68 as r
 from quota_ledger import read,private_dir,exclusive
 from release_policy import digest,Refusal
-ADMISSION_SHA256='d657a4bbfcf1cc60843517d3c6197bc6d27fe62c7ff6b70b16b7cb1e1e08e376'
-MODULE_SHA256='54957d4955b8dd9cd3913301a64f6cf1a10756ebfbe52d95caa2200782a482ae'
-ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-admission70.json')
+ADMISSION_SHA256='b6006c891a18321fbf52f2982b623c4c017c570dd03d636f08d1876b0fb380e6'
+MODULE_SHA256='d617a2caee3ffa5fa7bdb00498118b5b26e13243b20b4f7bf51596b04b43f667'
+ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-admission74.json')
 def admission():
  if os.environ.get('RENDER')!='true' or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_RENDER_HOST')
  if hashlib.sha256((Path(__file__).parent/'release_integration68.py').read_bytes()).hexdigest()!=MODULE_SHA256:raise Refusal('INTEGRATION_SOURCE_PIN')
  private_dir(ADMISSION_PATH.parent);data=read(ADMISSION_PATH,65536)
  if hashlib.sha256(json.dumps(data,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()!=ADMISSION_SHA256:raise Refusal('ACTUAL_ADMISSION_PIN')
- c,e=data['config'],data['evidence'];r.ADMITTED_CONFIG_SHA256=digest(c);r.ADMITTED_CAPTURE_SHA256=digest(e);r.ADMITTED_EVIDENCE_SHA256=digest(e);r.WORKER_ENTRY=Path(__file__).resolve()
+ c,e=data['config'],data['evidence'];r.ADMITTED_CONFIG_SHA256=digest(c);r.ADMITTED_CAPTURE_SHA256=digest(e);r.ADMITTED_EVIDENCE_SHA256=digest(e);r.WORKER_ENTRY=Path(__file__).resolve();r.WORKER_ADMISSION_PATH=ADMISSION_PATH
  r.qualify(c,e,pin=digest(c),capture_pin=digest(e),source_root=Path(__file__).parent)
  return c,e
 def main():

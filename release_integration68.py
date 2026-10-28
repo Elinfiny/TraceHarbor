@@ -10,6 +10,7 @@ import hashlib
 import hmac
 import json
 import math
+import ipaddress
 import os
 import re
 import stat
@@ -42,6 +43,7 @@ VENDOR = Path('/var/data/traceharbor-staging/install65/vendor/nemotron-input-cou
 COOKIE = '__Host-traceharbor-operator68'
 WORKER_WALL_SECONDS = 45
 WORKER_ENTRY = Path(__file__).resolve()
+WORKER_ADMISSION_PATH = None
 
 
 def checked_manifest(path, pins):
@@ -221,7 +223,7 @@ def run_worker(raw, config, directory):
 
 def worker(directory):
     directory = private_dir(directory)
-    data = read(directory / 'admission.json', 65536)
+    data = read(WORKER_ADMISSION_PATH or directory / 'admission.json', 65536)
     config, evidence = data['config'], data['evidence']
     # Even trusted process startup cannot bypass the source-bound trusted launch pins.
     qualify(config, evidence, pin=digest(config), capture_pin=digest(evidence),
@@ -238,6 +240,44 @@ def worker(directory):
 
 
 class ReleaseHandler(EdgeHandler):
+    def _tls_envelope(self):
+        p=self.server.edge_policy
+        hosts=self.headers.get_all('Host',[]);origins=self.headers.get_all('Origin',[])
+        return (hosts==[p.host] and len(origins)<=1 and (not origins or origins==[p.origin]) and
+                (self.command!='POST' or origins==[p.origin]) and
+                self.headers.get_all('X-Forwarded-Proto',[])==['https'] and
+                self.headers.get_all('X-Forwarded-Host',[]) in ([],[p.host]) and
+                not self.headers.get_all('Transfer-Encoding',[]) and
+                len(self.headers.get_all('Content-Length',[]))<=1)
+
+    def _qualify_owner_peer(self):
+        # Called ONLY after a valid native Owner grant/session. Never from a
+        # public flag/header alone; no CIDR wildcard or trust-all-proxies rule.
+        peer=ipaddress.ip_address(self.client_address[0])
+        if not peer.is_private or peer.is_loopback or peer.is_unspecified:
+            raise Refusal('PRIVATE_RENDER_PEER_REQUIRED')
+        peer=str(peer);policy=self.server.edge_policy
+        with self.server.peer_enrollment_lock:
+            if peer not in policy.peers:
+                root=STATE/'qualified-proxy-peers';root.mkdir(mode=0o700,exist_ok=True);private_dir(root)
+                path=root/(hashlib.sha256(peer.encode()).hexdigest()+'.json')
+                value={'proxy_peer':peer,'release_config_sha256':digest(policy.config),
+                       'proof':'NATIVE_OWNER_AUTHENTICATED_HTTPS_SESSION',
+                       'scope':'ONE_APPROVED_CAPTURE164_AND_RECORDED_E2E'}
+                if path.exists():
+                    if read(path)!=value:raise Refusal('PROXY_ENROLLMENT_MISMATCH')
+                else:exclusive(path,value)
+                policy.peers=policy.peers|{peer}
+        return True
+
+    def allowed(self):
+        if not self._tls_envelope():return False
+        if self.client_address[0] in self.server.edge_policy.peers:return True
+        # This public page contains only a login form, no protected capability.
+        if self.command=='GET' and self.path=='/operator/session':return True
+        if self.server.operator.authorize(self):return self._qualify_owner_peer()
+        return False
+
     def do_GET(self):
         if self.path == '/healthz':
             return self.respond(200, canonical({'phase': 'RELEASE68', 'public_AI_enabled': False,
@@ -279,7 +319,7 @@ class ReleaseHandler(EdgeHandler):
     def do_POST(self):
         if self.path == '/operator/session':
             try:
-                if (not self.allowed() or self.headers.get('Content-Type') != 'application/x-www-form-urlencoded' or
+                if (not self._tls_envelope() or self.headers.get('Content-Type') != 'application/x-www-form-urlencoded' or
                     self.headers.get_all('Transfer-Encoding', []) or
                     len(self.headers.get_all('Content-Length', [])) != 1):
                     raise Refusal('OPERATOR_HEADERS')
@@ -293,6 +333,7 @@ class ReleaseHandler(EdgeHandler):
                 if set(form) != {'grant'} or len(form['grant']) != 1:
                     raise Refusal('OPERATOR_BODY_SHAPE')
                 token = self.server.operator.consume_grant(form['grant'][0].encode())
+                self._qualify_owner_peer()
                 self.send_response(303)
                 self.send_header('Location', '/private-capture/')
                 self.send_header('Set-Cookie', COOKIE+'='+token+'; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=900')
@@ -317,12 +358,28 @@ def build_server(config, evidence, *, port, platform_port, directory=STATE):
     operator = OperatorSession(directory / 'operator')
     # Custody must be provisioned once by admitted setup, never reconstructed/reset.
     from capture_sink import MediaSink
-    sink = MediaSink(directory / 'capture', admitted=True)
+    capture_path=private_dir(directory/'capture')
+    if (capture_path/'custody.json').exists():
+        # EXACTLY ONE known pre-effect repair. This is not a resume/reset API.
+        # Owner-native evidence bound in the launch admission proves no picker
+        # invocation; the durable state independently must still be empty.
+        if (set(x.name for x in capture_path.iterdir())!={'custody.json'} or
+            (directory/'e2e-reserved.json').exists() or
+            Ledger(directory/'allocation',config).snapshot()['reserved_calls']!=0):
+            raise Refusal('CAPTURE_OR_AI_STATE_NOT_UNSTARTED')
+        expected={'schema':'traceharbor.capture48.v1','classification':'SYNTHETIC_ONLY','seconds':164,'byte_limit':25165824}
+        if read(capture_path/'custody.json')!=expected:raise Refusal('UNSTARTED_CUSTODY_PIN')
+        exclusive(directory/'pre-effect-reattach74.json',{'id':'TRACEHARBOR-SOURCEBOUND-E2E70-PRE_EFFECT_REPAIR_ONCE',
+            'state':'KNOWN_NO_PICKER_NO_CAPTURE_NO_AI','checkpoint72_sha256':'efa1b0b0c1b261d08a501a45c3b5ac54036d6f1eb10eb81b979272d9c8f7280e',
+            'quota_reset':False,'custody_rewritten':False,'retry':False})
+        sink=MediaSink.__new__(MediaSink);sink.path=capture_path;sink.bytes=0;sink.next=0;sink.terminal=False;sink.lock=threading.Lock()
+    else:sink = MediaSink(capture_path, admitted=True)
     capture_routes.CAPTURE_RELEASE_SHA256 = digest(evidence)
     router = capture_routes.CaptureRoutes(pin=digest(evidence), authorize=operator.authorize, sink=sink)
     server = StagingServer(address, ReleaseHandler)
     server.edge_policy = policy
     server.operator = operator
+    server.peer_enrollment_lock=threading.Lock()
     server.capture_router = router
     server.runtime_session = CapturedOnceSession(config, directory, sink)
     server.source_commit = os.environ.get('RENDER_GIT_COMMIT', 'UNOBSERVED')
