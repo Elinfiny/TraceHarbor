@@ -8,9 +8,9 @@ from pathlib import Path
 import release_integration68 as r
 from quota_ledger import read,private_dir,exclusive
 from release_policy import digest,Refusal
-ADMISSION_SHA256='b6006c891a18321fbf52f2982b623c4c017c570dd03d636f08d1876b0fb380e6'
-MODULE_SHA256='d617a2caee3ffa5fa7bdb00498118b5b26e13243b20b4f7bf51596b04b43f667'
-ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-admission74.json')
+ADMISSION_SHA256='e20e58927efcb9c1248389b21785cdd9cdf9db109eaab67576d8d48ffbc419f3'
+MODULE_SHA256='6ce35005a47ecb86c19cbeb86d1ba53981a64547e28ed48ec2f305bfb7b002cd'
+ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-admission77.json')
 def admission():
  if os.environ.get('RENDER')!='true' or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_RENDER_HOST')
  if hashlib.sha256((Path(__file__).parent/'release_integration68.py').read_bytes()).hexdigest()!=MODULE_SHA256:raise Refusal('INTEGRATION_SOURCE_PIN')

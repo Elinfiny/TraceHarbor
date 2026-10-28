@@ -170,7 +170,8 @@ class CapturedOnceSession:
 
     def status(self):
         exists = (self.directory / 'e2e-reserved.json').exists()
-        ready = self.sink is not None and self.sink.bytes > 0 and not self.sink.terminal
+        ready = (self.sink is not None and self.sink.bytes > 0 and not self.sink.terminal
+                 and (self.directory/'capture-started.json').is_file())
         return {'schema': 'traceharbor.runtime-status.v1', 'enabled': ready and not exists,
                 'new_call_cap': 1 if ready and not exists else 0,
                 'state': 'ONE_RECORDED_E2E_ONLY', 'reason': 'OTHER_255_HELD',
@@ -198,7 +199,8 @@ def run_worker(raw, config, directory):
     command = [sys.executable, str(Path(WORKER_ENTRY).resolve()), '--worker', str(directory)]
     # Credentials stay inside the selected service and are never placed in argv/stdin.
     environment = {k: v for k, v in os.environ.items()
-                   if k in {'PATH', 'LANG', 'LC_ALL', 'NEBIUS_API_KEY'}}
+                   if k in {'PATH', 'LANG', 'LC_ALL', 'NEBIUS_API_KEY', 'RENDER',
+                            'RENDER_EXTERNAL_HOSTNAME', 'RENDER_GIT_COMMIT'}}
     environment['PYTHONDONTWRITEBYTECODE'] = '1'
     def limits():
         import resource
@@ -270,8 +272,25 @@ class ReleaseHandler(EdgeHandler):
                 policy.peers=policy.peers|{peer}
         return True
 
+    def _public_safe_route(self):
+        # These exact routes were public in the synthetic staging release.
+        # They contain no operator/session/media/provider capability. Render's
+        # private ingress peers are ephemeral: do not make public assets depend
+        # on a previous operator login or persist them as authenticated peers.
+        # Host/Origin/TLS/framing validation still applies before this method.
+        try:
+            peer=ipaddress.ip_address(self.client_address[0])
+            if not peer.is_private or peer.is_loopback or peer.is_unspecified:return False
+        except ValueError:return False
+        if self.command=='POST':return self.path in {'/analyze','/verify','/evolution'}
+        if self.command!='GET':return False
+        import app
+        return (self.path in app.STATIC or self.path in {'/runtime/status','/scenarios/evolution.json'} or
+                self.path in {'/fixtures/'+name+'.json' for name in app.CASES})
+
     def allowed(self):
         if not self._tls_envelope():return False
+        if self._public_safe_route():return True
         if self.client_address[0] in self.server.edge_policy.peers:return True
         # This public page contains only a login form, no protected capability.
         if self.command=='GET' and self.path=='/operator/session':return True
@@ -295,9 +314,13 @@ class ReleaseHandler(EdgeHandler):
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Content-Length', str(len(body)))
             self.send_header('Cache-Control', 'no-store')
-            self.send_header('Referrer-Policy', 'no-referrer')
+            self.send_header('Referrer-Policy', 'same-origin')
             self.send_header('Content-Security-Policy', "default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
             self.end_headers(); self.wfile.write(body); return
+        if self.path == '/private-capture/controller.js':
+            if not self.server.operator.authorize(self) or not self.server.capture_router.enabled():
+                return self.error(403, 'Private capture not admitted.')
+            return self.respond(200, (Path(__file__).parent/'capture_controller75.js').read_bytes(), 'text/javascript; charset=utf-8')
         if self.path == '/operator68.js':
             if not self.server.operator.authorize(self):
                 return self.error(403, 'Private operator only.')
@@ -317,6 +340,21 @@ class ReleaseHandler(EdgeHandler):
         return super().do_GET()
 
     def do_POST(self):
+        if self.path in {'/private-capture/chunk','/private-capture/finish'} and not (STATE/'capture-started.json').is_file():
+            return self.error(403,'Native selection must be durably acknowledged first.')
+        if self.path == '/private-capture/selected':
+            try:
+                if not self.allowed() or not self.server.operator.authorize(self):raise Refusal('PRIVATE_NATIVE_SELECTION_REQUIRED')
+                if self.headers.get('Content-Type')!='application/json' or len(self.headers.get_all('Content-Length',[]))!=1:raise Refusal('SELECTION_HEADERS')
+                length=int(self.headers['Content-Length'])
+                if not 1<=length<=128:raise Refusal('SELECTION_BOUND')
+                raw=self.rfile.read(length)
+                if len(raw)!=length or json.loads(raw)!={'phase':'TAB_SELECTED_BEFORE_RECORDER'}:raise Refusal('SELECTION_SHAPE')
+                if self.server.runtime_session.sink.bytes or self.server.runtime_session.sink.terminal or (STATE/'e2e-reserved.json').exists():raise Refusal('ALREADY_STARTED')
+                exclusive(STATE/'capture-started.json',{'id':'TRACEHARBOR-LIVE67-NATIVE-CAPTURE164-APPROVED',
+                    'state':'NATIVE_TAB_SELECTED_RESERVED_UNKNOWN_NO_RETRY','seconds':164,'retry':False})
+                return self.respond(200,canonical({'recording_started':True,'retry':False}))
+            except Exception:return self.error(403,'Native selection refused or unknown; no automatic retry.')
         if self.path == '/operator/session':
             try:
                 if (not self._tls_envelope() or self.headers.get('Content-Type') != 'application/x-www-form-urlencoded' or
@@ -363,15 +401,22 @@ def build_server(config, evidence, *, port, platform_port, directory=STATE):
         # EXACTLY ONE known pre-effect repair. This is not a resume/reset API.
         # Owner-native evidence bound in the launch admission proves no picker
         # invocation; the durable state independently must still be empty.
-        if (set(x.name for x in capture_path.iterdir())!={'custody.json'} or
+        if ((directory/'capture-started.json').exists() or set(x.name for x in capture_path.iterdir())!={'custody.json'} or
             (directory/'e2e-reserved.json').exists() or
             Ledger(directory/'allocation',config).snapshot()['reserved_calls']!=0):
             raise Refusal('CAPTURE_OR_AI_STATE_NOT_UNSTARTED')
         expected={'schema':'traceharbor.capture48.v1','classification':'SYNTHETIC_ONLY','seconds':164,'byte_limit':25165824}
         if read(capture_path/'custody.json')!=expected:raise Refusal('UNSTARTED_CUSTODY_PIN')
-        exclusive(directory/'pre-effect-reattach74.json',{'id':'TRACEHARBOR-SOURCEBOUND-E2E70-PRE_EFFECT_REPAIR_ONCE',
+        marker={'id':'TRACEHARBOR-SOURCEBOUND-E2E70-PRE_EFFECT_REPAIR_ONCE',
             'state':'KNOWN_NO_PICKER_NO_CAPTURE_NO_AI','checkpoint72_sha256':'efa1b0b0c1b261d08a501a45c3b5ac54036d6f1eb10eb81b979272d9c8f7280e',
-            'quota_reset':False,'custody_rewritten':False,'retry':False})
+            'quota_reset':False,'custody_rewritten':False,'retry':False}
+        path=directory/'pre-effect-reattach74.json'
+        if path.exists():
+            if read(path)!=marker:raise Refusal('ORIGINAL_SETUP_RECEIPT_MISMATCH')
+        else:exclusive(path,marker)
+        # Reading an already-applied EMPTY setup receipt is not another capture.
+        # A new durable native-selection marker closes this path BEFORE Recorder.start.
+
         sink=MediaSink.__new__(MediaSink);sink.path=capture_path;sink.bytes=0;sink.next=0;sink.terminal=False;sink.lock=threading.Lock()
     else:sink = MediaSink(capture_path, admitted=True)
     capture_routes.CAPTURE_RELEASE_SHA256 = digest(evidence)
