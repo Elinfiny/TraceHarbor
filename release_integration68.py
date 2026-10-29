@@ -317,6 +317,12 @@ class ReleaseHandler(EdgeHandler):
             self.send_header('Referrer-Policy', 'same-origin')
             self.send_header('Content-Security-Policy', "default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
             self.end_headers(); self.wfile.write(body); return
+        if self.path == '/private-capture/' and self.server.runtime_session.sink.terminal:
+            if not self.server.operator.authorize(self):
+                return self.error(403,'Private capture only.')
+            # A consumed/partial/unknown attempt is a read-only retained state,
+            # never another recording page, retry button or implicit reset.
+            return self.respond(200,b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor retained capture</title><h1>Previous capture retained</h1><p>This capture attempt is closed. No automatic retry or new recording is admitted.</p></html>','text/html; charset=utf-8')
         if self.path == '/private-capture/controller.js':
             if not self.server.operator.authorize(self) or not self.server.capture_router.enabled():
                 return self.error(403, 'Private capture not admitted.')
@@ -397,7 +403,23 @@ def build_server(config, evidence, *, port, platform_port, directory=STATE):
     # Custody must be provisioned once by admitted setup, never reconstructed/reset.
     from capture_sink import MediaSink
     capture_path=private_dir(directory/'capture')
-    if (capture_path/'custody.json').exists():
+    consumed_capture = ((directory/'capture-started.json').exists() or
+        (capture_path/'terminal.json').exists() or
+        any(p.name!='custody.json' for p in capture_path.iterdir()) or
+        (directory/'e2e-reserved.json').exists() or
+        Ledger(directory/'allocation',config).snapshot()['reserved_calls']!=0)
+    if (capture_path/'custody.json').exists() and consumed_capture:
+        # Public boot must not depend on re-opening a consumed recorder. Attach
+        # a permanently closed, read-only view; write no marker/quota/custody.
+        expected={'schema':'traceharbor.capture48.v1','classification':'SYNTHETIC_ONLY','seconds':164,'byte_limit':25165824}
+        if read(capture_path/'custody.json')!=expected:raise Refusal('RETAINED_CUSTODY_PIN')
+        entries=list(capture_path.iterdir())
+        for entry in entries:
+            info=entry.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_uid!=os.getuid() or info.st_mode&0o077:raise Refusal('RETAINED_CAPTURE_PRIVATE_FILE')
+        media=[entry for entry in entries if re.fullmatch(r'chunk-[0-9]{5}\.webm',entry.name)]
+        sink=MediaSink.__new__(MediaSink);sink.path=capture_path;sink.bytes=sum(entry.stat().st_size for entry in media);sink.next=len(media);sink.terminal=True;sink.lock=threading.Lock()
+    elif (capture_path/'custody.json').exists():
         # EXACTLY ONE known pre-effect repair. This is not a resume/reset API.
         # Owner-native evidence bound in the launch admission proves no picker
         # invocation; the durable state independently must still be empty.

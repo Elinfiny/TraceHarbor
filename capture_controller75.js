@@ -1,10 +1,20 @@
 /* Private48: sticky failure and synchronous bounded Blob custody; no capture on import.
    Limits cover application-retained work, not browser physical memory/bitrate. */
 class CaptureController {
-  constructor({mediaDevices,Recorder,sink,recordingGate=async()=>{const response=await fetch('/private-capture/selected',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:'TAB_SELECTED_BEFORE_RECORDER'})});if(!response.ok||(await response.json()).recording_started!==true)throw Error('NATIVE_SELECTION_NOT_ACKNOWLEDGED');},onTerminal=()=>{},now=()=>performance.now(),timers={set:setTimeout,clear:clearTimeout}}){
-    Object.assign(this,{devices:mediaDevices,Recorder,sink,recordingGate,onTerminal,now,timers});
-    this.state='IDLE';this.queue=Promise.resolve();this.max=25165824;this.maxPendingBytes=2097152;this.maxPendingChunks=8;
+  constructor({mediaDevices,Recorder,sink,recordingGate=async()=>{const response=await fetch('/private-capture/selected',{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify({phase:'TAB_SELECTED_BEFORE_RECORDER'})});if(!response.ok||(await response.json()).recording_started!==true)throw Error('NATIVE_SELECTION_NOT_ACKNOWLEDGED');},onTerminal=()=>{},onDiagnostic=()=>{},now=()=>performance.now(),timers={set:setTimeout,clear:clearTimeout}}){
+    Object.assign(this,{devices:mediaDevices,Recorder,sink,recordingGate,onTerminal,onDiagnostic,now,timers});
+    this.state='IDLE';this.diagnostic=null;this.startPhase='SELECTING';this.queue=Promise.resolve();this.max=25165824;this.maxPendingBytes=2097152;this.maxPendingChunks=8;
     this.bytes=0;this.seq=0;this.receivedBytes=0;this.receivedChunks=0;this.reservedBytes=0;this.reservedChunks=0;this.pendingBytes=0;this.pendingChunks=0;this.droppedBytes=0;this.failure=null;this.stoppedAt=null;this.finalizing=false;
+  }
+  reportDiagnostic(error,phase){
+    if(this.diagnostic)return;
+    const names=new Set(['EncodingError','NotSupportedError','NotReadableError','InvalidStateError','SecurityError','AbortError','UnknownError']);
+    const phases=new Set(['SELECTING','RECORDING_GATE','CONSTRUCTING','STARTING','RECORDER_EVENT','UNEXPECTED_STOP']);
+    const state=this.recorder?.state;
+    this.diagnostic=Object.freeze({schema:'traceharbor.capture-diagnostic84.v1',error_name:names.has(error?.name)?error.name:'UnclassifiedError',phase:phases.has(phase)?phase:'UNEXPECTED_STOP',recorder_state:['inactive','recording','paused'].includes(state)?state:'unobserved',retry:false});
+    // No raw message, stack, device name/ID, source text or credential values.
+    // Diagnostic publication must never alter the once-only capture lifecycle.
+    try{this.onDiagnostic(this.diagnostic);}catch{}
   }
   async start(admission){
     if(this.state!=='IDLE'||admission?.capture!==true||admission?.classification!=='SYNTHETIC_ONLY'||admission?.secureContext!==true)throw Error('CAPTURE_NOT_ADMITTED');
@@ -13,12 +23,12 @@ class CaptureController {
     try{
       this.stream=await this.devices.getDisplayMedia({video:true,audio:false});const tracks=this.stream.getVideoTracks();
       if(tracks.length!==1||tracks[0].getSettings?.().displaySurface!=='browser')throw Error('BROWSER_TAB_REQUIRED');
-      await this.recordingGate();
+      this.startPhase='RECORDING_GATE';await this.recordingGate();this.startPhase='CONSTRUCTING';
       this.recorder=new this.Recorder(this.stream,{mimeType:'video/webm;codecs=vp8',videoBitsPerSecond:1000000});
-      this.recorder.ondataavailable=e=>this.enqueue(e.data);this.recorder.onerror=()=>this.stop('ERROR');tracks[0].onended=()=>this.stop('CANCEL');this.recorder.onstop=()=>this.finalize();
-      this.started=this.now();this.state='RECORDING';this.recorder.start(250);this.timer=this.timers.set(()=>this.stop('STOP164'),164000);
+      this.recorder.ondataavailable=e=>this.enqueue(e.data);this.recorder.onerror=e=>{this.reportDiagnostic(e?.error,'RECORDER_EVENT');this.stop('ERROR');};tracks[0].onended=()=>this.stop('CANCEL');this.recorder.onstop=()=>this.finalize();
+      this.startPhase='STARTING';this.started=this.now();this.state='RECORDING';this.recorder.start(250);this.timer=this.timers.set(()=>this.stop('STOP164'),164000);
       return {state:this.state,seconds:164,bytes_limit:this.max,pending_bytes_limit:this.maxPendingBytes,pending_chunks_limit:this.maxPendingChunks,permission:'NATIVE_GRANTED_NOT_REUSABLE'};
-    }catch{this.state='FAILED';this.stream?.getTracks().forEach(t=>t.stop());throw Error('CAPTURE_START_FAILED');}
+    }catch(error){this.reportDiagnostic(error,this.startPhase);this.state='FAILED';this.stream?.getTracks().forEach(t=>t.stop());throw Error('CAPTURE_START_FAILED');}
   }
   enqueue(blob){
     if(!blob?.size)return;
@@ -52,7 +62,7 @@ class CaptureController {
   }
   async finalize(){
     if(this.finalizing)return;this.finalizing=true;
-    if(this.stoppedAt===null){this.stoppedAt=this.now();this.failure=this.failure||'ERROR';this.reason=this.failure;this.state='STOPPING';}
+    if(this.stoppedAt===null){this.reportDiagnostic(null,'UNEXPECTED_STOP');this.stoppedAt=this.now();this.failure=this.failure||'ERROR';this.reason=this.failure;this.state='STOPPING';}
     await this.queue;
     const elapsed=Math.max(0,(this.stoppedAt-this.started)/1000);
     const custody={received_bytes:this.receivedBytes,reserved_bytes:this.reservedBytes,acked_bytes:this.bytes,reserved_chunks:this.reservedChunks,acked_chunks:this.seq,pending_bytes:this.pendingBytes,pending_chunks:this.pendingChunks,dropped_bytes:this.droppedBytes,failure:this.failure!==null};
@@ -68,9 +78,9 @@ function sameOriginSink(fetcher){
 }
 if(typeof module!=='undefined')module.exports={CaptureController,sameOriginSink};
 if(typeof document!=='undefined'){
- const start=document.getElementById('start-capture');if(start)start.addEventListener('click',async()=>{start.disabled=true;const status=document.getElementById('capture-status');try{
+ const start=document.getElementById('start-capture');if(start)start.addEventListener('click',async()=>{start.disabled=true;const status=document.getElementById('capture-status');let diagnosticText='';try{
  const permit={capture:document.body.dataset.captureAdmitted==='true',classification:'SYNTHETIC_ONLY',secureContext:window.isSecureContext};
- const controller=new CaptureController({mediaDevices:navigator.mediaDevices,Recorder:window.MediaRecorder,sink:sameOriginSink(fetch),onTerminal:r=>{status.textContent=r.state==='CAPTURED_NOT_AV_VERIFIED'?'Recording retained privately; audiovisual verification remains pending.':'Partial recording retained. No automatic retry.';}});
+ const controller=new CaptureController({onDiagnostic:d=>{diagnosticText='Recorder diagnostic: '+d.phase+' / '+d.error_name+' / '+d.recorder_state+'. ';status.textContent=diagnosticText+'No automatic retry.';},mediaDevices:navigator.mediaDevices,Recorder:window.MediaRecorder,sink:sameOriginSink(fetch),onTerminal:r=>{status.textContent=diagnosticText+(r.state==='CAPTURED_NOT_AV_VERIFIED'?'Recording retained privately; audiovisual verification remains pending.':'Partial recording retained. No automatic retry.');}});
  await controller.start(permit);status.textContent='Recording synthetic demonstration; automatic stop after 164 seconds.';
- }catch{status.textContent='Capture unavailable. No automatic retry.';}});
+ }catch{status.textContent=diagnosticText+'Capture unavailable. No automatic retry.';}});
 }

@@ -1,0 +1,9 @@
+/* Private recording view only; the accepted public stylesheet is unchanged. */
+.recovery-mode{font-size:20px}
+.recovery-mode .recovery-banner{padding:.5rem 1rem;border-bottom:1px solid #497f6a;background:#0b141a;color:#e1efea}
+.recovery-mode .recovery-banner p{margin:.2rem 0;font-size:1rem}
+.recovery-mode .recovery-banner:before{content:'●';color:#8ac4a4;float:right;animation:recovery-pulse 1s infinite alternate}
+.recovery-mode h1{font-size:2.2rem;line-height:1.05}
+.recovery-mode details,.recovery-mode pre,.recovery-mode .citation{font-size:1rem}
+.recovery-mode main{max-width:1280px}
+@keyframes recovery-pulse{to{opacity:.35}}
