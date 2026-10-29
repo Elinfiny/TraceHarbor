@@ -199,6 +199,7 @@ class Recovery:
         self.assert_original();exclusive(self.root/'demo-armed.json',{'state':'DEMO_READY','client_id':client_id,'at':self.clock(),'request_sha256':r.NEW_REQUEST,'retry':False});return {'armed':True}
     def begin(self,client_id):
         if not self.ready()or read(self.active_target())['client_id']!=client_id:raise Refusal('DEMO_NOT_READY')
+        __import__('retained_scope113').provider_active(self,max_age=600)
         exclusive(self.root/'demo-execution-reserved.json',{'client_id':client_id,'at':self.clock(),'state':'UNKNOWN_NO_RETRY'});return {'begun':True}
     def mark(self,name,elapsed):
         if name not in {'runtime-rendered','runtime-failed','story-start','supported','citation','conflicted','exported','reimported','historical','story-end','flow-failed'}or type(elapsed)not in(int,float)or not math.isfinite(elapsed)or not 0<=elapsed<=230:raise Refusal('FLOW_MARK')

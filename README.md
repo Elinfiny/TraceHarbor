@@ -272,3 +272,12 @@ Official sources inspected on 23 September 2026:
 - https://nebiusglobalaihackathon.devpost.com/rules
 
 </details>
+
+
+## Credit-only recorded release (2026-10-29)
+
+This release preserves disabled paid continuation and the existing allocation. A funded promo-credit attempt may be admitted even when the console billing label is Suspended. That label is retained as observed; neither a catalog response nor admission proves inference success. No additional generation is used as a health check. The original one-request recording flow requires its first retained full-media fragment before the request. Failed or uncertain effects are never retried.
+
+The existing public app at https://traceharbor.onrender.com supports source-linked synthetic evidence review, verification, import and evidence evolution without a judge API key or payment. The separately recorded runtime uses nvidia/Nemotron-3_5-Lightning through Nebius Token Factory with server-held credentials. Its verified runtime-result JSON and completion receipt will be published under release-evidence/ only after the original actual attempt and recording are verified. Review that receipt for actual completion; this source publication alone is not a successful inference, final video or submitted entry. Judges can import the published runtime-result JSON using the existing Import control, inspect citations and retained contrary evidence, and run the deterministic evidence-evolution path. Imported records do not independently attest model origin or semantic entailment; no fresh inference is promised by the public import flow.
+
+The published completion receipt binds the deployed source, demonstration video and actual runtime result. Existing historical example228 remains distinct. No Owner key, one-use grant, payment information or private console link belongs in the repository or delivery package. The same entry is Devpost submission1264455/software1509980; legal/prize/final submission remains a separately verified final step.

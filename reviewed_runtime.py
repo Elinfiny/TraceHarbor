@@ -48,6 +48,10 @@ class ReviewedSession:
             result={'schema':old.SCHEMA,'mode':'SERVER_RUNTIME_RECORD_ORIGIN_UNATTESTED','record':build_record(raw,analysis,metadata),'attempt':{'request_attempted':True,'retry':False,'origin':'NOT_INDEPENDENTLY_ATTESTED','deadline_seconds':old.DEADLINE_SECONDS},'limits':old.LIMITS}
             result['dossier_sha256']=digest(result);old.verify_runtime_result(result)
         except Exception:result=None
+        try:
+            import provider_receipt132
+            provider_receipt132.retain(boundary,self.ledger.path.parent,key)
+        except Exception:result=None
         try:self.ledger.terminal(reservation,result is not None)
         except Exception:result=None
         if result is None:raise old.RuntimeRefusal('CALL_OUTCOME_UNKNOWN',consumed=True) from None
