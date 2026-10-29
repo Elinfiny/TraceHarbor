@@ -20,8 +20,8 @@ def admission():
  r.qualify(c,e,pin=digest(c),capture_pin=digest(e),source_root=Path(__file__).parent)
  return c,e
 
-CREDIT67_PATH=Path('/var/data/traceharbor-staging/actual-recovery93.json')
-CREDIT67_SHA256='b3b34b934e8abc98427894f11382593844756d2ce037d1dcd71100d0fc9eaa18'
+CREDIT67_PATH=Path('/var/data/traceharbor-staging/actual-recovery96.json')
+CREDIT67_SHA256='ab9e610fcaf7e78f39aa24619775289dff9917710d8642f238191032e82ded3c'
 def credit_admission67():
  if os.environ.get('RENDER')!='true'or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_CREDIT67_RENDER_HOST')
  data=read(CREDIT67_PATH,65536)

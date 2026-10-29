@@ -11,7 +11,7 @@ import credit_scope67 as scope
 from quota_ledger import read,exclusive,private_dir,Ledger
 from release_policy import canonical,digest,Refusal
 POLICY_SHA256='5a5b6f318e1b7e5049c1e9b75c402b11f63c0f7f17f65553f9096fb9928bc354'
-COOKIE='__Host-traceharbor-recovery93'
+COOKIE='__Host-traceharbor-recovery96'
 PHASES=('vp8','vp9','select','native','full')
 NAMES={'TypeError','ReferenceError','EncodingError','NotSupportedError','NotReadableError','InvalidStateError','SecurityError','AbortError','UnknownError','OverconstrainedError','TimeoutError','NotAllowedError','NotFoundError'}
 
@@ -201,7 +201,7 @@ def review_page():
     return b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor private final review</title><body><h1>Private final review</h1><p>176 seconds: actual server result excerpt, then synthetic walkthrough. Private; no publication or submission.</p><video controls playsinline preload="metadata" src="/recovery67/final.mp4"></video><p><a href="/recovery67/final.mp4" download="TraceHarbor176.mp4">Download verified private copy</a> <a href="/recovery67/av-result">Custody and technical checks</a></p><p>Manual visual/audio review still required before public delivery.</p></body></html>'
 
 def html_page():
-    return b'''<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor checked recovery</title><body><h1>Checked recording recovery</h1><p>Existing diagnostic media is retained. A distinct server certificate is required before the original native sample and full recording. No new synthetic recording or retry.</p><button id="diagnose86" disabled>Original synthetic diagnostics closed</button><button id="select86" disabled>Select TraceHarbor tab and continue</button><p id="status86" role="status">Not started.</p><video id="preview86" muted controls playsinline></video><script src="/recovery67/selection146.js" defer></script><script src="/recovery67/controller.js" defer></script></body></html>'''
+    return b'''<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor checked recovery</title><body><h1>Checked recording recovery</h1><p><strong>Only after explicit execution authorization:</strong> select the browser tab named TraceHarbor &#183; Recording target67. After Share, activate that target tab and remain there for about 4 minutes, with up to 6 minutes margin. Keep this controller tab open; do not reload, close tabs, stop sharing, or press Share twice. Wait for CAPTURA SALVATA PRIVAT or CAPTURA OPRITA CU EROARE on the target, then return to ChatGPT. If no terminal after 6 minutes, return without restarting.</p><p>Existing diagnostic media is retained. A distinct server certificate is required before the original native sample and full recording. No new synthetic recording or retry.</p><button id="diagnose86" disabled>Original synthetic diagnostics closed</button><button id="select86" disabled>Select TraceHarbor tab and continue</button><p id="status86" role="status">Not started.</p><video id="preview86" muted controls playsinline></video><script src="/recovery67/selection146.js" defer></script><script src="/recovery67/controller.js" defer></script></body></html>'''
 
 class Handler(r.ReleaseHandler):
     def allowed(self):
@@ -239,7 +239,7 @@ class Handler(r.ReleaseHandler):
             return self.respond(200,(Path(__file__).parent/name).read_bytes(),'text/javascript; charset=utf-8')
         if self.path=='/recovery67/session':
             if not self._tls_envelope():return self.error(403,'TLS Host/Origin required.')
-            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator</title><h1>Recovery93 operator</h1><form method="post" action="/recovery67/session"><label>One-use recovery93 grant<input name="grant" type="password" required autocomplete="off"></label><button type="submit">Open recovery session</button></form></html>'
+            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator</title><h1>Recovery96 operator</h1><form method="post" action="/recovery67/session"><label>One-use recovery96 grant<input name="grant" type="password" required autocomplete="off"></label><button type="submit">Open recovery session</button></form></html>'
             self.send_response(200)
             for k,v in [('Content-Type','text/html; charset=utf-8'),('Content-Length',str(len(body))),('Cache-Control','no-store'),('Referrer-Policy','same-origin'),('Content-Security-Policy',"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")]:self.send_header(k,v)
             self.end_headers();self.wfile.write(body);return
@@ -250,7 +250,7 @@ class Handler(r.ReleaseHandler):
             if self.path=='/recovery67/target113':return self.error(403,'Original113 target closed; no retry.')
             if self.path=='/recovery67/target67':
                 import app
-                body=(app.ROOT/'web/index.html').read_bytes().replace(b'/app.js',b'/recovery67/app.js').replace(b'</head>',b'<link rel="stylesheet" href="/recovery67/demo.css"></head>').replace(b'</body>',b'<script src="/recovery67/operator67.js" defer></script></body>');return self.respond(200,body,'text/html; charset=utf-8')
+                body=(app.ROOT/'web/index.html').read_bytes().replace(b'/app.js',b'/recovery67/app.js').replace(b'</head>',b'<link rel="stylesheet" href="/recovery67/demo.css"></head>').replace(b'</body>',b'<section id="capture-controls96"><h2>Captura autorizata96</h2><p>Alege fila curenta TraceHarbor &#183; Recording target67 in dialogul Share. Dupa Share ramai AICI aproximativ4 minute, cu marja6minute. Nu inchide, nu reincarca si nu opri partajarea. Asteapta mesajul CAPTURA SALVATA PRIVAT sau CAPTURA OPRITA CU EROARE, apoi revino la ChatGPT. Nu repeta Share.</p><button id="diagnose86" disabled>Diagnostice vechi inchise</button><button id="select86" disabled>Select TraceHarbor tab and continue</button><p id="status86" role="status"></p><video id="preview86" muted playsinline style="display:none"></video></section><script src="/recovery67/selection146.js" defer></script><script src="/recovery67/controller.js" defer></script><script src="/recovery67/operator67.js" defer></script></body>');return self.respond(200,body,'text/html; charset=utf-8')
             if self.path=='/recovery67/':return self.respond(200,html_page(),'text/html; charset=utf-8')
             if self.path=='/recovery67/status':return self.respond(200,canonical(m.status()))
             if self.path=='/recovery67/runtime/status':return self.respond(200,canonical(m.status()))
@@ -308,7 +308,7 @@ class Handler(r.ReleaseHandler):
                 if not self._tls_envelope()or self.headers.get('Content-Type')!='application/x-www-form-urlencoded':raise Refusal('SESSION_HEADERS')
                 raw=self.body(512);form=parse_qs(raw.decode('ascii'),strict_parsing=True,max_num_fields=1)
                 if set(form)!={'grant'}or len(form['grant'])!=1:raise Refusal('SESSION_FORM')
-                token=self.server.operator67.consume(form['grant'][0].encode());self._qualify_owner_peer();self.send_response(303);self.send_header('Location','/recovery67/');self.send_header('Set-Cookie',COOKIE+'='+token+'; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=1800');self.send_header('Content-Length','0');self.send_header('Cache-Control','no-store');self.end_headers()
+                token=self.server.operator67.consume(form['grant'][0].encode());self._qualify_owner_peer();self.send_response(303);self.send_header('Location','/recovery67/target67');self.send_header('Set-Cookie',COOKIE+'='+token+'; Secure; HttpOnly; SameSite=Strict; Path=/; Max-Age=1800');self.send_header('Content-Length','0');self.send_header('Cache-Control','no-store');self.end_headers()
             except Exception:self.error(403,'Recovery session refused; no automatic retry.')
             return
         if self.path.startswith('/recovery67/'):

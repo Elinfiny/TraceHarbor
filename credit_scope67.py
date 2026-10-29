@@ -7,11 +7,11 @@ from pathlib import Path
 from quota_ledger import read,exclusive,private_dir,Ledger
 from release_policy import Refusal,digest,canonical
 import worker_scope67 as w
-ID='CREDIT-RECOVERY66-NEXT'
-ROOT=Path('/var/data/traceharbor-recovery67')
+ID='TRACEHARBOR-RECOVERY96'
+ROOT=Path('/var/data/traceharbor-recovery96')
 ORIGINAL=Path('/var/data/traceharbor-release68')
 PRIOR=Path('/var/data/traceharbor-recovery86')
-COOKIE='__Host-traceharbor-recovery93'
+COOKIE='__Host-traceharbor-recovery96'
 DEADLINE=1793379600
 
 def contract():
@@ -78,10 +78,10 @@ def legacy_technical83_closed(m):
 
 def ledger(m,*,unspent=False):
  authority(m);v=Ledger(ORIGINAL/'allocation',m.config);s=v.snapshot()
- if s['reserved_calls']not in((1,)if unspent else(1,2)):raise Refusal('EXACT_SHARED_ALLOCATION_STATE')
- if s['reserved_calls']==2:
-  q=read(v.path/'slot-002.json')
-  if q['request_sha256']!=m.p['request_sha256']or not(m.root/'e2e-reserved.json').exists():raise Refusal('FOREIGN_SLOT002')
+ if s['reserved_calls']not in((2,)if unspent else(2,3)):raise Refusal('EXACT_SHARED_ALLOCATION96_STATE')
+ if s['reserved_calls']==3:
+  q=read(v.path/'slot-003.json')
+  if q['request_sha256']!=m.p['request_sha256']or not(m.root/'e2e-reserved.json').exists():raise Refusal('FOREIGN_SLOT003')
  return v
 
 def idle(m):
@@ -123,7 +123,7 @@ def _validate_credit_value(m,v,max_age):
 
 def observe_credit(m,v):
  idle(m);base=m.root/'credit-observations';private_dir(base)
- if len(list(base.glob('*.json')))>=3:raise Refusal('OBSERVATION_BUDGET')
+ if len(list(base.glob('*.json')))>=1:raise Refusal('OBSERVATION_BUDGET')
  # Validate in memory before O_EXCL publication, using the same validator.
  validate_observation(m,v)
  exclusive(base/(digest(v)+'.json'),v);return {'state':'STANDARD_PAID_OBSERVATION_RETAINED_NOT_INFERENCE_PROOF'if(m.root/'standard-authority89.json').exists()else'CONFIRMED_CREDIT_OBSERVATION_RETAINED_NOT_INFERENCE_PROOF','sha256':digest(v)}
@@ -218,4 +218,4 @@ def status(m):
   return standard_billing89.status(m)
  try:v=credit(m,300);admitted=True;label=v['billing_status']
  except Exception:admitted=False;label='UNKNOWN'
- return {'schema':'traceharbor.runtime-status.v1','enabled':m.ready(),'new_call_cap':1 if m.ready()else 0,'reason':'ONE_FROM255HELD_OTHER254HELD','phases':{n:m.state(n)for n in('select','native','full')},'armed':(m.root/'target.json').exists(),'armed_id':read(m.root/'target.json')['client_id']if(m.root/'target.json').exists()else None,'target_epoch':'67','full_elapsed':m.clock()-m.sinks['full'].started if'full'in m.sinks else None,'session_remaining':int(m.operator.remaining()),'e2e_reserved':(m.root/'e2e-reserved.json').exists(),'e2e_result':(m.root/'e2e-result.json').exists(),'retained_clip_qualification':{'state':'PASS_PRIOR_NATIVE146_LINEAGE','clip_bytes':71412,'new_native_sample_still_required':True},'provider_readiness':{'state':'CREDIT_ONLY_ATTEMPT_ADMITTED'if admitted else'NOT_ADMITTED','admitted_attempt':admitted,'billing_status':label,'paid_continuation_disabled':True},'retry':False}
+ return {'schema':'traceharbor.runtime-status.v1','enabled':m.ready(),'new_call_cap':1 if m.ready()else 0,'reason':'ONE_FROM254HELD_OTHER253HELD','phases':{n:m.state(n)for n in('select','native','full')},'armed':(m.root/'target.json').exists(),'armed_id':read(m.root/'target.json')['client_id']if(m.root/'target.json').exists()else None,'target_epoch':'67','full_elapsed':m.clock()-m.sinks['full'].started if'full'in m.sinks else None,'session_remaining':int(m.operator.remaining()),'e2e_reserved':(m.root/'e2e-reserved.json').exists(),'e2e_result':(m.root/'e2e-result.json').exists(),'retained_clip_qualification':{'state':'PASS_PRIOR_NATIVE146_LINEAGE','clip_bytes':71412,'new_native_sample_still_required':True},'provider_readiness':{'state':'CREDIT_ONLY_ATTEMPT_ADMITTED'if admitted else'NOT_ADMITTED','admitted_attempt':admitted,'billing_status':label,'paid_continuation_disabled':True},'retry':False}

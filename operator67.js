@@ -16,11 +16,11 @@
  async function mark(name){return request('/recovery67/mark',{name,elapsed:elapsed()});}
  async function begin(){
   const s=await request('/recovery67/status');if(!s.enabled||s.armed_id!==clientId)return;
-  if(started)return;started=true;await request('/recovery67/begin',{client_id:clientId});clock=performance.now()-s.full_elapsed*1000;channel.postMessage({type:'ROOT_ACK',id:'CREDIT-RECOVERY66-NEXT'});
+  if(started)return;started=true;await request('/recovery67/begin',{client_id:clientId});clock=performance.now()-s.full_elapsed*1000;channel.postMessage({type:'ROOT_ACK',id:'TRACEHARBOR-RECOVERY96'});
   try{
    if(typeof run!=='function'||typeof runRuntime!=='function'||typeof loadRuntimeStatus!=='function')throw Error('APP_INTERFACE');
-   deadlineTimer=setTimeout(()=>{flowAborted=true;mark('runtime-failed').catch(()=>{});channel.postMessage({type:'FLOW_FAILED',id:'CREDIT-RECOVERY66-NEXT'});},Math.max(0,52000-(performance.now()-clock)));
-   line.textContent='One live server attempt · synthetic inputs · no remediation';
+   deadlineTimer=setTimeout(()=>{flowAborted=true;mark('runtime-failed').catch(()=>{});channel.postMessage({type:'FLOW_FAILED',id:'TRACEHARBOR-RECOVERY96'});},Math.max(0,52000-(performance.now()-clock)));
+   line.textContent='ÎNREGISTRARE ÎN CURS · o singură cerere server · date sintetice · rămâi aici până la mesajul final.';
    await run(()=>text('/recovery67/input'));await loadRuntimeStatus();await runRuntime();
    if(dossier?.schema!=='traceharbor.runtime-result.v1'){await mark('runtime-failed');throw Error('RUNTIME_NOT_VERIFIED');}
    clearTimeout(deadlineTimer);if(flowAborted||elapsed()>52)throw Error('RUNTIME_RENDER_TOO_LATE');await mark('runtime-rendered');line.textContent='Server record received. Origin and causal meaning are not independently attested.';
@@ -35,9 +35,16 @@
    await wait(176);await run(()=>text('/recovery67/export'),'/verify');await ready(()=>dossier?.schema==='traceharbor.evolution.v1');await mark('reimported');
    await wait(192);await run(()=>text('/recovery67/historical'),'/verify');await ready(()=>dossier?.schema==='traceharbor.provider-record.v1'||/IMPORTED RECORD/.test(document.querySelector('.mode').textContent));await mark('historical');
    await wait(214);line.textContent='Synthetic prototype. Integrity does not establish authorship, causation or production accuracy. No remediation executes.';document.getElementById('runtime-status')?.scrollIntoView({block:'center'});await mark('story-end');
-  }catch{clearTimeout(deadlineTimer);line.textContent='The recorded workflow stopped. Partial evidence retained; no automatic retry.';await mark('flow-failed').catch(()=>{});channel.postMessage({type:'FLOW_FAILED',id:'CREDIT-RECOVERY66-NEXT'});}
+  }catch{clearTimeout(deadlineTimer);line.textContent='The recorded workflow stopped. Partial evidence retained; no automatic retry.';await mark('flow-failed').catch(()=>{});channel.postMessage({type:'FLOW_FAILED',id:'TRACEHARBOR-RECOVERY96'});}
  }
- channel.onmessage=e=>{if(e.data?.type==='FULL_ACK'&&e.data?.id==='CREDIT-RECOVERY66-NEXT')begin().catch(()=>{channel.postMessage({type:'FLOW_FAILED',id:'CREDIT-RECOVERY66-NEXT'});});};
+ channel.onmessage=e=>{
+ if(e.data?.id==='TRACEHARBOR-RECOVERY96'){
+  if(e.data.type==='CAPTURE_STARTED'){const controls=document.getElementById('capture-controls96');if(controls)controls.hidden=true;}
+  if(e.data.type==='CAPTURE_STARTED')line.textContent='ÎNREGISTRARE ÎN CURS. Rămâi în această filă aproximativ 4 minute; nu închide filele și nu opri partajarea.';
+  if(e.data.type==='CAPTURE_FINISHED')line.textContent='CAPTURĂ SALVATĂ PRIVAT. Poți reveni la ChatGPT. Verificarea AV este încă necesară.';
+  if(e.data.type==='CAPTURE_FAILED')line.textContent='CAPTURĂ OPRITĂ CU EROARE. Dovezile sunt păstrate. Revino la ChatGPT; nu apăsa Share din nou.';
+ }
+ if(e.data?.type==='FULL_ACK'&&e.data?.id==='TRACEHARBOR-RECOVERY96')begin().catch(()=>{channel.postMessage({type:'FLOW_FAILED',id:'TRACEHARBOR-RECOVERY96'});});};
  // Arming is non-media and not an AI call; only one target can arm this route.
- request('/recovery67/status').then(async s=>{if(s.target_epoch!=='67'||s.armed!==false||s.armed_id!==null)throw Error('DISTINCT_TARGET67_ALREADY_ARMED');for(const id of ['evolution','runtime-analyze','result'])if(!document.getElementById(id))throw Error('APP_TARGET_MISSING');await request('/recovery67/arm67',{client_id:clientId});line.textContent='Recording target armed. Awaiting checked native capture.';}).catch(()=>{line.textContent='This view cannot arm another recording. Preserve the current attempt.';channel.close();});
+ request('/recovery67/status').then(async s=>{if(s.target_epoch!=='67'||s.armed!==false||s.armed_id!==null)throw Error('DISTINCT_TARGET67_ALREADY_ARMED');for(const id of ['evolution','runtime-analyze','result'])if(!document.getElementById(id))throw Error('APP_TARGET_MISSING');await request('/recovery67/arm67',{client_id:clientId});document.documentElement.dataset.targetArmed96='yes';document.dispatchEvent(new Event('traceharbor-target-ready96'));line.textContent='Pregatit pentru Share: selecteaza aceasta fila TraceHarbor · Recording target67 si ramai aici pana la mesajul final. Filmarea dureaza aproximativ4minute; marja6minute.';}).catch(()=>{line.textContent='This view cannot arm another recording. Preserve the current attempt.';channel.close();});
 })();

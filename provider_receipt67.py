@@ -4,7 +4,7 @@ No network or worker on import. No authentication headers, secret or retry.
 import hashlib,json,re
 from pathlib import Path
 from quota_ledger import exclusive,private_dir
-ROOT=Path('/var/data/traceharbor-recovery67')
+ROOT=Path('/var/data/traceharbor-recovery96')
 def redact(value,key):
  if isinstance(value,dict):return {str(k)[:80]:('[REDACTED]'if re.search('authorization|cookie|api.?key|access.?token|secret|password',str(k),re.I)else redact(v,key))for k,v in value.items()}
  if isinstance(value,list):return [redact(v,key)for v in value[:32]]

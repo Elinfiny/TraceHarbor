@@ -62,8 +62,8 @@ def gate(root,original,p):
     import worker_scope67 as w
     if native.get('probe',{}).get('worker',{}).get('identity')!=w.identity():raise r.Refusal('NATIVE_IDENTITY_DRIFT')
     result=r.r.runtime_service.verify_runtime_result(r.read(root/'e2e-result.json',65536))
-    ledger=scope.ledger(m);slot=r.read(ledger.path/'slot-002.json');terminal_AI=r.read(ledger.path/'terminal-002.json')
-    if slot['request_sha256']!=p['request_sha256']or terminal_AI['state']!='VERIFIED_RECORD_SEMANTICS_NOT_VERIFIED':raise r.Refusal('NEW_SLOT002_NOT_VERIFIED')
+    ledger=scope.ledger(m);slot=r.read(ledger.path/'slot-003.json');terminal_AI=r.read(ledger.path/'terminal-003.json')
+    if slot['request_sha256']!=p['request_sha256']or terminal_AI['state']!='VERIFIED_RECORD_SEMANTICS_NOT_VERIFIED':raise r.Refusal('NEW_SLOT003_NOT_VERIFIED')
     if any((root/('mark-'+n+'.json')).exists()for n in ('flow-failed','runtime-failed')):raise r.Refusal('FLOW_FAILED')
     marks={n:r.read(root/('mark-'+n+'.json'))for n in MARKS}
     if marks['runtime-rendered']['elapsed']>52:raise r.Refusal('LATE_RUNTIME')
@@ -105,7 +105,7 @@ def render():
         r.regular(assets[name])
         if H(assets[name].read_bytes())!=p[key]:raise r.Refusal('ASSET_PIN')
     edl=json.loads(assets['edl.json'].read_bytes());audio_plan(edl);captions=shifted_captions(assets['captions.srt'].read_bytes())
-    r.exclusive(root/'av/render-reserved.json',{'id':'CREDIT-RECOVERY66-NEXT-AV176','state':'UNKNOWN_NO_RETRY','seconds':176,'retry':False})
+    r.exclusive(root/'av/render-reserved.json',{'id':'TRACEHARBOR-RECOVERY96-AV176','state':'UNKNOWN_NO_RETRY','seconds':176,'retry':False})
     raw=assemble(root,terminal,p);prepare_audio(assets['voice.wav'],edl,root/'av/audio176.wav');r.binary_once(root/'av/captions176.srt',captions)
     checks={mode:bounded_child(mode,root,p)for mode in ('encode','decode','final-probe')};meta=checks['final-probe']['metadata'];streams=meta['streams'];v=[x for x in streams if x['codec_type']=='video'];a=[x for x in streams if x['codec_type']=='audio'];sub=[x for x in streams if x['codec_type']=='subtitle'];duration=float(meta['format']['duration'])
     if len(v)!=1 or v[0]['codec_name']!='h264'or(v[0]['width'],v[0]['height'])!=(1280,720)or len(a)!=1 or a[0]['codec_name']!='aac'or len(sub)!=1 or sub[0]['codec_name']!='mov_text'or not 175.75<=duration<=176.25:raise r.Refusal('FINAL_METADATA')

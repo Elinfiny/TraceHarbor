@@ -18,7 +18,7 @@ const Selection146=(()=>{
    let display;
    // This call is synchronous in the trusted click stack, BEFORE any await or
    // network request. The durable one-use reservation already exists.
-   try{display=this.devices.getDisplayMedia({video:true,audio:false});}
+   try{display=this.devices.getDisplayMedia({video:true,audio:false,preferCurrentTab:true,selfBrowserSurface:'include'});}
    catch(e){this.fail(error(e?.name||'NotAllowedError'));return Promise.reject(e);}
    const stream=Promise.resolve(display).then(raw=>{
     if(this.failed||this.now()-begun>120000){stop(raw);this.fail(error('TimeoutError','TIMEOUT'));throw error('TimeoutError','TIMEOUT');}
