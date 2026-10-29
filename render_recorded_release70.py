@@ -19,8 +19,24 @@ def admission():
  c,e=data['config'],data['evidence'];r.ADMITTED_CONFIG_SHA256=digest(c);r.ADMITTED_CAPTURE_SHA256=digest(e);r.ADMITTED_EVIDENCE_SHA256=digest(e);r.WORKER_ENTRY=Path(__file__).resolve();r.WORKER_ADMISSION_PATH=ADMISSION_PATH
  r.qualify(c,e,pin=digest(c),capture_pin=digest(e),source_root=Path(__file__).parent)
  return c,e
+
+CREDIT67_PATH=Path('/var/data/traceharbor-staging/actual-credit67.json')
+CREDIT67_SHA256='362bb0b078cb0c8ff3b0017ba2513175d3657458385de0fd9533c642e282b2d5'
+def credit_admission67():
+ if os.environ.get('RENDER')!='true'or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_CREDIT67_RENDER_HOST')
+ data=read(CREDIT67_PATH,65536)
+ if digest(data)!=CREDIT67_SHA256 or data.get('schema')!='traceharbor.credit67.contract.v1':raise Refusal('EXACT_PRIVATE_CREDIT67_CONTRACT')
+ r.checked_manifest(Path(__file__).parent,data['source_pins'])
+ return data['policy']
+
 def main():
  c,e=admission()
+ if len(sys.argv)==3 and sys.argv[1]=='--credit-worker67':
+  import credit_scope67,credit_runtime67
+  if Path(sys.argv[2])!=credit_scope67.ROOT:raise Refusal('EXACT_CREDIT67_WORKER')
+  p=credit_admission67()
+  if p['release_config']!=c:raise Refusal('SHARED_ORIGINAL_CONFIG_REQUIRED')
+  return credit_runtime67.worker(c,p)
  if len(sys.argv)==3 and sys.argv[1]=='--worker':
   if Path(sys.argv[2])!=r.STATE:raise Refusal('EXACT_WORKER_STATE')
   return r.worker(r.STATE)
@@ -34,6 +50,12 @@ def main():
   print('TraceHarbor capture146 configured; no automatic grant/media/AI; original84 retained',flush=True)
  except Exception:
   print('TraceHarbor capture146 unavailable; public read-only retained; no retry',flush=True)
+ try:
+  import recovery67
+  recovery67.wire(server,c)
+  print('Credit67 route installed; no automatic grant/media/AI',flush=True)
+ except Exception:
+  print('Credit67 not admitted; existing public read-only retained',flush=True)
  try:server.serve_forever()
  finally:server.server_close()
 if __name__=='__main__':main()
