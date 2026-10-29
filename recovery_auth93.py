@@ -22,10 +22,11 @@ def constants(m):
 def authority(m):
  import credit_scope67 as scope
  from render_recorded_release70 import CREDIT67_SHA256
+ import source_extension100 as ext
  scope.assert_parent(m);f.preserved();a=read(m.root/AUTHORITY,65536)
  for k,v in constants(m).items():need(type(a.get(k))is type(v)and a[k]==v,'ACTUAL_TECHNICAL96_SCOPE_REQUIRED')
- need(a.get('source_commit')==w.identity()['source_commit']and re.fullmatch('[a-f0-9]{40}',a.get('candidate_tree','')),'NEW96_SOURCE_BINDING')
- need(a.get('source_contract_sha256')==CREDIT67_SHA256,'NEW96_CONTRACT_BINDING')
+ need(a.get('source_commit')==ext.OLD_COMMIT and re.fullmatch('[a-f0-9]{40}',a.get('candidate_tree','')),'NEW96_SOURCE_BINDING')
+ need(a.get('source_contract_sha256')==ext.OLD_CONTRACT,'NEW96_CONTRACT_BINDING')
  o=a.get('technical_owner');r=a.get('independent_review');z=a.get('finance205')
  need(all(isinstance(v,dict)for v in(o,r,z)),'ACTUAL96_RECEIPTS_REQUIRED')
  need(digest(z)==FINANCE205 and z.get('state')=='ACTUAL_INFORMED_STANDARD89_OWNER_RECEIVED'and z.get('accepted')is True and z.get('proposed')is False,'PRESERVE_ACTUAL_FINANCE205')
@@ -40,13 +41,13 @@ def authority(m):
  need(type(a.get('expires'))in(int,float)and math.isfinite(a['expires'])and m.clock()<a['expires']<=1793379600 and o.get('expires')==a['expires'],'RECOVERY96_AUTHORITY_EXPIRED')
  migration=read(operator_path(m)/'migration.json',65536);complete=read(operator_path(m)/'bootstrap-complete.json',65536)
  need(digest(migration)==a.get('migration_sha256')and migration.get('epoch')==EPOCH and migration.get('source_commit')==a['source_commit'],'APPEND96_MIGRATION_REQUIRED')
- need(complete.get('state')=='RECOVERY96_APPEND_COMPLETE'and complete.get('authority_sha256')==digest(a)and complete.get('contract_sha256')==CREDIT67_SHA256 and complete.get('migration_sha256')==digest(migration),'PARTIAL96_BOOTSTRAP_CLOSED')
+ need(complete.get('state')=='RECOVERY96_APPEND_COMPLETE'and complete.get('authority_sha256')==digest(a)and complete.get('contract_sha256')==ext.OLD_CONTRACT and complete.get('migration_sha256')==digest(migration),'PARTIAL96_BOOTSTRAP_CLOSED')
  need(hashlib.sha256(HELPER.read_bytes()).hexdigest()==a['helper_sha256']==complete.get('helper_sha256'),'PRIVATE96_HELPER_PIN')
  backup=operator_path(m)/'preimages96.zip'
  import recovery86
  recovery86.regular(backup);need(backup.stat().st_size<=33554432 and hashlib.sha256(backup.read_bytes()).hexdigest()==complete.get('backup_sha256'),'PRIVATE96_PREIMAGE_BACKUP_REQUIRED')
  need(hashlib.sha256((m.root/'standard-authority89.json').read_bytes()).hexdigest()==BASE_AUTHORITY,'COPIED_FINANCE205_LINEAGE_ONLY')
- return a
+ return ext.authorize(m,a)
 
 def grant(m):
  import credit_scope67 as scope
