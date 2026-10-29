@@ -1,7 +1,8 @@
 /* Source-only Recovery86 controller. No media effect on import/page load.
    All reservations precede media APIs; distinct diagnostics are not demo retries. */
 const Recovery86=(()=>{
- const safeNames=new Set(['EncodingError','NotSupportedError','NotReadableError','InvalidStateError','SecurityError','AbortError','UnknownError','OverconstrainedError','TimeoutError']);
+ const platformTimers=Object.freeze({set:(fn,ms)=>setTimeout(fn,ms),clear:id=>clearTimeout(id)});
+ const safeNames=new Set(['TypeError','ReferenceError','EncodingError','NotSupportedError','NotReadableError','InvalidStateError','SecurityError','AbortError','UnknownError','OverconstrainedError','TimeoutError']);
  const named=(name,where)=>Object.assign(new Error('RECOVERY_REFUSED_NO_RETRY'),{name:safeNames.has(name)?name:'UnknownError',where});
  const safe=e=>({error_name:safeNames.has(e?.name||e?.error_name)?(e.name||e.error_name):'UnclassifiedError',where:['SELECT','CONSTRUCT','START','RECORDER_EVENT','DECODE','UPLOAD','PROBE','TIMEOUT','TRACK_ENDED','FLOW'].includes(e?.where)?e.where:'FLOW'});
  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -16,12 +17,12 @@ const Recovery86=(()=>{
   finish(phase,value){return this.post('/recovery86/finish',{phase,value});}
   fail(phase,e){return this.post('/recovery86/fail',{phase,...safe(e)});}
  }
- function probe(stream,mime,Recorder,{seconds=2,maximum=1048576,now=()=>performance.now(),timers={set:setTimeout,clear:clearTimeout}}={}){
+ function probe(stream,mime,Recorder,{seconds=2,maximum=1048576,now=()=>performance.now(),timers=platformTimers}={}){
   return new Promise((resolve,reject)=>{
    let rec,timer,hardTimer,done=false,bytes=0,chunks=[],started=now(),failure=null;
    const stop=()=>{try{if(rec?.state!=='inactive')rec.stop();}catch{};};
    const fail=e=>{if(done)return;failure=failure||e;stop();finish();};
-   const finish=()=>{if(done)return;done=true;timers.clear(timer);timers.clear(hardTimer);if(failure)return reject(failure);const blob=new Blob(chunks,{type:mime});if(!blob.size)return reject(named('NotReadableError','DECODE'));resolve({blob,elapsed:(now()-started)/1000});};
+   const finish=()=>{if(done)return;done=true;timers.clear(timer);timers.clear(hardTimer);if(failure){stop();return reject(failure);}const blob=new Blob(chunks,{type:mime});if(!blob.size)return reject(named('NotReadableError','DECODE'));resolve({blob,elapsed:(now()-started)/1000});};
    try{
     rec=new Recorder(stream,{mimeType:mime,videoBitsPerSecond:800000});
     rec.ondataavailable=e=>{if(done||!e.data?.size)return;if(e.data.size>maximum||bytes+e.data.size>maximum||chunks.length>=32)return fail(named('UnknownError','UPLOAD'));bytes+=e.data.size;chunks.push(e.data);};
@@ -41,7 +42,7 @@ const Recovery86=(()=>{
   draw();const interval=setInterval(draw,1000/p.fps);const stream=c.captureStream(p.fps);return {stream,dispose:()=>{clearInterval(interval);stream.getTracks().forEach(t=>t.stop());}};
  }
  class FullRecorder{
-  constructor({stream,mime,Recorder,api,p,onAck=()=>{},onTerminal=()=>{},now=()=>performance.now(),timers={set:setTimeout,clear:clearTimeout}}){Object.assign(this,{stream,mime,Recorder,api,p,onAck,onTerminal,now,timers});this.state='IDLE';this.queue=Promise.resolve();this.failure=null;this.stoppedAt=null;this.finalizing=false;this.receivedBytes=0;this.reservedBytes=0;this.bytes=0;this.reservedChunks=0;this.seq=0;this.pendingBytes=0;this.pendingChunks=0;this.droppedBytes=0;}
+  constructor({stream,mime,Recorder,api,p,onAck=()=>{},onTerminal=()=>{},now=()=>performance.now(),timers=platformTimers}){Object.assign(this,{stream,mime,Recorder,api,p,onAck,onTerminal,now,timers});this.state='IDLE';this.queue=Promise.resolve();this.failure=null;this.stoppedAt=null;this.finalizing=false;this.receivedBytes=0;this.reservedBytes=0;this.bytes=0;this.reservedChunks=0;this.seq=0;this.pendingBytes=0;this.pendingChunks=0;this.droppedBytes=0;}
   async start(codec){
    if(this.state!=='IDLE')throw named('InvalidStateError','START');this.state='RESERVING';
    await this.api.reserve('full',codec);this.started=this.now(); // ACK before construction/start; unknown => no retry.
@@ -68,7 +69,7 @@ const Recovery86=(()=>{
    if(this.usedDiagnostics)throw named('InvalidStateError','START');this.usedDiagnostics=true;
    for(const codec of Object.keys(this.p.codecs)){
     let src,reserved=false;
-    try{await this.api.reserve(codec,codec);reserved=true;if(!this.Recorder.isTypeSupported(this.p.codecs[codec]))throw named('NotSupportedError','START');src=this.source(this.p);const result=await probe(src.stream,this.p.codecs[codec],this.Recorder);await this.decoder(result.blob,this.p);await this.api.append(codec,0,new Uint8Array(await result.blob.arrayBuffer()));const q=await this.api.finish(codec,{elapsed:result.elapsed,reason:'DIAGNOSTIC_DONE',client_decoded:true});if(q.state==='PASS'){this.codec=codec;this.state='CODEC_QUALIFIED';this.report('Synthetic codec passed: '+codec+'. Native sample remains required.');return codec;}}
+    try{await this.api.reserve(codec,codec);reserved=true;if(!this.Recorder.isTypeSupported(this.p.codecs[codec]))throw named('NotSupportedError','START');src=this.source(this.p);const result=await probe(src.stream,this.p.codecs[codec],this.Recorder);await this.decoder(result.blob,this.p);await this.api.append(codec,0,new Uint8Array(await result.blob.arrayBuffer()));const q=await this.api.finish(codec,{elapsed:result.elapsed,reason:'DIAGNOSTIC_DONE',client_decoded:true});if(q.state==='PASS'){this.codec=codec;this.state='CODEC_QUALIFIED';this.report('Distinct diagnostic106 passed: '+codec+'. Native sample remains required.');return codec;}}
     catch(e){if(!reserved){this.state='FAILED';throw e;}await this.api.fail(codec,e).catch(()=>{});this.report('Codec diagnostic: '+codec+' / '+safe(e).error_name+' / '+safe(e).where+'. No repeat of this codec.');}
     finally{src?.dispose();}
    }
@@ -94,7 +95,7 @@ const Recovery86=(()=>{
    }catch(e){await this.api.fail(activePhase,e).catch(()=>{});this.state='FAILED';this.report('Recovery stopped: '+safe(e).error_name+' / '+safe(e).where+'. Retained; no automatic retry.');clearTimeout(timer);source?.dispose();raw?.getTracks().forEach(t=>t.stop());throw e;}
   }
  }
- return {API,probe,safe,FullRecorder,Controller};
+ return {API,probe,safe,FullRecorder,Controller,platformTimers};
 })();
 if(typeof module!=='undefined')module.exports=Recovery86;
 if(typeof document!=='undefined'&&document.getElementById('diagnose86')){
