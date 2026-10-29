@@ -7,7 +7,7 @@ const Recovery86=(()=>{
  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  const hash=async b=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',b))).map(x=>x.toString(16).padStart(2,'0')).join('');
  class API{
-  constructor(fetcher=fetch){this.fetcher=fetcher;}
+  constructor(fetcher=fetch){this.fetcher=fetcher.bind(typeof window==='undefined'?undefined:window);}
   async bounded(path,options){const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),8000);try{const r=await this.fetcher(path,{...options,signal:abort.signal});abort.signal.throwIfAborted();const data=await r.json();return {ok:r.ok,json:async()=>data};}finally{clearTimeout(timer);}}
   async get(path){const r=await this.bounded(path,{credentials:'same-origin',cache:'no-store',redirect:'error'});if(!r.ok)throw named('UnknownError','PROBE');return r.json();}
   async post(path,x){const r=await this.bounded(path,{method:'POST',credentials:'same-origin',cache:'no-store',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});if(!r.ok)throw named('UnknownError','UPLOAD');return r.json();}
@@ -101,5 +101,5 @@ if(typeof document!=='undefined'&&document.getElementById('diagnose86')){
  (async()=>{const api=new Recovery86.API();const p=await api.get('/recovery86/policy');const status=document.getElementById('status86'),diagnose=document.getElementById('diagnose86'),select=document.getElementById('select86');const c=new Recovery86.Controller({api,p,devices:navigator.mediaDevices,Recorder:window.MediaRecorder,report:t=>status.textContent=t,preview:document.getElementById('preview86'),channel:new BroadcastChannel('traceharbor-recovery86')});
  diagnose.addEventListener('click',async()=>{diagnose.disabled=true;try{await c.diagnostic();const s=await api.get('/recovery86/status');select.disabled=!s.armed;}catch{status.textContent+=' Recovery closed; no native sample/full recording admitted.';}});
  select.addEventListener('click',async()=>{select.disabled=true;try{await c.selectAndRun();}catch{}});
- })().catch(()=>{document.getElementById('status86').textContent='Recovery unavailable; no automatic retry.';});
+ })().catch(e=>{const name=['TypeError','AbortError','TimeoutError','SecurityError'].includes(e?.name)?e.name:'UnclassifiedError';document.getElementById('diagnose86').disabled=true;document.getElementById('select86').disabled=true;document.getElementById('status86').textContent='Recovery unavailable / '+name+' / INITIALIZATION. No media started. No automatic retry.';});
 }

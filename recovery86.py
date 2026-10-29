@@ -197,9 +197,22 @@ def bounded_probe(path,codec,p):
         proc.kill();proc.communicate(timeout=2);return {'pass':False,'error':'PROBE_WALL_EXHAUSTED'}
     if proc.returncode or len(out)>65536:return {'pass':False,'error':'PROBE_UNKNOWN'}
     try:
-        data=json.loads(out);videos=[x for x in data['streams']if x['codec_type']=='video'];audio=[x for x in data['streams']if x['codec_type']=='audio'];v=videos[0];frames=int(v.get('nb_read_frames','0'));duration=float(data.get('format',{}).get('duration',0))
-        ok=len(videos)==1 and not audio and v['codec_name']==codec and v['width']==p['width'] and v['height']==p['height'] and frames>=2 and 0.1<=duration<=4
-        return {'pass':ok,'codec':v['codec_name'],'width':v['width'],'height':v['height'],'frames':frames,'seconds':duration,'audio_streams':len(audio)}
+        data=json.loads(out);videos=[x for x in data['streams']if x['codec_type']=='video'];audio=[x for x in data['streams']if x['codec_type']=='audio'];v=videos[0];frames=int(v.get('nb_read_frames','0'))
+        raw_duration=data.get('format',{}).get('duration');basis='container_duration'
+        if raw_duration in(None,'','N/A')or float(raw_duration)==0:
+            # Matroska Duration is optional. Keep the same duration bound using
+            # actual video packet timestamps; do not accept an absent clock.
+            packets=[x for x in data.get('packets',[])if x.get('codec_type')=='video']
+            if not 2<=len(packets)<=90:raise ValueError('PACKET_BOUND')
+            pts=[float(x['pts_time'])for x in packets]
+            if not all(math.isfinite(x)for x in pts)or any(b<a for a,b in zip(pts,pts[1:])):raise ValueError('PACKET_CLOCK')
+            raw_tail=packets[-1].get('duration_time')
+            tail=(pts[-1]-pts[-2]if pts[-1]>pts[-2]else 1/p['fps'])if raw_tail in(None,'','N/A')else float(raw_tail)
+            if not math.isfinite(tail)or not 0<tail<=1:raise ValueError('PACKET_TAIL')
+            duration=pts[-1]-pts[0]+tail;basis='video_packet_timestamps'
+        else:duration=float(raw_duration)
+        ok=len(videos)==1 and not audio and v['codec_name']==codec and v['width']==p['width'] and v['height']==p['height'] and 2<=frames<=90 and math.isfinite(duration) and 0.1<=duration<=4
+        return {'pass':ok,'codec':v['codec_name'],'width':v['width'],'height':v['height'],'frames':frames,'seconds':duration,'duration_basis':basis,'audio_streams':len(audio)}
     except Exception:return {'pass':False,'error':'PROBE_SHAPE'}
 
 def probe_child(path,codec):
@@ -209,7 +222,7 @@ def probe_child(path,codec):
     regular(path)
     if path.stat().st_size>p['diagnostic_bytes']:raise Refusal('PROBE_BOUND')
     resource.setrlimit(resource.RLIMIT_CPU,(p['probe_cpu_seconds'],)*2);resource.setrlimit(resource.RLIMIT_AS,(p['probe_as_bytes'],)*2);resource.setrlimit(resource.RLIMIT_FSIZE,(131072,)*2)
-    os.execve('/usr/bin/ffprobe',['ffprobe','-v','error','-threads','1','-protocol_whitelist','file,pipe','-count_frames','-show_entries','stream=codec_type,codec_name,width,height,nb_read_frames:format=duration','-of','json',str(path)],{'PATH':'/usr/bin:/bin','LANG':'C'})
+    os.execve('/usr/bin/ffprobe',['ffprobe','-v','error','-threads','1','-protocol_whitelist','file,pipe','-count_frames','-show_packets','-show_entries','stream=codec_type,codec_name,width,height,nb_read_frames:format=duration:packet=codec_type,pts_time,duration_time','-of','json',str(path)],{'PATH':'/usr/bin:/bin','LANG':'C'})
 
 def review_page():
     return b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor private final review</title><body><h1>Private final review</h1><p>176 seconds: actual server result excerpt, then synthetic walkthrough. Private; no publication or submission.</p><video controls playsinline preload="metadata" src="/recovery86/final.mp4"></video><p><a href="/recovery86/final.mp4" download="TraceHarbor176.mp4">Download verified private copy</a> <a href="/recovery86/av-result">Custody and technical checks</a></p><p>Manual visual/audio review still required before public delivery.</p></body></html>'
