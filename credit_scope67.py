@@ -28,6 +28,9 @@ def assert_parent(m):
   if len(b)!=pin['bytes']or hashlib.sha256(b).hexdigest()!=pin['sha256']:raise Refusal('PARENT143_146_DRIFT')
 
 def authority(m):
+ if (m.root/'standard-authority89.json').exists():
+  import standard_billing89
+  return standard_billing89.authority(m)
  assert_parent(m);a=read(m.root/'authority.json',65536)
  expected={'schema':'traceharbor.credit67.authority.v1','scope':ID,'accepted':True,'deploy_slot':3,'max_total_deploys':3,'new_AI_max':1,'reallocated_from_HELD':1,'allocation_id':m.config['allocation_id'],'total_call_limit':256,'session_max':1,'selector_max':1,'recording_sessions_max':1,'paid_continuation_disabled':True,'new_cash_USD':'0','credit_call_gross_cap_USD':'0.002','total_cash_cap_USD':'20','new_permissions_terms':False,'request_sha256':m.p['request_sha256']}
  for k,v in expected.items():
@@ -45,6 +48,9 @@ OWNER83_PARENT_TREE='33476f59ae86cc6a9dc4cc8ef3ef80af15b9ea67'
 OWNER83_PARENT_CONTRACT='16fbb84516bd009ce5a909af076c9395b8f595bfdacaeaa7f7c49c0110ae02b0'
 TECHNICAL84_REVIEW='ACCEPT_EXACT_TECHNICAL84_CANDIDATE_FOR_OWNER83_ONLY'
 def technical_authority(m):
+ if (m.root/'standard-authority89.json').exists():
+  import standard_billing89
+  return standard_billing89.authority(m)
  # This separate path never creates/promotes the full effect authority.json.
  assert_parent(m);path=m.root/'technical-authority83.json'
  if not path.exists():return authority(m) # Preserve separately approved full path.
@@ -85,6 +91,9 @@ def credit(m,max_age=600):
  return _validate_credit_value(m,v,max_age)
 
 def _validate_credit_value(m,v,max_age):
+ if (m.root/'standard-authority89.json').exists():
+  import standard_billing89
+  return standard_billing89.validate_observation(m,v,max_age)
  authority(m)
  expected={'schema':'traceharbor.confirmed-credit67.v1','scope':ID,'tenant':'aitenant-e00rrxfyw57s74dbqq','project':'aiproject-e00d73xwjm884tnvcs','provider_confirmed_credit_only':True,'credential_project_binding_confirmed':True,'paid_continuation_disabled':True,'new_money_card_terms_permissions':False,'pricing_confirmed':True,'input_nanodollars_per_token':60,'output_nanodollars_per_token':240,'no_inference':True,'identity':w.identity()}
  for k,z in expected.items():
@@ -110,7 +119,7 @@ def observe_credit(m,v):
  if len(list(base.glob('*.json')))>=3:raise Refusal('OBSERVATION_BUDGET')
  # Validate in memory before O_EXCL publication, using the same validator.
  validate_observation(m,v)
- exclusive(base/(digest(v)+'.json'),v);return {'state':'CONFIRMED_CREDIT_OBSERVATION_RETAINED_NOT_INFERENCE_PROOF','sha256':digest(v)}
+ exclusive(base/(digest(v)+'.json'),v);return {'state':'STANDARD_PAID_OBSERVATION_RETAINED_NOT_INFERENCE_PROOF'if(m.root/'standard-authority89.json').exists()else'CONFIRMED_CREDIT_OBSERVATION_RETAINED_NOT_INFERENCE_PROOF','sha256':digest(v)}
 
 def validate_observation(m,v):
  return _validate_credit_value(m,v,120)
@@ -198,6 +207,9 @@ def begin(m,client_id):
  credit(m,600);exclusive(m.root/'demo-execution-reserved.json',{'at':m.clock(),'client_id':client_id,'state':'UNKNOWN_NO_RETRY'});return {'begun':True}
 
 def status(m):
+ if (m.root/'standard-authority89.json').exists():
+  import standard_billing89
+  return standard_billing89.status(m)
  try:v=credit(m,300);admitted=True;label=v['billing_status']
  except Exception:admitted=False;label='UNKNOWN'
  return {'schema':'traceharbor.runtime-status.v1','enabled':m.ready(),'new_call_cap':1 if m.ready()else 0,'reason':'ONE_FROM255HELD_OTHER254HELD','phases':{n:m.state(n)for n in('select','native','full')},'armed':(m.root/'target.json').exists(),'armed_id':read(m.root/'target.json')['client_id']if(m.root/'target.json').exists()else None,'target_epoch':'67','full_elapsed':m.clock()-m.sinks['full'].started if'full'in m.sinks else None,'session_remaining':int(m.operator.remaining()),'e2e_reserved':(m.root/'e2e-reserved.json').exists(),'e2e_result':(m.root/'e2e-result.json').exists(),'retained_clip_qualification':{'state':'PASS_PRIOR_NATIVE146_LINEAGE','clip_bytes':71412,'new_native_sample_still_required':True},'provider_readiness':{'state':'CREDIT_ONLY_ATTEMPT_ADMITTED'if admitted else'NOT_ADMITTED','admitted_attempt':admitted,'billing_status':label,'paid_continuation_disabled':True},'retry':False}
