@@ -11,7 +11,7 @@ import credit_scope67 as scope
 from quota_ledger import read,exclusive,private_dir,Ledger
 from release_policy import canonical,digest,Refusal
 POLICY_SHA256='5a5b6f318e1b7e5049c1e9b75c402b11f63c0f7f17f65553f9096fb9928bc354'
-COOKIE='__Host-traceharbor-credit67'
+COOKIE='__Host-traceharbor-recovery93'
 PHASES=('vp8','vp9','select','native','full')
 NAMES={'TypeError','ReferenceError','EncodingError','NotSupportedError','NotReadableError','InvalidStateError','SecurityError','AbortError','UnknownError','OverconstrainedError','TimeoutError','NotAllowedError','NotFoundError'}
 
@@ -33,20 +33,22 @@ def witness(original):
     return digest({'selected':read(original/'capture-started.json'),'terminal':read(original/'capture/terminal.json'),'custody':read(original/'capture/custody.json')})
 
 class Operator:
-    def __init__(self,path,ttl,clock=time.time):self.path=path;self.ttl=ttl;self.clock=clock;self.lock=threading.Lock()
+    def __init__(self,path,ttl,clock=time.time,*,scope_id='CREDIT67_ONLY'):self.path=path;self.ttl=ttl;self.clock=clock;self.lock=threading.Lock();self.scope_id=scope_id
     def consume(self,raw):
         if not isinstance(raw,bytes)or not re.fullmatch(rb'[a-f0-9]{64}',raw):raise Refusal('GRANT_SHAPE')
         with self.lock:
             g=read(self.path/'grant.json')
-            if g['scope']!='CREDIT67_ONLY' or self.clock()>=g['expires'] or not hmac.compare_digest(hashlib.sha256(raw).hexdigest(),g['sha256']):raise Refusal('GRANT_REFUSED')
-            exclusive(self.path/'grant-consumed.json',{'scope':'CREDIT67_ONLY','retry':False})
-            token=os.urandom(32).hex();exclusive(self.path/'session.json',{'sha256':hashlib.sha256(token.encode()).hexdigest(),'scope':'CREDIT67_ONLY','expires':min(g['expires'],self.clock()+self.ttl)})
+            if g['scope']!=self.scope_id or self.clock()>=g['expires'] or not hmac.compare_digest(hashlib.sha256(raw).hexdigest(),g['sha256']):raise Refusal('GRANT_REFUSED')
+            exclusive(self.path/'grant-consumed.json',{'scope':self.scope_id,'retry':False})
+            token=os.urandom(32).hex();exclusive(self.path/'session.json',{'sha256':hashlib.sha256(token.encode()).hexdigest(),'scope':self.scope_id,'expires':min(g['expires'],self.clock()+self.ttl)})
             return token
     def authorize(self,h):
         try:
             if len(h.headers.get_all('Cookie',[]))!=1:return False
-            c=SimpleCookie();c.load(h.headers['Cookie']);v=c[COOKIE].value;s=read(self.path/'session.json')
-            return len(v)==64 and s['scope']=='CREDIT67_ONLY' and self.clock()<s['expires'] and hmac.compare_digest(hashlib.sha256(v.encode()).hexdigest(),s['sha256'])
+            header=h.headers['Cookie']
+            if sum(x.split('=',1)[0].strip()==COOKIE for x in header.split(';'))!=1:return False
+            c=SimpleCookie();c.load(header);v=c[COOKIE].value;s=read(self.path/'session.json')
+            return len(v)==64 and s['scope']==self.scope_id and self.clock()<s['expires'] and hmac.compare_digest(hashlib.sha256(v.encode()).hexdigest(),s['sha256'])
         except Exception:return False
     def remaining(self):
         try:return max(0,read(self.path/'session.json')['expires']-self.clock())
@@ -70,7 +72,8 @@ class Recovery:
     def __init__(self,root,original,config,p,*,clock=time.time,probe=None):
         self.root=Path(root);self.original=Path(original);self.config=config;self.p=p;self.clock=clock;self.probe=probe or bounded_probe;self.lock=threading.Lock();self.sinks={};self.call=None;self.selection_timer_factory146=threading.Timer;self.selection_timer146=None
         self.assert_original()
-        self.operator=Operator(self.root/'operator67',p['session_seconds'],clock)
+        from recovery_auth93 import EPOCH,operator_path
+        self.operator=Operator(operator_path(self),min(p['session_seconds'],1800),clock,scope_id=EPOCH)
     def assert_original(self):return scope.assert_parent(self)
     def initialize(self):return scope.initialize(self)
     def phase_dir(self,phase):
@@ -81,7 +84,10 @@ class Recovery:
     def prepare113(self):raise Refusal('OLD_SCOPE_CLOSED')
     def issue_grant106_once(self):raise Refusal('SCOPE106_CLOSED_NO_REISSUE')
     def issue_grant113_once(self):raise Refusal('ORIGINAL113_GRANT_CLOSED_NO_REISSUE')
-    def issue_grant67_once(self):return scope.grant(self)
+    def issue_grant67_once(self):raise Refusal('CONSUMED_OPERATOR67_GRANT_CLOSED')
+    def issue_grant93_once(self):
+        import recovery_auth93
+        return recovery_auth93.grant(self)
     def state(self,phase):
         if phase=='select':return scope.selection_status(self)
         if phase not in('native','full'):raise Refusal('PHASE')
@@ -198,13 +204,24 @@ def html_page():
     return b'''<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor checked recovery</title><body><h1>Checked recording recovery</h1><p>Existing diagnostic media is retained. A distinct server certificate is required before the original native sample and full recording. No new synthetic recording or retry.</p><button id="diagnose86" disabled>Original synthetic diagnostics closed</button><button id="select86" disabled>Select TraceHarbor tab and continue</button><p id="status86" role="status">Not started.</p><video id="preview86" muted controls playsinline></video><script src="/recovery67/selection146.js" defer></script><script src="/recovery67/controller.js" defer></script></body></html>'''
 
 class Handler(r.ReleaseHandler):
+    def allowed(self):
+        # Same authenticated scope on every ephemeral Render ingress peer.
+        # Never enroll a peer from headers or the old operator session alone.
+        protected=(self.path.startswith('/recovery67/') and
+                   self.path!='/recovery67/session') or self.path=='/operator86.js'
+        if protected:
+            if not self._tls_envelope() or not self.server.operator67.authorize(self):
+                return False
+            return self._qualify_owner_peer()
+        return super().allowed()
+
     def _qualify_owner_peer(self):
         peer=r.ipaddress.ip_address(self.client_address[0])
         if not peer.is_private or peer.is_loopback or peer.is_unspecified:raise Refusal('PRIVATE_RENDER_PEER')
         with self.server.peer_enrollment_lock:
             key=str(peer);policy=self.server.edge_policy
             if key not in policy.peers:
-                root=self.server.recovery67.root/'qualified-proxy-peers';root.mkdir(mode=0o700,exist_ok=True);private_dir(root);f=root/(hashlib.sha256(key.encode()).hexdigest()+'.json');v={'peer':key,'proof':'NATIVE_RECOVERY86_OWNER','config_sha256':digest(policy.config)}
+                root=self.server.operator67.path/'qualified-proxy-peers';root.mkdir(mode=0o700,exist_ok=True);private_dir(root);f=root/(hashlib.sha256(key.encode()).hexdigest()+'.json');v={'peer':key,'proof':'NATIVE_RECOVERY93_OWNER','config_sha256':digest(policy.config)}
                 if f.exists():
                     if read(f)!=v:raise Refusal('RECOVERY_PROXY_DRIFT')
                 else:exclusive(f,v)
@@ -222,7 +239,7 @@ class Handler(r.ReleaseHandler):
             return self.respond(200,(Path(__file__).parent/name).read_bytes(),'text/javascript; charset=utf-8')
         if self.path=='/recovery67/session':
             if not self._tls_envelope():return self.error(403,'TLS Host/Origin required.')
-            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator</title><h1>Recovery86 operator</h1><form method="post" action="/recovery67/session"><label>One-use recovery grant<input name="grant" type="password" required autocomplete="off"></label><button type="submit">Open recovery session</button></form></html>'
+            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator</title><h1>Recovery93 operator</h1><form method="post" action="/recovery67/session"><label>One-use recovery93 grant<input name="grant" type="password" required autocomplete="off"></label><button type="submit">Open recovery session</button></form></html>'
             self.send_response(200)
             for k,v in [('Content-Type','text/html; charset=utf-8'),('Content-Length',str(len(body))),('Cache-Control','no-store'),('Referrer-Policy','same-origin'),('Content-Security-Policy',"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")]:self.send_header(k,v)
             self.end_headers();self.wfile.write(body);return

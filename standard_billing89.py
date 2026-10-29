@@ -18,6 +18,10 @@ def expected(m):
  return {'schema':'traceharbor.standard89.authority.v1','scope':MODE,'accepted':True,'billing_mode':MODE,'same_service':'srv-dbh6hgh42hec73c3g9m0','deploy_slot':4,'max_total_deploys':4,'new_AI_max':1,'reallocated_from_HELD':1,'allocation_id':m.config['allocation_id'],'total_call_limit':256,'session_max':1,'selector_max':1,'recording_sessions_max':1,'paid_usage_authorized':True,'paid_continuation_disabled':False,'provider_global_hardcap':False,'uncapped_provider_liability_acknowledged':True,'project_credential_binding_not_provider_attested_acknowledged':True,'new_topup_authorized':False,'new_terms_permissions_authorized':False,'call_gross_cap_USD':'0.002','planned_total_USD':'20','request_sha256':m.p['request_sha256'],'policy_sha256':digest(m.p)}
 
 def authority(m):
+ import recovery_auth93
+ return recovery_auth93.authority(m)
+
+def legacy_standard89_authority_closed(m):
  import credit_scope67 as scope
  from render_recorded_release70 import CREDIT67_SHA256
  scope.assert_parent(m)

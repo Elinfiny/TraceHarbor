@@ -11,7 +11,7 @@ ID='CREDIT-RECOVERY66-NEXT'
 ROOT=Path('/var/data/traceharbor-recovery67')
 ORIGINAL=Path('/var/data/traceharbor-release68')
 PRIOR=Path('/var/data/traceharbor-recovery86')
-COOKIE='__Host-traceharbor-credit67'
+COOKIE='__Host-traceharbor-recovery93'
 DEADLINE=1793379600
 
 def contract():
@@ -28,6 +28,10 @@ def assert_parent(m):
   if len(b)!=pin['bytes']or hashlib.sha256(b).hexdigest()!=pin['sha256']:raise Refusal('PARENT143_146_DRIFT')
 
 def authority(m):
+ import recovery_auth93
+ return recovery_auth93.authority(m)
+
+def legacy_authority67_closed(m):
  if (m.root/'standard-authority89.json').exists():
   import standard_billing89
   return standard_billing89.authority(m)
@@ -48,6 +52,9 @@ OWNER83_PARENT_TREE='33476f59ae86cc6a9dc4cc8ef3ef80af15b9ea67'
 OWNER83_PARENT_CONTRACT='16fbb84516bd009ce5a909af076c9395b8f595bfdacaeaa7f7c49c0110ae02b0'
 TECHNICAL84_REVIEW='ACCEPT_EXACT_TECHNICAL84_CANDIDATE_FOR_OWNER83_ONLY'
 def technical_authority(m):
+ return authority(m)
+
+def legacy_technical83_closed(m):
  if (m.root/'standard-authority89.json').exists():
   import standard_billing89
   return standard_billing89.authority(m)
@@ -143,8 +150,7 @@ def codec(m):
  return 'vp8'
 
 def grant(m):
- idle(m);codec(m);credit(m,120);a=authority(m)
- raw=os.urandom(32).hex();exclusive(m.root/'operator67/grant.json',{'scope':'CREDIT67_ONLY','sha256':hashlib.sha256(raw.encode()).hexdigest(),'expires':min(m.clock()+1800,a['expires'])});return raw
+ raise Refusal('CONSUMED_OPERATOR67_GRANT_CLOSED')
 
 def arm(m,client_id):
  with m.lock:
