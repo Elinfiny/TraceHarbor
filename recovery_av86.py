@@ -68,12 +68,10 @@ def commands(root):
     return {'encode':encode,'decode':decode,'final-probe':probe}
 
 def bounded_child(mode,root,p):
-    cpu=p['render_cpu_seconds']if mode=='encode'else p['decode_cpu_seconds']if mode=='decode'else p['final_probe_cpu_seconds']
-    wall=p['render_wall_seconds']if mode=='encode'else p['decode_wall_seconds']if mode=='decode'else p['final_probe_wall_seconds']
-    cmd=[sys.executable,str(Path(__file__).resolve()),'--child',mode]
-    result=subprocess.run(cmd,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=wall,env=ENV)
-    if result.returncode or len(result.stdout)>65536 or len(result.stderr)>131072:raise r.Refusal('AV_CHILD_FAILED_OR_UNKNOWN')
-    return {'exit':0,'cpu_limit':cpu,'wall_limit':wall,'metadata':json.loads(result.stdout)if mode=='final-probe'else None}
+    import worker_scope113 as w
+    result,stdout=w.run(mode,'run',root/'av'/('worker113-'+mode))
+    if result['pass']is not True:raise r.Refusal('AV_WORKER113_FAILED_CLOSED_NO_RETRY')
+    return {'exit':0,'worker':result,'metadata':json.loads(stdout)if mode=='final-probe'else None}
 
 def assemble(root,terminal,p):
     output=root/'av/raw224.webm';fd=os.open(output,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600);size=0;dig=hashlib.sha256()
@@ -106,13 +104,7 @@ def render():
     result={'state':'RENDERED_NOT_PUBLIC','bytes':size,'sha256':H(final.read_bytes()),'raw':raw,'checks':checks,'duration':duration,'captions':33,'original_speech_cues_unchanged':9,'retry':False,'public':False,'perceptual_QA':'REQUIRED_NATIVE_PRIVATE_PLAYBACK','original84_sha256':r.witness(original)}
     r.exclusive(root/'av/result.json',result);return result
 
-def child(mode):
-    import resource
-    p=r.policy();root=Path(p['root'])
-    if mode not in commands(root):raise r.Refusal('CHILD_MODE')
-    cpu=p['render_cpu_seconds']if mode=='encode'else p['decode_cpu_seconds']if mode=='decode'else p['final_probe_cpu_seconds']
-    resource.setrlimit(resource.RLIMIT_CPU,(cpu,cpu));resource.setrlimit(resource.RLIMIT_AS,(p['render_as_bytes'],)*2);resource.setrlimit(resource.RLIMIT_FSIZE,(p['final_byte_limit'],)*2)
-    cmd=commands(root)[mode];os.execve(cmd[0],cmd,ENV)
+def child(mode):raise r.Refusal('INTERNAL_SOURCE_BOUND_WORKER113_ENTRY_REQUIRED')
 if __name__=='__main__':
     if sys.argv[1:]==['--render']:print(json.dumps(render(),sort_keys=True))
     elif len(sys.argv)==3 and sys.argv[1]=='--child':child(sys.argv[2])

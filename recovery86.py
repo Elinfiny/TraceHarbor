@@ -10,7 +10,7 @@ import release_integration68 as r
 from quota_ledger import read,exclusive,private_dir,Ledger
 from release_policy import canonical,digest,Refusal
 POLICY_SHA256='5a5b6f318e1b7e5049c1e9b75c402b11f63c0f7f17f65553f9096fb9928bc354'
-COOKIE='__Host-traceharbor-recovery106'
+COOKIE='__Host-traceharbor-recovery113'
 PHASES=('vp8','vp9','select','native','full')
 NAMES={'TypeError','ReferenceError','EncodingError','NotSupportedError','NotReadableError','InvalidStateError','SecurityError','AbortError','UnknownError','OverconstrainedError','TimeoutError'}
 
@@ -74,7 +74,7 @@ class Recovery:
     def __init__(self,root,original,config,p,*,clock=time.time,probe=None):
         self.root=Path(root);self.original=Path(original);self.config=config;self.p=p;self.clock=clock;self.probe=probe or bounded_probe;self.lock=threading.Lock();self.sinks={};self.call=None
         self.assert_original()
-        self.operator=Operator(self.root/'operator106',p['session_seconds'],clock)
+        self.operator=Operator(self.root/'operator113',p['session_seconds'],clock)
     def assert_original(self):
         if witness(self.original)!=self.p['original_capture_sha256']:raise Refusal('ORIGINAL84_DRIFT')
     def initialize(self):
@@ -106,15 +106,13 @@ class Recovery:
             epoch.mkdir(mode=0o700);exclusive(epoch/'setup-reserved.json',{'state':'UNKNOWN_NO_RETRY','id':manifest['id']});exclusive(epoch/'manifest.json',manifest);(epoch/'vp8').mkdir(mode=0o700);(epoch/'readiness').mkdir(mode=0o700);exclusive(epoch/'setup-complete.json',{'manifest_sha256':digest(manifest)})
         (self.root/'operator106').mkdir(mode=0o700,exist_ok=True);private_dir(self.root/'operator106')
     def issue_grant_once(self):raise Refusal('ORIGINAL86_GRANT_CLOSED_NOT_REISSUED')
-    def issue_grant106_once(self):
-        self.prepare106()
-        if any((self.root/n/'reserved.json').exists()for n in('select','native','full'))or(self.original/'e2e-reserved.json').exists()or Ledger(self.original/'allocation',self.config).snapshot()['reserved_calls']!=0:raise Refusal('REMAINING_EFFECT_NOT_UNSTARTED')
-        if (self.phase_dir('vp8')/'reserved.json').exists():raise Refusal('NO_NEW_GRANT_AFTER106_MEDIA')
-        commit=os.environ.get('RENDER_GIT_COMMIT','')
-        if not re.fullmatch(r'[a-f0-9]{40}',commit):raise Refusal('NATIVE_SOURCE_COMMIT')
-        ready=read(self.root/'codec106/readiness'/(commit+'.json'))
-        if ready.get('state')!='PASS_NO_MEDIA_ENCODER_NOT_YET_QUALIFIED'or ready.get('source_commit')!=commit or any(ready.get(k)is not True for k in('fetch_window_receiver','native_timer_receivers','canvas_2d_no_stream','VP8_supported','native_crypto'))or any(ready.get(k)!=0 for k in('streams','recorders','grants','AI')):raise Refusal('ACTUAL_NATIVE_READINESS_REQUIRED')
-        raw=os.urandom(32).hex();exclusive(self.root/'operator106/grant.json',{'sha256':hashlib.sha256(raw.encode()).hexdigest(),'scope':'RECOVERY86_ONLY','authority_id':'RECOVERY86-SUPPLEMENT106-OWNER','expires':self.clock()+self.p['session_seconds']});return raw
+    def prepare113(self):
+        import retained_scope113 as scope
+        return scope.prepare(self)
+    def issue_grant106_once(self):raise Refusal('SCOPE106_CLOSED_NO_REISSUE')
+    def issue_grant113_once(self):
+        import retained_scope113 as scope
+        return scope.grant_once(self)
     def state(self,phase):
         if phase not in PHASES:raise Refusal('PHASE')
         d=self.phase_dir(phase)
@@ -123,19 +121,19 @@ class Recovery:
         if (d/'terminal.json').exists():return read(d/'terminal.json')
         return {'state':'UNKNOWN_CONSUMED_NO_RETRY'if(d/'reserved.json').exists()else'NOT_STARTED','retry':False}
     def codec(self):
-        for n in ('vp8',):
-            if self.state(n).get('state')=='PASS':return n
-        raise Refusal('NO_QUALIFIED_CODEC')
+        import retained_scope113 as scope
+        return scope.codec(self)
     def reserve(self,phase,codec):
         with self.lock:
             self.assert_original()
             if phase not in PHASES or codec not in self.p['codecs']:raise Refusal('PHASE_OR_CODEC')
-            if phase=='vp9':raise Refusal('SUPPLEMENT106_ONE_NEW_CODEC_ONLY')
+            if phase in('vp8','vp9'):raise Refusal('ALL_SYNTHETIC_DIAGNOSTICS_CLOSED_NO_REPLAY')
             if phase in ('vp8','vp9') and phase!=codec:raise Refusal('CODEC_IDENTITY')
             if phase=='vp9' and self.state('vp8').get('state')not in {'FAIL_NO_RETRY','FAILED_NO_RETRY'}:raise Refusal('FIRST_CODEC_NOT_TERMINAL_FAILED')
             if phase=='select' and self.operator.remaining()<400:raise Refusal('SESSION_TOO_SHORT')
             if phase in ('select','native','full'):
                 if codec!=self.codec()or not(self.root/'demo-armed.json').exists():raise Refusal('CODEC_OR_DEMO_GATE')
+                __import__('retained_scope113').provider_active(self,max_age={'select':300,'native':600,'full':480}[phase])
             if phase in ('native','full'):
                 sel=read(self.root/'select/reserved.json')
                 if self.clock()-sel['at']>120:raise Refusal('SELECTION_WINDOW_EXPIRED')
@@ -186,11 +184,21 @@ class Recovery:
         exclusive(self.phase_dir(phase)/'failure.json',safe)
         if phase in self.sinks and not self.sinks[phase].terminal:self.sinks[phase].close(safe)
         return safe
+    def active_target(self):
+        new=self.root/'demo-armed113.json'
+        return new if new.exists()else self.root/'demo-armed.json'
+    def arm113(self,client_id):
+        import retained_scope113 as scope
+        with self.lock:
+            if not isinstance(client_id,str)or not re.fullmatch(r'[a-f0-9]{32}',client_id):raise Refusal('DEMO_ID')
+            self.assert_original();scope.unstarted(self);self.codec();scope.provider_active(self,max_age=300)
+            if (self.root/'demo-execution-reserved.json').exists()or not(self.root/'demo-armed.json').exists():raise Refusal('ORIGINAL_TARGET_STATE_NOT_ELIGIBLE')
+            old=read(self.root/'demo-armed.json');exclusive(self.root/'demo-armed113.json',{'state':'DEMO_READY','client_id':client_id,'at':self.clock(),'request_sha256':r.NEW_REQUEST,'original_target_sha256':digest(old),'authority_id':'TRACEHARBOR-RETAINED113-OPTIONAL-TARGET','retry':False});return {'armed':True,'distinct_target113':True,'old_target_retained':True}
     def arm(self,client_id):
         if not isinstance(client_id,str)or not re.fullmatch(r'[a-f0-9]{32}',client_id):raise Refusal('DEMO_ID')
         self.assert_original();exclusive(self.root/'demo-armed.json',{'state':'DEMO_READY','client_id':client_id,'at':self.clock(),'request_sha256':r.NEW_REQUEST,'retry':False});return {'armed':True}
     def begin(self,client_id):
-        if not self.ready()or read(self.root/'demo-armed.json')['client_id']!=client_id:raise Refusal('DEMO_NOT_READY')
+        if not self.ready()or read(self.active_target())['client_id']!=client_id:raise Refusal('DEMO_NOT_READY')
         exclusive(self.root/'demo-execution-reserved.json',{'client_id':client_id,'at':self.clock(),'state':'UNKNOWN_NO_RETRY'});return {'begun':True}
     def mark(self,name,elapsed):
         if name not in {'runtime-rendered','runtime-failed','story-start','supported','citation','conflicted','exported','reimported','historical','story-end','flow-failed'}or type(elapsed)not in(int,float)or not math.isfinite(elapsed)or not 0<=elapsed<=230:raise Refusal('FLOW_MARK')
@@ -201,10 +209,11 @@ class Recovery:
     def ready(self):
         s=self.sinks.get('full');return bool(self.state('native').get('state')=='PASS' and self.state('full').get('state')!='FAILED_NO_RETRY' and s and not s.terminal and s.bytes>0 and (self.root/'full/reserved.json').exists() and (self.root/'preview-ready.json').exists() and self.call and self.call.status()['enabled'])
     def status(self):
-        return {'schema':'traceharbor.runtime-status.v1','enabled':self.ready(),'new_call_cap':1 if self.ready()else 0,'reason':'ONE_RECORDED_E2E_ONLY_OTHER255HELD','phases':{n:self.state(n)for n in PHASES},'armed':(self.root/'demo-armed.json').exists(),'armed_id':read(self.root/'demo-armed.json')['client_id']if(self.root/'demo-armed.json').exists()else None,'full_elapsed':self.clock()-self.sinks['full'].started if 'full'in self.sinks else None,'session_remaining':int(self.operator.remaining()),'e2e_reserved':(self.original/'e2e-reserved.json').exists(),'e2e_result':(self.original/'e2e-result.json').exists(),'diagnostic_epoch':'SUPPLEMENT106_ONE_NEW_VP8','prior_diagnostics86':{n:read(self.root/n/'failure.json')for n in('vp8','vp9')},'retry':False}
+        return {'schema':'traceharbor.runtime-status.v1','enabled':self.ready(),'new_call_cap':1 if self.ready()else 0,'reason':'ONE_RECORDED_E2E_ONLY_OTHER255HELD','phases':{n:self.state(n)for n in PHASES},'armed':self.active_target().exists(),'armed_id':read(self.active_target())['client_id']if self.active_target().exists()else None,'target_epoch':'113'if(self.root/'demo-armed113.json').exists()else'86','full_elapsed':self.clock()-self.sinks['full'].started if 'full'in self.sinks else None,'session_remaining':int(self.operator.remaining()),'e2e_reserved':(self.original/'e2e-reserved.json').exists(),'e2e_result':(self.original/'e2e-result.json').exists(),'diagnostic_epoch':'RETAINED113_NO_NEW_SYNTHETIC_MEDIA','retained_clip_qualification':__import__('retained_scope113').summary(self),'provider_readiness':__import__('retained_scope113').provider_summary(self),'prior_diagnostics86':{n:read(self.root/n/'failure.json')for n in('vp8','vp9')},'retry':False}
     def dispatch(self,raw):
         self.assert_original()
         if not self.ready()or not(self.root/'demo-execution-reserved.json').exists():raise r.runtime_service.RuntimeRefusal('RECOVERY_FULL_CAPTURE_ACK_REQUIRED')
+        __import__('retained_scope113').provider_active(self)
         return self.call.dispatch(raw) # Original exclusive E2E reservation + ORIGINAL allocation, no new ledger.
     def export(self,raw):
         if not 1<=len(raw)<=262144:raise Refusal('EXPORT_BOUND')
@@ -212,13 +221,18 @@ class Recovery:
         value=json.loads(raw);app.verify_evolution(value)
         path=self.root/'exports/evolution.json';binary_once(path,raw);return {'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw),'retained':True}
 
-def bounded_probe(path,codec,p):
-    # Child sets its own hard resources; no unsafe preexec hook in HTTP threads.
-    proc=subprocess.Popen([sys.executable,str(Path(__file__).resolve()),'--probe',str(path),codec],stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,env={'PATH':'/usr/bin:/bin','LANG':'C','PYTHONDONTWRITEBYTECODE':'1'})
-    try:out,_=proc.communicate(timeout=p['probe_wall_seconds'])
-    except subprocess.TimeoutExpired:
-        proc.kill();proc.communicate(timeout=2);return {'pass':False,'error':'PROBE_WALL_EXHAUSTED'}
-    if proc.returncode or len(out)>65536:return {'pass':False,'error':'PROBE_UNKNOWN'}
+def bounded_probe(path,codec,p,*,receipt=None):
+    import worker_scope113 as w
+    path=Path(path)
+    if codec!='vp8':raise Refusal('RETAINED113_VP8_ONLY')
+    if receipt is None:
+        if path!=Path(p['root'])/'native/media.webm':raise Refusal('RETAINED113_NATIVE_OWNER_QUALIFICATION_ONLY')
+        receipt=path.parent/'worker113-probe'
+    worker,out=w.run('probe',str(path),receipt)
+    if worker['pass']is not True:return {'pass':False,'error':'PROBE_EXECUTION_FAILED','worker':worker}
+    result=parse_probe113(out,codec,p);result['worker']=worker;return result
+
+def parse_probe113(out,codec,p):
     try:
         data=json.loads(out);videos=[x for x in data['streams']if x['codec_type']=='video'];audio=[x for x in data['streams']if x['codec_type']=='audio'];v=videos[0];frames=int(v.get('nb_read_frames','0'))
         raw_duration=data.get('format',{}).get('duration');basis='container_duration'
@@ -238,15 +252,7 @@ def bounded_probe(path,codec,p):
         return {'pass':ok,'codec':v['codec_name'],'width':v['width'],'height':v['height'],'frames':frames,'seconds':duration,'duration_basis':basis,'audio_streams':len(audio)}
     except Exception:return {'pass':False,'error':'PROBE_SHAPE'}
 
-def probe_child(path,codec):
-    import resource
-    p=policy();path=Path(path)
-    permitted={Path(p['root'])/'codec106/vp8/media.webm',Path(p['root'])/'native/media.webm'}
-    if codec not in p['codecs']or path not in permitted:raise Refusal('FIXED_PROBE_PATH')
-    regular(path)
-    if path.stat().st_size>p['diagnostic_bytes']:raise Refusal('PROBE_BOUND')
-    resource.setrlimit(resource.RLIMIT_CPU,(p['probe_cpu_seconds'],)*2);resource.setrlimit(resource.RLIMIT_AS,(p['probe_as_bytes'],)*2);resource.setrlimit(resource.RLIMIT_FSIZE,(131072,)*2)
-    os.execve('/usr/bin/ffprobe',['ffprobe','-v','error','-threads','1','-protocol_whitelist','file,pipe','-count_frames','-show_packets','-show_entries','stream=codec_type,codec_name,width,height,nb_read_frames:format=duration:packet=codec_type,pts_time,duration_time','-of','json',str(path)],{'PATH':'/usr/bin:/bin','LANG':'C'})
+def probe_child(path,codec):raise Refusal('INTERNAL_SOURCE_BOUND_WORKER113_ENTRY_REQUIRED')
 
 def readiness_page106():
     return b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor native readiness106</title><h1>Native browser readiness106</h1><p>Read-only platform checks. No stream, recorder, private session, AI or provider request is created.</p><button id="readiness106">Check native platform before media</button><pre id="readiness106-status">Not started.</pre><script src="/recovery86/platform106.js" defer></script><script src="/recovery86/readiness106.js" defer></script></html>'
@@ -255,7 +261,7 @@ def review_page():
     return b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor private final review</title><body><h1>Private final review</h1><p>176 seconds: actual server result excerpt, then synthetic walkthrough. Private; no publication or submission.</p><video controls playsinline preload="metadata" src="/recovery86/final.mp4"></video><p><a href="/recovery86/final.mp4" download="TraceHarbor176.mp4">Download verified private copy</a> <a href="/recovery86/av-result">Custody and technical checks</a></p><p>Manual visual/audio review still required before public delivery.</p></body></html>'
 
 def html_page():
-    return b'''<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor checked recovery</title><body><h1>Checked recording recovery</h1><p>Private synthetic codec checks run before one native TraceHarbor tab sample. A new full recording starts only after both decode gates pass. No automatic retry.</p><button id="diagnose86">Run bounded synthetic diagnostics</button><button id="select86" disabled>Select TraceHarbor tab and continue</button><p id="status86" role="status">Not started.</p><video id="preview86" muted controls playsinline></video><script src="/recovery86/controller.js" defer></script></body></html>'''
+    return b'''<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor checked recovery</title><body><h1>Checked recording recovery</h1><p>Existing diagnostic media is retained. A distinct server certificate is required before the original native sample and full recording. No new synthetic recording or retry.</p><button id="diagnose86" disabled>Original synthetic diagnostics closed</button><button id="select86" disabled>Select TraceHarbor tab and continue</button><p id="status86" role="status">Not started.</p><video id="preview86" muted controls playsinline></video><script src="/recovery86/controller.js" defer></script></body></html>'''
 
 class Handler(r.ReleaseHandler):
     def _qualify_owner_peer(self):
@@ -289,15 +295,18 @@ class Handler(r.ReleaseHandler):
         if protected:
             if not self.allowed()or not self.server.operator.authorize(self):return self.error(403,'Private recovery only.')
             m=self.server.recovery
+            if self.path=='/recovery86/target113':
+                import app
+                body=(app.ROOT/'web/index.html').read_bytes().replace(b'</head>',b'<link rel="stylesheet" href="/recovery86/demo.css"></head>').replace(b'</body>',b'<script src="/recovery86/operator113.js" defer></script></body>');return self.respond(200,body,'text/html; charset=utf-8')
             if self.path=='/recovery86/':return self.respond(200,html_page(),'text/html; charset=utf-8')
             if self.path=='/recovery86/status':return self.respond(200,canonical(m.status()))
             if self.path=='/recovery86/review':return self.respond(200,review_page(),'text/html; charset=utf-8')
             if self.path=='/recovery86/av-result':return self.respond(200,canonical(read(m.root/'av/result.json')))
-            fixed={'/recovery86/controller.js':('recovery86_client.js','text/javascript'),'/operator86.js':('operator86.js','text/javascript'),'/recovery86/demo.css':('recovery86_demo.css','text/css'),'/recovery86/policy':('recovery86_policy.json','application/json'),'/recovery86/historical':('examples/recorded/provider_record228.json','application/json')}
+            fixed={'/recovery86/operator113.js':('operator113.js','text/javascript'),'/recovery86/controller.js':('recovery86_client.js','text/javascript'),'/operator86.js':('operator86.js','text/javascript'),'/recovery86/demo.css':('recovery86_demo.css','text/css'),'/recovery86/policy':('recovery86_policy.json','application/json'),'/recovery86/historical':('examples/recorded/provider_record228.json','application/json')}
             if self.path in fixed:
                 n,kind=fixed[self.path]
                 if self.path=='/recovery86/policy':
-                    view=dict(m.p);view['codecs']={'vp8':m.p['codecs']['vp8']};view['diagnostic_epoch']='SUPPLEMENT106_ONE_NEW_VP8';return self.respond(200,canonical(view))
+                    view=dict(m.p);view['codecs']={'vp8':m.p['codecs']['vp8']};view['diagnostic_epoch']='RETAINED113_NO_NEW_SYNTHETIC_MEDIA';view['synthetic_diagnostics_closed']=True;view['worker_profile113']=__import__('worker_scope113').PROFILE;return self.respond(200,canonical(view))
                 return self.respond(200,(Path(__file__).parent/n).read_bytes(),kind+'; charset=utf-8')
             if self.path=='/recovery86/export':
                 f=m.root/'exports/evolution.json';regular(f);return self.respond(200,f.read_bytes())
@@ -350,6 +359,8 @@ class Handler(r.ReleaseHandler):
             try:
                 if not self.allowed()or not self.server.operator.authorize(self):raise Refusal('RECOVERY_OWNER_REQUIRED')
                 m=self.server.recovery
+                if self.path=='/recovery86/arm113':
+                    value=json.loads(self.body(1024));return self.respond(200,canonical(m.arm113(value['client_id'])))
                 if self.path=='/recovery86/chunk':
                     if self.headers.get('Content-Type')!='application/octet-stream':raise Refusal('CHUNK_TYPE')
                     for key in ('X-Recovery-Phase','X-Chunk-Sequence','X-Chunk-SHA256'):
@@ -381,7 +392,7 @@ class Handler(r.ReleaseHandler):
 def wire(server,config):
     p=policy()
     if os.environ.get('RENDER')!='true'or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=p['host']:raise Refusal('NATIVE_HOST')
-    m=Recovery(Path(p['root']),Path(p['original']),config,p);m.initialize();m.prepare106();server.recovery=m;server.operator=m.operator;server.runtime_session=m;server.RequestHandlerClass=Handler;return server
+    m=Recovery(Path(p['root']),Path(p['original']),config,p);m.initialize();m.prepare106();m.prepare113();server.recovery=m;server.operator=m.operator;server.runtime_session=m;server.RequestHandlerClass=Handler;return server
 
 if __name__=='__main__':
     if len(sys.argv)==4 and sys.argv[1]=='--probe':probe_child(sys.argv[2],sys.argv[3])

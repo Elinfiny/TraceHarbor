@@ -66,10 +66,10 @@ const Recovery86=(()=>{
  class Controller{
   constructor({api,p,devices,Recorder,source=canvasSource,decoder=decode,report=()=>{},preview=null,channel=null}){Object.assign(this,{api,p,devices,Recorder,source,decoder,report,preview,channel});this.state='IDLE';this.codec=null;this.usedDiagnostics=false;this.usedSelection=false;this.full=null;this.disposed=false;}
   async diagnostic(){
-   if(this.usedDiagnostics)throw named('InvalidStateError','START');this.usedDiagnostics=true;
+   if(this.usedDiagnostics||this.p.synthetic_diagnostics_closed)throw named('InvalidStateError','START');this.usedDiagnostics=true;
    for(const codec of Object.keys(this.p.codecs)){
     let src,reserved=false;
-    try{await this.api.reserve(codec,codec);reserved=true;if(!this.Recorder.isTypeSupported(this.p.codecs[codec]))throw named('NotSupportedError','START');src=this.source(this.p);const result=await probe(src.stream,this.p.codecs[codec],this.Recorder);await this.decoder(result.blob,this.p);await this.api.append(codec,0,new Uint8Array(await result.blob.arrayBuffer()));const q=await this.api.finish(codec,{elapsed:result.elapsed,reason:'DIAGNOSTIC_DONE',client_decoded:true});if(q.state==='PASS'){this.codec=codec;this.state='CODEC_QUALIFIED';this.report('Distinct diagnostic106 passed: '+codec+'. Native sample remains required.');return codec;}}
+    try{await this.api.reserve(codec,codec);reserved=true;if(!this.Recorder.isTypeSupported(this.p.codecs[codec]))throw named('NotSupportedError','START');src=this.source(this.p);const result=await probe(src.stream,this.p.codecs[codec],this.Recorder);await this.decoder(result.blob,this.p);await this.api.append(codec,0,new Uint8Array(await result.blob.arrayBuffer()));const q=await this.api.finish(codec,{elapsed:result.elapsed,reason:'DIAGNOSTIC_DONE',client_decoded:true});if(q.state==='PASS'){this.codec=codec;this.state='CODEC_QUALIFIED';this.report('Distinct diagnostic106 passed: '+codec+'. Native sample remains required.');return codec;}this.report('Diagnostic retained; server qualification '+q.state+' / '+(q.probe?.error||'UNQUALIFIED')+'. No retry.');}
     catch(e){if(!reserved){this.state='FAILED';throw e;}await this.api.fail(codec,e).catch(()=>{});this.report('Codec diagnostic: '+codec+' / '+safe(e).error_name+' / '+safe(e).where+'. No repeat of this codec.');}
     finally{src?.dispose();}
    }
@@ -78,7 +78,7 @@ const Recovery86=(()=>{
   async selectAndRun(){
    if(this.usedSelection||!this.codec)throw named('InvalidStateError','SELECT');this.usedSelection=true;let raw,source,timer;let activePhase='select';const begun=performance.now();
    try{
-    const status=await this.api.get('/recovery86/status');if(!status.armed||status.session_remaining<400)throw named('SecurityError','SELECT');
+    const status=await this.api.get('/recovery86/status');if(!status.armed||status.session_remaining<400||status.provider_readiness?.state!=='Active')throw named('SecurityError','SELECT');
     await this.api.reserve('select',this.codec); // Durable intent BEFORE native picker.
     timer=setTimeout(()=>{this.disposed=true;this.full?.stop('ERROR');raw?.getTracks().forEach(t=>t.stop());source?.dispose();},this.p.native_stream_seconds*1000);
     raw=await this.devices.getDisplayMedia({video:true,audio:false});const tracks=raw.getVideoTracks();if(this.disposed||performance.now()-begun>120000||tracks.length!==1||tracks[0].getSettings?.().displaySurface!=='browser')throw named('SecurityError','SELECT');
@@ -100,7 +100,9 @@ const Recovery86=(()=>{
 if(typeof module!=='undefined')module.exports=Recovery86;
 if(typeof document!=='undefined'&&document.getElementById('diagnose86')){
  (async()=>{const api=new Recovery86.API();const p=await api.get('/recovery86/policy');const status=document.getElementById('status86'),diagnose=document.getElementById('diagnose86'),select=document.getElementById('select86');const c=new Recovery86.Controller({api,p,devices:navigator.mediaDevices,Recorder:window.MediaRecorder,report:t=>status.textContent=t,preview:document.getElementById('preview86'),channel:new BroadcastChannel('traceharbor-recovery86')});
- diagnose.addEventListener('click',async()=>{diagnose.disabled=true;try{await c.diagnostic();const s=await api.get('/recovery86/status');select.disabled=!s.armed;}catch{status.textContent+=' Recovery closed; no native sample/full recording admitted.';}});
+ const current=await api.get('/recovery86/status');const retained=current.retained_clip_qualification;
+ if(p.synthetic_diagnostics_closed){diagnose.disabled=true;c.usedDiagnostics=true;if(retained?.state==='PASS_RETAINED_CLIP113'){c.codec='vp8';c.state='CODEC_QUALIFIED';select.disabled=!current.armed||current.session_remaining<400||current.provider_readiness?.state!=='Active';status.textContent='Existing '+retained.clip_bytes+' byte clip passed DISTINCT server qualification113. Original FAIL is preserved. Native sample and full recording are unstarted.'+(current.provider_readiness?.state!=='Active'?' Billing is not verified ready for capture; recording remains disabled.':'');}else{select.disabled=true;status.textContent='Existing '+(retained?.clip_bytes||43637)+' byte clip retained. Original server qualification FAILED. Distinct qualification113: '+(retained?.state||'NOT_STARTED')+'. No new synthetic recording or retry.';}}
+ diagnose.addEventListener('click',async()=>{if(p.synthetic_diagnostics_closed)return;diagnose.disabled=true;try{await c.diagnostic();const s=await api.get('/recovery86/status');select.disabled=!s.armed;}catch{status.textContent+=' Recovery closed; no native sample/full recording admitted.';}});
  select.addEventListener('click',async()=>{select.disabled=true;try{await c.selectAndRun();}catch{}});
  })().catch(e=>{const name=['TypeError','AbortError','TimeoutError','SecurityError'].includes(e?.name)?e.name:'UnclassifiedError';document.getElementById('diagnose86').disabled=true;document.getElementById('select86').disabled=true;document.getElementById('status86').textContent='Recovery unavailable / '+name+' / INITIALIZATION. No media started. No automatic retry.';});
 }

@@ -8,9 +8,9 @@ from pathlib import Path
 import release_integration68 as r
 from quota_ledger import read,private_dir,exclusive
 from release_policy import digest,Refusal
-ADMISSION_SHA256='8dc2d351c641fe451cb0aa736a9c68f29740f632ba0d7b53560eccdb2e37c4af'
+ADMISSION_SHA256='c40747a697df51e1dce93fa2d694742acf3e207c29f4f769cb5cb8a7ba8d4c2b'
 MODULE_SHA256='0a4d002bc89c92fe72359ece0be63d031305fbe81c39c811dc1026c8df052911'
-ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-admission106.json')
+ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-admission113.json')
 def admission():
  if os.environ.get('RENDER')!='true' or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_RENDER_HOST')
  if hashlib.sha256((Path(__file__).parent/'release_integration68.py').read_bytes()).hexdigest()!=MODULE_SHA256:raise Refusal('INTEGRATION_SOURCE_PIN')
@@ -31,9 +31,9 @@ def main():
  try:
   import recovery86
   recovery86.wire(server,c)
-  print('TraceHarbor recovery106 configured; no automatic grant/media/AI; original84 retained',flush=True)
+  print('TraceHarbor retained113 configured; no automatic grant/media/AI; original84 retained',flush=True)
  except Exception:
-  print('TraceHarbor recovery106 unavailable; public read-only retained; no retry',flush=True)
+  print('TraceHarbor retained113 unavailable; public read-only retained; no retry',flush=True)
  try:server.serve_forever()
  finally:server.server_close()
 if __name__=='__main__':main()
