@@ -68,6 +68,9 @@ def authorize(m,a):
  import render_recorded_release70 as launch,release_integration68 as integration,worker_scope67 as worker
  need(H(J(a))==OLD_A and a['source_commit']==OLD_COMMIT and a['candidate_tree']==OLD_TREE and a['source_contract_sha256']==OLD_CONTRACT and a['technical_owner_sha256']==OWNER99 and a['independent_review_sha256']==REVIEW98,'ORIGINAL96_AUTHORITY_IMMUTABLE')
  e=read(EXT);s=verified_extension(e,m.clock());preserved()
+ if (ROOT/'continuity105/release-complete.json').exists():
+  import continuity105
+  return continuity105.authorize_current(m,a,e)
  need(worker.identity()['source_commit']==e['source_commit'],'ACTUAL_NEW_SOURCE_IDENTITY_REQUIRED')
  need(H(J(m.p))==POLICY and launch.ADMISSION_PATH==INITIAL and launch.CREDIT67_PATH==CONTRACT and launch.ADMISSION_SHA256==s['initial_sha256']and launch.CREDIT67_SHA256==s['source_contract_sha256'],'NEW_INITIAL_AND_CONTRACT_BINDING')
  need(H(raw(INITIAL))==s['initial_sha256']and H(raw(CONTRACT))==s['source_contract_sha256'],'NEW_PRIVATE_APPEND_PINS')

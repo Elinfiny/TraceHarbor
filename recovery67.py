@@ -73,7 +73,11 @@ class Recovery:
         self.root=Path(root);self.original=Path(original);self.config=config;self.p=p;self.clock=clock;self.probe=probe or bounded_probe;self.lock=threading.Lock();self.sinks={};self.call=None;self.selection_timer_factory146=threading.Timer;self.selection_timer146=None
         self.assert_original()
         from recovery_auth93 import EPOCH,operator_path
-        self.operator=Operator(operator_path(self),min(p['session_seconds'],1800),clock,scope_id=EPOCH)
+        authpath=operator_path(self)
+        if(self.root/'continuity105/release-complete.json').exists():
+            import continuity105
+            authpath=continuity105.operator_path(self)
+        self.operator=Operator(authpath,min(p['session_seconds'],1800),clock,scope_id=EPOCH)
     def assert_original(self):return scope.assert_parent(self)
     def initialize(self):return scope.initialize(self)
     def phase_dir(self,phase):
