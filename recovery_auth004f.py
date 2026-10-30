@@ -13,32 +13,18 @@ def operator_path(m):
  return m.root/'auth004'
 
 def authority(m):
- import credit_scope004f as scope,render_recorded_release70 as launch
- scope.assert_parent(m);v=g.read(g.ROOT/'source004/extension004.json');s,b=v['spec'],v['bindings'];g.validate_bindings(s,b,m.clock())
- a=g.read(g.ROOT/'recovery-authority004.json');ident=w.identity()
- g.need(a=={'schema':'traceharbor.authority115.v1','scope':EPOCH,'effects':g.effects(),'spec_sha256':g.H(g.J(s)),'source_commit':b['published_commit'],'source_tree':b['published_tree'],'policy_sha256':s['policy_sha256'],'finance205_sha256':g.FINANCE,'expires':b['technical_owner']['expires']},'EXACT004_AUTHORITY')
- g.need(ident['source_commit']==b['published_commit']and launch.CREDIT004F_SHA256==s['contract_sha256']and launch.ADMISSION_SHA256==s['initial_sha256']and digest(m.p)==s['policy_sha256'],'CURRENT004_SOURCE_AUTHORITY')
- g.source_check(Path(__file__).parent,s['source_pins'],runtime_required=True);g.bootstrap_readback(s);g.check_history(s['history'])
- g.need(m.p['request_sha256']==g.REQUEST and m.p['certificate']==s['counter']and m.config==m.p['release_config'],'004_REQUEST_CONFIG_BINDING')
- return a
+ import session_continuity119 as continuity
+ return continuity.authority(m)
 
 def grant(m):raise Refusal('USE_EXACT_HASH_ONLY_ISSUE004_NO_AUTOMATIC_GRANT')
 
 def issue_once(m,presence,reservation,credential_sha256,focus):
- import credit_scope004f as scope
- a=authority(m);scope.idle(m);scope.ledger(m,unspent=True);scope.codec(m);w.assert_startup()
- now=m.clock();g.validate_focus(focus,now);g.need(g.DEADLINE-now>=3600 and a['expires']-now>=1800,'COMPLETE_DELIVERY_TIME_REQUIRED_BEFORE004_ISSUE')
- g.need(presence.get('state')=='ACTUAL_OWNER_PRESENT_FOR_RECOVERY004F'and bool(presence.get('canonical_source'))and type(presence.get('at'))in(int,float)and 0<=now-presence['at']<=120,'ACTUAL_OWNER004_PRESENT')
- g.need(reservation.get('state')=='RESERVED_NOT_DISPATCHED'and reservation.get('dispatch_count')==0 and reservation.get('max_dispatches')==1 and reservation.get('spec_sha256')==a['spec_sha256']and bool(reservation.get('canonical_source'))and reservation.get('credential_sha256')==credential_sha256,'EXACT004_GRANT_RESERVATION')
- g.need(type(credential_sha256)is str and re.fullmatch('[a-f0-9]{64}',credential_sha256),'SHA256_ONLY_NO_RAW_CREDENTIAL')
- path=operator_path(m);private_dir(path);g.need(m.operator.path==path and not any((path/n).exists()for n in('grant.json','grant-consumed.json','session.json')),'004_AUTH_ALREADY_CONSUMED_OR_PARTIAL')
- exclusive(path/'grant.json',{'scope':EPOCH,'sha256':credential_sha256,'expires':min(now+1800,a['expires']),'spec_sha256':a['spec_sha256'],'retry':False})
- return {'state':'AUTH004F_HASH_ONLY_GRANT_ISSUED_ONCE','expires':min(now+1800,a['expires']),'retry':False}
+ raise Refusal('ORIGINAL_GRANT_IMMUTABLE_USE_DISTINCT_SESSION119_BRANCH')
 
 def metadata_context(m):
  import credit_scope004f as scope
  a=authority(m);scope.idle(m);scope.ledger(m,unspent=True);w.assert_startup()
- g.need(m.operator.path==operator_path(m)and m.operator.remaining()>=1500 and(operator_path(m)/'grant-consumed.json').exists(),'AUTH004F_SESSION_BEFORE_METADATA')
+ g.need(m.operator.path==operator_path(m)and m.operator.remaining()>=1500 and __import__('session_continuity119').has_consumed_session(m,a),'AUTH004F_SESSION_BEFORE_METADATA')
  base=m.root/'credit-observations';private_dir(base)
  g.need(not list(base.iterdir())and not(m.root/'metadata004-reserved.json').exists()and not(m.root/'metadata004-complete.json').exists(),'004_ONE_METADATA_ALREADY_USED')
  return a

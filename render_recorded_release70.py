@@ -8,9 +8,9 @@ from pathlib import Path
 import release_integration68 as r
 from quota_ledger import read,private_dir,exclusive
 from release_policy import digest,Refusal
-ADMISSION_SHA256='8011dca7e61580b0f6490b0599dd230dabecb322300ca21c48c1cba6c32c0475'
+ADMISSION_SHA256='c35b712aab2ae9de95211688cbdecb55da89dd14a8fec1d1154a098d4ab82fc0'
 MODULE_SHA256='0a4d002bc89c92fe72359ece0be63d031305fbe81c39c811dc1026c8df052911'
-ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-initial115.json')
+ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-initial119.json')
 def admission():
  if os.environ.get('RENDER')!='true' or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_RENDER_HOST')
  if hashlib.sha256((Path(__file__).parent/'release_integration68.py').read_bytes()).hexdigest()!=MODULE_SHA256:raise Refusal('INTEGRATION_SOURCE_PIN')
@@ -20,8 +20,8 @@ def admission():
  r.qualify(c,e,pin=digest(c),capture_pin=digest(e),source_root=Path(__file__).parent)
  return c,e
 
-CREDIT004F_PATH=Path('/var/data/traceharbor-staging/actual-recovery115.json')
-CREDIT004F_SHA256='1d2b3b7bd618a8420d38879ab7f19539ac4bc3b8acdbe22505ed9fa33462550e'
+CREDIT004F_PATH=Path('/var/data/traceharbor-staging/actual-recovery119.json')
+CREDIT004F_SHA256='b482c783f5b4e97f8a5f04726f99a2daabb8438511bf4b10e498e8a5db3aa3a0'
 def credit_admission004f():
  if os.environ.get('RENDER')!='true'or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_CREDIT67_RENDER_HOST')
  data=read(CREDIT004F_PATH,65536)

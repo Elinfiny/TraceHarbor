@@ -35,13 +35,8 @@ def witness(original):
 class Operator:
     def __init__(self,path,ttl,clock=time.time,*,scope_id='CREDIT67_ONLY'):self.path=path;self.ttl=ttl;self.clock=clock;self.lock=threading.Lock();self.scope_id=scope_id
     def consume(self,raw):
-        if not isinstance(raw,bytes)or not re.fullmatch(rb'[a-f0-9]{64}',raw):raise Refusal('GRANT_SHAPE')
-        with self.lock:
-            g=read(self.path/'grant.json')
-            if g['scope']!=self.scope_id or self.clock()>=g['expires'] or not hmac.compare_digest(hashlib.sha256(raw).hexdigest(),g['sha256']):raise Refusal('GRANT_REFUSED')
-            exclusive(self.path/'grant-consumed.json',{'scope':self.scope_id,'retry':False})
-            token=os.urandom(32).hex();exclusive(self.path/'session.json',{'sha256':hashlib.sha256(token.encode()).hexdigest(),'scope':self.scope_id,'expires':min(g['expires'],self.clock()+self.ttl)})
-            return token
+        import session_continuity119 as continuity
+        return continuity.consume_operator(self,raw)
     def authorize(self,h):
         try:
             if len(h.headers.get_all('Cookie',[]))!=1:return False
@@ -251,7 +246,7 @@ class Handler(r.ReleaseHandler):
             return self.respond(200,(Path(__file__).parent/name).read_bytes(),'text/javascript; charset=utf-8')
         if self.path=='/recovery004f/session':
             if not self._tls_envelope():return self.error(403,'TLS Host/Origin required.')
-            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator</title><h1>Recovery004 operator</h1><form method="post" action="/recovery004f/session"><label>One-use recovery004f grant<input name="grant" type="password" required autocomplete="off"></label><button type="submit">Open recovery session</button></form></html>'
+            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator</title><h1>Recovery004 operator</h1><form method="post" action="/recovery004f/session"><label>One-use recovery004f grant<input name="grant" type="password" required autocomplete="off" data-bwignore="true" data-1p-ignore="true" data-lpignore="true"></label><button type="submit">Open recovery session</button></form></html>'
             self.send_response(200)
             for k,v in [('Content-Type','text/html; charset=utf-8'),('Content-Length',str(len(body))),('Cache-Control','no-store'),('Referrer-Policy','same-origin'),('Content-Security-Policy',"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")]:self.send_header(k,v)
             self.end_headers();self.wfile.write(body);return
