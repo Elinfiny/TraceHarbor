@@ -1,33 +1,37 @@
 # TraceHarbor — start here
 
-TraceHarbor is an offline evidence desk for reviewing synthetic incident dossiers. Follow source citations, compare complete, missing and contradictory evidence, and export a dossier for integrity checking. Remediation remains advice for a human reviewer; the desk does not execute it.
+## Current delivery — 30 October 2026
+
+TraceHarbor is submitted to the Nebius x NVIDIA Global AI Hackathon as entry 1264455. The current [README](README.md) is the primary guide to the delivered project, its exact source baseline, historical NVIDIA/Nebius execution and limitations.
+
+- [Public project and demonstration](https://devpost.com/software/traceharbor)
+- [Working synthetic evidence desk](https://traceharbor.onrender.com/)
+- [Demonstration video — 2:56](https://youtu.be/x1DSpXFOWHo)
+- [Complete historical provider record](examples/recorded/provider_record228.json)
+- [Historical native execution](https://github.com/Elinfiny/TraceHarbor/actions/runs/40206978963)
+
+The public desk requires no account, key or payment and makes no new model call. Start evidence evolution, add the captured verification and inspect the conflicting capture. Exact quotations and unkeyed hashes do not authenticate origin or prove production causation. The application does not execute checks or remediation.
 
 ## Run locally
 
-Use Python 3.12 or later and the standard library, from a verified source checkout:
+Use Python 3.12 or later from this source checkout; the offline application requires only the standard library:
 
 ```sh
-python app.py serve --port 8787
+python3 -B app.py serve --port 8787
 ```
 
-Open `http://127.0.0.1:8787/`. Use that exact loopback hostname and port because Host and Origin are validated. The offline synthetic workflow requires no API key. Do not enter production records or secrets.
-
-A create-only command-line example requires an output path that does not exist:
+Open `http://127.0.0.1:8787/` using that exact hostname and port. Use synthetic data only. To create a dossier at an absent output path:
 
 ```sh
-python app.py analyze fixtures/missing.json --out missing-dossier.json
+python3 -B app.py analyze fixtures/missing.json --out missing-dossier.json
 ```
 
-## Source and browser evidence
+Use Verify imported dossier to review the bundled historical provider record. It remains an UNKNOWN saved record, distinct from fresh inference. Refer to README for the source and execution evidence; do not rerun consumed workflows or protected runtime attempts.
 
-Canonical main: `dfd0639d8aec43cc13d4776a19138af3bd626598`, tree `f38d934627f809cd9ff747c0d09df746bd15c739`. Qualified PR45 head: `3445843b599032b3fe825f3647bd006ea7223f08`, tree `ab2ec6d56fd72dcf156001bf641c38a4b29f8da1`; the pull request remains unmerged at the last verified observation. The two versions have identical application, web and fixture bytes; the branch differs in its QA runner and workflow.
+## Judging access
 
-Actual hosted Chromium passed 27 checks using synthetic inputs at widths 390 and 1440. See [browser evidence](release/QA_EVIDENCE170.md) for the run, hashes, tested behavior and limits. These proposed documentation changes do not establish a new published commit or release. README.md retains older source and QA wording outside this document update.
+The official judging period ends on 23 December 2026 at 20:00 UTC / 22:00 Europe/Bucharest. Code, video and the working project must remain accessible to judges through that time. The offline build provides an alternative independent of provider inference credits. This requirement does not extend private AI authority or guarantee future hosting availability.
 
-A current GitHub Download ZIP has not been byte-verified. Historical offline archives are separate artifacts and do not prove a current public download. A persistent working demo URL, genuine Nebius/NVIDIA execution evidence and a recorded video are still missing.
+## Preserved historical documentation
 
-## Delivery material
-
-The [readiness checklist](release/READINESS170.json), [submission draft](SUBMISSION_DRAFT.md) and [160-second storyboard](VIDEO_SCRIPT.md) describe completed evidence and remaining work. They are preparation material, not a submission receipt. A clearly labelled hosted offline desk can be delivered independently of later live-model integration.
-
-The [official contest rules](https://nebiusglobalaihackathon.devpost.com/rules) were reviewed on 24 October 2026: the submission deadline is 30 October, 10:00 PDT = 17:00 UTC = 19:00 Europe/Bucharest. The contest requires genuine Nebius execution with an NVIDIA open-source model; offline browser QA does not satisfy that requirement. Personal eligibility and entry declarations still require verification.
+The previous start guide, including its dated preparation state and references to files not bundled in this release, remains available in the [immutable previous revision](https://github.com/Elinfiny/TraceHarbor/blob/a81a10ddc589e854a5558e01e07f1b39b94fa6f2/START_HERE.md). Those old missing-demo, missing-video and missing-execution statements are superseded by the current delivery above. They are not current instructions.
