@@ -8,9 +8,9 @@ from pathlib import Path
 import release_integration68 as r
 from quota_ledger import read,private_dir,exclusive
 from release_policy import digest,Refusal
-ADMISSION_SHA256='8a4d0d6a00a007dbe5628a37a9710955c7d6f6f7b6f93d6be69848c46cb72e5a'
+ADMISSION_SHA256='2592213d24b21f4d33049d1ccf6880f50a092d0dcceef2f1407763250ca58d52'
 MODULE_SHA256='0a4d002bc89c92fe72359ece0be63d031305fbe81c39c811dc1026c8df052911'
-ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-initial100.json')
+ADMISSION_PATH=Path('/var/data/traceharbor-staging/actual-initial004.json')
 def admission():
  if os.environ.get('RENDER')!='true' or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_RENDER_HOST')
  if hashlib.sha256((Path(__file__).parent/'release_integration68.py').read_bytes()).hexdigest()!=MODULE_SHA256:raise Refusal('INTEGRATION_SOURCE_PIN')
@@ -20,42 +20,30 @@ def admission():
  r.qualify(c,e,pin=digest(c),capture_pin=digest(e),source_root=Path(__file__).parent)
  return c,e
 
-CREDIT67_PATH=Path('/var/data/traceharbor-staging/actual-recovery105.json')
-CREDIT67_SHA256='58b51ed2cdd5855e57833ccda267cda0f5d6c68764923f6028915aef4b11bcdd'
-def credit_admission67():
+CREDIT004_PATH=Path('/var/data/traceharbor-staging/actual-recovery004.json')
+CREDIT004_SHA256='f03d2e517c07c85084e5980d6253dbf9cf5f91bfb67d95be511452a6c00970c1'
+def credit_admission004():
  if os.environ.get('RENDER')!='true'or os.environ.get('RENDER_EXTERNAL_HOSTNAME')!=r.HOST:raise Refusal('EXACT_CREDIT67_RENDER_HOST')
- data=read(CREDIT67_PATH,65536)
- if digest(data)!=CREDIT67_SHA256 or data.get('schema')!='traceharbor.credit67.contract.v1':raise Refusal('EXACT_PRIVATE_CREDIT67_CONTRACT')
+ data=read(CREDIT004_PATH,65536)
+ if digest(data)!=CREDIT004_SHA256 or data.get('schema')!='traceharbor.recovery004.contract.v1':raise Refusal('EXACT_PRIVATE_CREDIT67_CONTRACT')
  r.checked_manifest(Path(__file__).parent,data['source_pins'])
  return data['policy']
 
 def main():
  c,e=admission()
- if len(sys.argv)==3 and sys.argv[1]=='--credit-worker67':
-  import credit_scope67,credit_runtime67
-  if Path(sys.argv[2])!=credit_scope67.ROOT:raise Refusal('EXACT_CREDIT67_WORKER')
-  p=credit_admission67()
-  if p['release_config']!=c:raise Refusal('SHARED_ORIGINAL_CONFIG_REQUIRED')
-  return credit_runtime67.worker(c,p)
- if len(sys.argv)==3 and sys.argv[1]=='--worker':
-  if Path(sys.argv[2])!=r.STATE:raise Refusal('EXACT_WORKER_STATE')
-  return r.worker(r.STATE)
- if len(sys.argv)!=1:raise Refusal('NO_ADMISSION_FLAGS')
- if not r.STATE.exists():raise Refusal('ORIGINAL_EXISTING_STATE_REQUIRED_RECOVERY86')
- # Existing state is never re-provisioned, decremented or restored.
+ if len(sys.argv)==3 and sys.argv[1]=='--credit-worker004':
+  import credit_scope004,credit_runtime004
+  if Path(sys.argv[2])!=credit_scope004.ROOT:raise Refusal('EXACT004_WORKER_ROOT')
+  p=credit_admission004()
+  if p['release_config']!=c:raise Refusal('SAME_ORIGINAL_ALLOCATION_CONFIG_REQUIRED')
+  return credit_runtime004.worker(c,p)
+ if len(sys.argv)!=1:raise Refusal('OLD_WORKERS_AND_ADMISSION_FLAGS_CLOSED')
+ if not r.STATE.exists():raise Refusal('ORIGINAL_CONSUMED_STATE_REQUIRED_NO_REPROVISION')
  server=r.build_server(c,e,port=int(os.environ['PORT']),platform_port=os.environ['PORT'])
  try:
-  import recovery86
-  recovery86.wire(server,c)
-  print('TraceHarbor capture146 configured; no automatic grant/media/AI; original84 retained',flush=True)
- except Exception:
-  print('TraceHarbor capture146 unavailable; public read-only retained; no retry',flush=True)
- try:
-  import recovery67
-  recovery67.wire(server,c)
-  print('Credit67 route installed; no automatic grant/media/AI',flush=True)
- except Exception:
-  print('Credit67 not admitted; existing public read-only retained',flush=True)
- try:server.serve_forever()
+  import recovery004
+  recovery004.wire(server,c)
+  print('TraceHarbor004 configured; no automatic grant, capture, AI or billing',flush=True)
+  server.serve_forever()
  finally:server.server_close()
 if __name__=='__main__':main()

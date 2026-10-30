@@ -34,6 +34,7 @@ def request_for(evidence, model):
         {'role': 'system', 'content': instruction},
         {'role': 'user', 'content': canonical(view).decode()}],
         'response_format': {'type': 'json_object'}, 'max_completion_tokens': 1500,
+        'chat_template_kwargs': {'enable_thinking': False},
         'n': 1, 'stream': False, 'store': False}
 
 EXPECTED_PROJECT_ID = 'aiproject-e00d73xwjm884tnvcs'
