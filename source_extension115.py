@@ -1,0 +1,216 @@
+"""Recovery004 immutable-source binding and append-only bootstrap.
+Import performs no I/O. Old scopes never receive writes or rollback.
+"""
+import datetime,fcntl,hashlib,io,json,math,os,re,shutil,socket,stat,tempfile,time,zipfile,sys
+from pathlib import Path
+ROOT=Path('/var/data/traceharbor-recovery004f');STAGE=Path('/var/data/traceharbor-staging')
+ROOTS=tuple(Path('/var/data/'+n)for n in('traceharbor-release68','traceharbor-recovery86','traceharbor-recovery67','traceharbor-recovery96','traceharbor-recovery004','traceharbor-recovery004r'))
+BASE_COMMIT='ac548c216a9cbc2882ac5d03c72c99a76e8a4f9a';BASE_TREE='608d34b85fd56e427dc0627c0ec1c83cf547e3c3'
+SERVICE='srv-dbh6hgh42hec73c3g9m0';HOST='traceharbor.onrender.com';DEADLINE=1793379600
+REQUEST='f80d6d38d3b87b0c93362fb435dd0c4eb7769f64972ddefe35a2fbab9abf9c1b'
+FINANCE='63c252ae7a7c0e532e84bab09b244d3ea32ca60ede5ca096fbadbb0d43b4a394'
+HOST_RUNTIME_PROFILE={'tree_sha256': 'ecf648782ae45b0c13f8e407125410f7798e60c3dcc407c3a0fefc4b192c3860', 'members': 512, 'files': 449, 'bytes': 5801292, 'python_version': '3.12.14', 'relative_root': '.venv', 'pyvenv_cfg_sha256': '05b96b2c4710a2287e8d35fbddb4bac26494592c81758b2c40351ac9b260f033'}
+HISTORICAL_PINS={'Owner110': '35ba306dd1743f0589564da0f76c4928f737b25af530966ea9ac472c0f2841bf', 'Result112': '3a2027b5167a0f1261588fc8a2a2ca3b2e6ef6b62f55987f338f57fcaca449d4', 'Review109': '2327f18f8711d1849072e6f7d82089fb009e2fce8dc9ad4be010fa664ba56283', 'Review111': 'c6bc9b4464f5fa1d9fcc1264bb0fef39885a051ebc43ec07567fe0da9d0ba913', 'Review113': 'ff63dfe70b4928a358ed10180629da821cc411d98af40c72cc9a79f119f84908', 'Result115': 'd5ad7f7a6080f885a76d1cd4867819b05f1ca01b49ec526b79ddc2b97f8c5d60'}
+BASE_SOURCE_MANIFEST='853385dc027c0bbeb8209028493aca83282c9e568b37b6274dc11e9931592194'
+PRESERVATION_HISTORY_SHA256='6b91549b5b519f3326ea1d7e7a92f11f6ad510f0932cba049460c6bf97dc993e'
+J=lambda v:json.dumps(v,sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode()
+H=lambda b:hashlib.sha256(b).hexdigest()
+class Closed(ValueError):pass
+def need(v,code):
+ if not v:raise Closed(code)
+def private(p):
+ p=Path(p);s=p.lstat();need(stat.S_ISDIR(s.st_mode)and s.st_uid==os.getuid()and not s.st_mode&0o077 and not any(x.is_symlink()for x in(p,*p.parents)),'PRIVATE_DIRECTORY');return p
+
+def raw(p,maximum=33554432,*,private_file=True):
+ p=Path(p);s=p.lstat();need(stat.S_ISREG(s.st_mode)and s.st_uid==os.getuid()and s.st_nlink==1 and s.st_size<=maximum and(not private_file or not s.st_mode&0o077)and not any(x.is_symlink()for x in(p,*p.parents)),'PRIVATE_FILE_CUSTODY')
+ fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)
+ with os.fdopen(fd,'rb')as f:
+  t=os.fstat(f.fileno());need((s.st_ino,s.st_size,s.st_mtime_ns)==(t.st_ino,t.st_size,t.st_mtime_ns),'FILE_CHANGED_DURING_READ');b=f.read(maximum+1)
+ need(len(b)==s.st_size,'SHORT_FILE');return b
+
+def read(p,maximum=262144):return json.loads(raw(p,maximum))
+def exclusive(p,b):
+ p=Path(p);private(p.parent);b=b if type(b)is bytes else J(b);fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ with os.fdopen(fd,'wb')as f:f.write(b);f.flush();os.fsync(f.fileno())
+ need(raw(p,max(len(b),1))==b,'WRITE_READBACK_UNKNOWN');fd=os.open(p.parent,os.O_RDONLY|os.O_DIRECTORY)
+ try:os.fsync(fd)
+ finally:os.close(fd)
+
+def snapshot(root,*,allow004=False):
+ root=Path(root);private(root);v={};total=0
+ excluded={str(ROOTS[0]/'allocation'/n)for n in('slot-004.json','terminal-004.json')}if allow004 and root==ROOTS[0]else set()
+ for p in [root,*sorted(root.rglob('*'))]:
+  if str(p)in excluded:continue
+  s=p.lstat();need(not p.is_symlink()and s.st_uid==os.getuid()and len(v)<4096,'HISTORY_CUSTODY_OR_NODES')
+  if stat.S_ISDIR(s.st_mode):v[str(p)]={'directory':True,'mode':stat.S_IMODE(s.st_mode)}
+  else:
+   pin=file_pin(p,67108864);total+=pin['bytes'];need(total<=134217728,'ROOT_HISTORY_BYTES128M');v[str(p)]=pin
+ return v
+
+def check_critical(pins):
+ need(type(pins)is dict and len(pins)<=128,'CRITICAL_PIN_SHAPE')
+ for name,pin in pins.items():
+  p=Path(name);need(any(r in p.parents for r in ROOTS),'CRITICAL_PATH')
+  if pin.get('exists')is False:need(not p.exists(),'PRESERVED_ABSENCE_CHANGED');continue
+  b=raw(p);need(len(b)==pin['bytes']and H(b)==pin['sha256'],'CONSUMED_PREIMAGE_DRIFT')
+
+def check_history(history):
+ need(set(history)=={'root_preimages','stage_preimages','stage_extra_preimages'}and set(history['root_preimages'])==set(map(str,ROOTS)),'ALL_SIX_HISTORY_ROOTS_REQUIRED');maps={}
+ for root in ROOTS:
+  v=snapshot(root,allow004=True);pin=history['root_preimages'][str(root)];need(H(J(v))==pin['tree_sha256']and len(v)==pin['members']and sum(x.get('bytes',0)for x in v.values())==pin['bytes'],'WHOLE_HISTORY115_DRIFT');maps.update(v)
+ stages=history['stage_preimages'];expected={Path(n).name for n in stages}
+ need(all(Path(n).parent==STAGE and Path(n).name.startswith('actual-')and Path(n).suffix=='.json'for n in stages),'STAGE_PREIMAGE_PATH')
+ need({p.name for p in STAGE.glob('actual-*.json')}<=expected|{'actual-initial115.json','actual-recovery115.json'},'UNEXPECTED_STAGING_ADMISSION')
+ for n,pin in stages.items():need(file_pin(n,131072)==pin,'OLD_ADMISSION_DRIFT115');maps[n]=pin
+ extra=history['stage_extra_preimages'];expected_tools={str(STAGE/n)for n in('recovery004-tools','recovery004-tools/install004.py','recovery112-tools','recovery112-tools/install112.py')}
+ need(set(extra)==expected_tools,'BOTH_PRIOR_TOOLS_REQUIRED')
+ for tool in('recovery004-tools','recovery112-tools'):
+  folder=STAGE/tool;need({str(p)for p in folder.rglob('*')}=={n for n in extra if Path(n).parent==folder},'OLD_TOOL_FILESET_DRIFT')
+ for n,pin in extra.items():
+  if pin.get('directory'):private(n);need(stat.S_IMODE(Path(n).lstat().st_mode)==pin['mode'],'OLD_TOOL_DIRECTORY_DRIFT')
+  else:need(file_pin(n,1048576)==pin,'OLD_TOOL_SOURCE_DRIFT')
+  maps[n]=pin
+ need(sum(v.get('bytes',0)for v in maps.values())<=134217728,'TOTAL_HISTORY_BYTES128M');return maps
+
+
+def runtime_profile(directory):
+ root=Path(directory)/'.venv';need(root.is_dir()and not root.is_symlink(),'EXACT_RENDER_RUNTIME_DIRECTORY');items={};total=0
+ for p in [root,*sorted(root.rglob('*'))]:
+  if '__pycache__'in p.parts:continue
+  s=p.lstat();need(s.st_uid==os.getuid()and len(items)<1024,'RUNTIME_CUSTODY_OR_BOUND');name=str(p.relative_to(root))
+  if stat.S_ISLNK(s.st_mode):items[name]={'symlink':os.readlink(p),'mode':stat.S_IMODE(s.st_mode)}
+  elif stat.S_ISDIR(s.st_mode):items[name]={'directory':True,'mode':stat.S_IMODE(s.st_mode)}
+  elif stat.S_ISREG(s.st_mode):
+   b=raw(p,33554432,private_file=False);total+=len(b);need(total<=8388608,'RUNTIME_TOTAL_BYTES');items[name]={'bytes':len(b),'sha256':H(b),'mode':stat.S_IMODE(s.st_mode)}
+  else:raise Closed('RUNTIME_SPECIAL_NODE')
+ return {'tree_sha256':H(J(items)),'members':len(items),'files':sum('sha256'in x for x in items.values()),'bytes':total,'python_version':'3.12.14','relative_root':'.venv','pyvenv_cfg_sha256':H(raw(root/'pyvenv.cfg',4096,private_file=False))}
+
+def source_check(directory,pins,*,runtime_required=False):
+ directory=Path(directory);need(type(pins)is dict and 101<=len(pins)<=128,'SOURCE_CLOSURE_BOUND')
+ runtime=directory/'.venv'
+ if runtime.exists()or runtime.is_symlink():need(runtime_profile(directory)==HOST_RUNTIME_PROFILE,'PINNED_RENDER_RUNTIME_DRIFT')
+ else:need(not runtime_required,'RENDER_RUNTIME_REQUIRED')
+ if runtime_required:need(sys.version.split()[0]=='3.12.14'and Path(sys.prefix)==runtime,'EXACT_RENDER_INTERPRETER')
+ # Only a successfully hash-verified whole runtime subtree is classified outside
+ # Git product source. No unverified prefix, broad ignore or tracked file skip.
+ actual={str(p.relative_to(directory))for p in directory.rglob('*')if p.is_file()and '__pycache__'not in p.parts and '.git'not in p.parts and '.venv'not in p.relative_to(directory).parts[:1]}
+ need(actual==set(pins),'EXACT_SOURCE_FILESET')
+ for name,pin in pins.items():
+  rel=Path(name);need(not rel.is_absolute()and '..'not in rel.parts and rel.parts[0]!='.venv','SOURCE_PATH')
+  b=raw(directory/rel,1048576,private_file=False);need(len(b)==pin['bytes']and H(b)==pin['sha256'],'SOURCE_CLOSURE_DRIFT')
+
+
+def effects():
+ return {'same_service':SERVICE,'deploy_ordinal':11,'max_additional_deploys':1,'new_root':str(ROOT),'new_auth_epoch':'TRACEHARBOR-AUTH004F','new_grants':1,'new_sessions':1,'session_seconds_max':1800,'new_targets':1,'new_prepared_capabilities':1,'new_selections':1,'new_native_samples':1,'new_full_recordings':1,'same_unconsumed_AI004':True,'new_AI_max':1,'additional_AI_budget':False,'new_allocation_slot':4,'required_prior_slots':3,'HELD_before':253,'HELD_after':252,'total_call_limit':256,'new_observations':1,'global_observation':7,'local_observation':1,'bootstrap_files':8,'bootstrap_directories':4,'new_allocation':False,'reset':False,'retry':False,'financial205_reapproval':False,'planned_total_USD':'20','call_gross_cap_USD':'0.002','tax_multiplier':'2','provider_global_hardcap':False,'new_money_terms_permissions':False,'AI_after_initial_FULLACK':True,'full_seconds':224,'AV_seconds':176,'new_AV_renders':1,'same_Devpost_entry':'1264455','final_legal_distinct':True,'native_Share_distinct':True,'all_004_original_files_immutable':True,'no_pause_READY_to_picker':True,'actual_focus_before_timers':True,'harmless_focus_page_required':True,'backup_streaming':True,'history_total_max_bytes':134217728,'backup_file_max_bytes':134217728,'bootstrap_min_free_bytes':536870912}
+
+def validate_spec(s):
+ need(s.get('schema')=='traceharbor.focus115.spec.v1'and s.get('base_commit')==BASE_COMMIT and s.get('base_tree')==BASE_TREE,'SOURCE112_BASE')
+ need(type(s.get('effects'))is dict and s['effects']==effects()and all(type(s['effects'].get(k))is type(v)for k,v in effects().items()),'EXACT112_NEW_TECHNICAL_CAPS')
+ need(s.get('request_sha256')==REQUEST and s.get('request_bytes')==5633 and s.get('counter')=={'count':1607,'request_sha256':REQUEST,'template_sha256':'17dc9cd8a6b70ec56bc2b758f9539a113ba789b5b025105234ae3aed78a5f49d','tokenizer_revision':'a9904d24bcc1d289a1950fa9d2b978c47cf903b9'},'SAME_UNSPENT_AI004_COUNTER343')
+ need(s.get('finance205_sha256')==FINANCE and s.get('historical_receipt_pins')==HISTORICAL_PINS and s.get('runtime_profile')==HOST_RUNTIME_PROFILE,'FINANCE_HISTORY_RUNTIME112')
+ need(len(s.get('old_source_pins',{}))==101 and H(J(s['old_source_pins']))==BASE_SOURCE_MANIFEST and len(s.get('source_pins',{}))==113,'EXACT101_TO113_SOURCE_CLOSURE')
+ need(s.get('history_sha256')==PRESERVATION_HISTORY_SHA256 and H(J(s['history']))==s['history_sha256']and H(J(s['source_pins']))==s['source_manifest_sha256'],'WHOLE112_MANIFEST_HISTORY')
+ need(re.fullmatch('[a-f0-9]{40}',s.get('candidate_tree','')),'NEW_SOURCE_TREE112')
+ for k in('decision_sha256','contract_sha256','policy_sha256','initial_sha256','install_program_sha256','source_manifest_sha256','history_sha256','handoff_driver_sha256','credential_binder_sha256'):
+  need(re.fullmatch('[a-f0-9]{64}',s.get(k,'')),'SPEC112_PIN')
+ return s
+
+def validate_bindings(s,b,now):
+ validate_spec(s);need(b.get('state')=='BOUND_FROM_ACTUAL_FOCUS115_RECEIPTS','UNBOUND112_NO_EFFECT')
+ history=b.get('historical_receipts',{});need(set(history)==set(HISTORICAL_PINS)and all(H(J(history[k]))==v for k,v in HISTORICAL_PINS.items()),'IMMUTABLE110_109_111_112_REQUIRED')
+ f=b.get('finance205',{});need(H(J(f))==FINANCE and f.get('accepted')is True and f.get('proposed')is False and f.get('state')=='ACTUAL_INFORMED_STANDARD89_OWNER_RECEIVED','FINANCE205_PRESERVED')
+ o=b.get('technical_owner',{});r=b.get('independent_review',{})
+ need(o.get('state')=='ACTUAL_OWNER_FOREGROUND115'and o.get('accepted')is True and o.get('proposed')is False and re.fullmatch('[a-f0-9]{64}',o.get('actual_message_utf8_sha256','')),'ACTUAL_NEW_TECHNICAL112_OWNER_REQUIRED')
+ need(r.get('state')=='ACTUAL_INDEPENDENT_COMPLETE_FOCUS115_ACCEPTANCE'and r.get('accepted')is True and r.get('independent')is True and r.get('proposed')is False and r.get('verdict')=='ACCEPT_COMPLETE_FOCUS115_INSTALLABLE_FOR_SAME_AI004','NEW_WHOLE112_REVIEW_REQUIRED')
+ for item in(o,r):
+  need(bool(item.get('canonical_source'))and item.get('spec_sha256')==H(J(s))and item.get('effects')==effects()and item.get('historical_receipt_pins')==HISTORICAL_PINS and item.get('finance205_sha256')==FINANCE,'WHOLE_ACTUAL112_RECEIPT_SCOPE')
+  for k in('candidate_tree','decision_sha256','contract_sha256','policy_sha256','initial_sha256','install_program_sha256','source_manifest_sha256','history_sha256','handoff_driver_sha256','credential_binder_sha256'):
+   need(item.get(k)==s[k],'EXACT112_RECEIPT_PIN')
+ need(type(o.get('expires'))in(int,float)and math.isfinite(o['expires'])and now<o['expires']<=DEADLINE,'112_AUTHORITY_EXPIRED')
+ need(re.fullmatch('[a-f0-9]{40}',b.get('published_commit',''))and b['published_commit']!=BASE_COMMIT and b.get('published_tree')==s['candidate_tree'],'ACTUAL112_NEW_SOURCE_PUBLICATION')
+ z=b.get('reservation',{});need(z.get('effect_id')=='FOCUS115-APPEND8-DEPLOY11-ONCE'and z.get('state')=='RESERVED_NOT_DISPATCHED'and z.get('max_dispatches')==1 and z.get('dispatch_count')==0 and z.get('spec_sha256')==H(J(s))and z.get('owner_sha256')==H(J(o))and z.get('review_sha256')==H(J(r))and z.get('history_sha256')==s['history_sha256']and bool(z.get('canonical_source')),'EXACT112_DISTINCT_ORIGINAL_RESERVATION')
+ need(type(z.get('at'))in(int,float)and 0<=now-z['at']and z['at']<=o['expires'],'112_RESERVATION_TIME');return o
+
+def backup(maps,destination):
+ destination=Path(destination);need(not destination.exists(),'BACKUP_DESTINATION_USED');total=sum(v.get('bytes',0)for v in maps.values());need(total<=134217728,'BACKUP_TOTAL_BOUND128M')
+ with zipfile.ZipFile(destination,'x',compression=zipfile.ZIP_STORED,allowZip64=False)as z:
+  destination.chmod(0o600)
+  for n,pin in maps.items():
+   if pin.get('directory'):continue
+   need(file_pin(n,67108864)==pin,'BACKUP_PREIMAGE_DRIFT');info=zipfile.ZipInfo(n.lstrip('/'));info.compress_type=zipfile.ZIP_STORED;info.external_attr=(stat.S_IFREG|pin['mode'])<<16
+   with Path(n).open('rb')as source,z.open(info,'w')as target:
+    shutil.copyfileobj(source,target,1048576)
+ need(destination.stat().st_size<=134217728,'BACKUP_FILE_BOUND128M');return destination
+
+def restore_proof(blob,maps,*,directory=None):
+ files={n:p for n,p in maps.items()if not p.get('directory')}
+ with zipfile.ZipFile(blob)as z:
+  need(z.testzip()is None,'BACKUP_CRC');need(len(z.namelist())==len(files)and set(z.namelist())=={n.lstrip('/')for n in files},'BACKUP_COMPLETE_MANIFEST')
+  with tempfile.TemporaryDirectory(prefix='.traceharbor115-restore-',dir=directory)as td:
+   base=Path(td)
+   for n,pin in maps.items():
+    rel=Path(n.lstrip('/'));need('..'not in rel.parts and not rel.is_absolute(),'BACKUP_PATH');p=base/rel
+    if pin.get('directory'):p.mkdir(parents=True,exist_ok=True);p.chmod(pin['mode'])
+    else:
+     p.parent.mkdir(parents=True,exist_ok=True);fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,pin['mode'])
+     with z.open(str(rel))as source,os.fdopen(fd,'wb')as target:shutil.copyfileobj(source,target,1048576);target.flush();os.fsync(target.fileno())
+     need(file_pin(p,67108864)==pin,'ISOLATED_STREAM_RESTORE_READBACK')
+ return {'state':'ISOLATED_RESTORE_PASS_NO_LIVE_RESTORE','members':len(files),'nodes':len(maps),'bytes':sum(v['bytes']for v in files.values()),'tree_sha256':H(J(maps)),'streaming':True}
+
+def install(s,b,initial,contract,program,*,source_root=None,now=None):
+ now=time.time()if now is None else now;validate_bindings(s,b,now)
+ need(0<=now-b['reservation']['at']<=300,'FRESH115_PREWRITE_RESERVATION')
+ need(os.environ.get('RENDER')=='true'and os.environ.get('RENDER_EXTERNAL_HOSTNAME')==HOST and os.environ.get('RENDER_GIT_COMMIT')==BASE_COMMIT,'EXACT_OLD_NATIVE_SOURCE115')
+ source_check(source_root or Path.cwd(),s['old_source_pins'],runtime_required=source_root is None)
+ need(H(program)==s['install_program_sha256']and H(J(initial))==s['initial_sha256']and H(J(contract))==s['contract_sha256']and H(J(contract['policy']))==s['policy_sha256'],'BOOTSTRAP115_PAYLOAD_PINS')
+ need(not ROOT.exists()and not(STAGE/'actual-initial115.json').exists()and not(STAGE/'actual-recovery115.json').exists()and not(STAGE/'recovery115-tools').exists(),'115_PARTIAL_OR_USED_NO_RETRY')
+ need(shutil.disk_usage(ROOT.parent).free>=536870912,'STREAM_BACKUP_RESTORE_AV_MARGIN512M_REQUIRED')
+ lock=os.open(ROOTS[0]/'allocation/lock',os.O_RDONLY|os.O_NOFOLLOW)
+ try:
+  fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);allocation=ROOTS[0]/'allocation'
+  need({p.name for p in allocation.glob('slot-*.json')}=={'slot-001.json','slot-002.json','slot-003.json'}and not(allocation/'terminal-004.json').exists(),'EXPECTED3_NO_SLOT004_BEFORE_BOOTSTRAP')
+  maps=check_history(s['history'])
+  with tempfile.TemporaryDirectory(prefix='.traceharbor115-backup-',dir=ROOT.parent)as td:
+   blob=backup(maps,Path(td)/'all-preimages.zip');proof=restore_proof(blob,maps,directory=ROOT.parent);backup_pin=file_pin(blob)
+   need(check_history(s['history'])==maps,'115_PREAPPEND_DRIFT');ROOT.mkdir(mode=0o700);(ROOT/'source004').mkdir(mode=0o700);(ROOT/'auth004').mkdir(mode=0o700);(STAGE/'recovery115-tools').mkdir(mode=0o700)
+   extension={'spec':s,'bindings':b};authority={'schema':'traceharbor.authority115.v1','scope':'TRACEHARBOR-AUTH004F','effects':effects(),'spec_sha256':H(J(s)),'source_commit':b['published_commit'],'source_tree':b['published_tree'],'policy_sha256':s['policy_sha256'],'finance205_sha256':FINANCE,'expires':b['technical_owner']['expires']}
+   archive=ROOT/'source004/preimages004.zip';exclusive_copy(archive,blob)
+   writes={ROOT/'source004/preimages004-manifest.json':J(maps),ROOT/'source004/extension004.json':J(extension),ROOT/'recovery-authority004.json':J(authority),STAGE/'actual-initial115.json':J(initial),STAGE/'actual-recovery115.json':J(contract),STAGE/'recovery115-tools/install115.py':program}
+   for p,data in writes.items():exclusive(p,data)
+   pins={str(p):{'bytes':len(v),'sha256':H(v)}for p,v in writes.items()};pins[str(archive)]={k:backup_pin[k]for k in('bytes','sha256')}
+   complete={'state':'RECOVERY004F_APPEND8_COMPLETE','spec_sha256':H(J(s)),'file_pins':pins,'restore_proof':proof,'old_history_sha256':s['history_sha256'],'retry':False}
+   exclusive(ROOT/'source004/bootstrap-complete.json',complete);need(check_history(s['history'])==maps,'ALL_SIX_HISTORY_POSTAPPEND_DRIFT115')
+   return {'state':'APPENDED8FILES4DIRS_VERIFIED_NO_DEPLOY_OR_TIMERS','spec_sha256':H(J(s)),'backup_sha256':backup_pin['sha256'],'backup_bytes':backup_pin['bytes'],'restore_proof':proof}
+ finally:os.close(lock)
+
+def bootstrap_readback(s):
+ complete=read(ROOT/'source004/bootstrap-complete.json');need(complete.get('state')=='RECOVERY004F_APPEND8_COMPLETE'and complete.get('spec_sha256')==H(J(s))and complete.get('old_history_sha256')==s['history_sha256'],'115_PARTIAL_BOOTSTRAP')
+ expected={ROOT/'source004'/n for n in('preimages004.zip','preimages004-manifest.json','extension004.json')}|{ROOT/'recovery-authority004.json',STAGE/'actual-initial115.json',STAGE/'actual-recovery115.json',STAGE/'recovery115-tools/install115.py'}
+ need({Path(n)for n in complete.get('file_pins',{})}==expected,'115_EXACT_SEVEN_POSTIMAGES_REQUIRED')
+ for name,pin in complete['file_pins'].items():
+  actual=file_pin(name);need(all(actual[k]==pin[k]for k in('bytes','sha256')),'115_BOOTSTRAP_POSTIMAGE_DRIFT')
+ need(complete['restore_proof']['state']=='ISOLATED_RESTORE_PASS_NO_LIVE_RESTORE'and complete['restore_proof']['streaming']is True,'115_STREAM_RESTORE_REQUIRED');return complete
+
+def file_pin(p,maximum=134217728):
+ p=Path(p);s=p.lstat();need(stat.S_ISREG(s.st_mode)and s.st_uid==os.getuid()and s.st_nlink==1 and s.st_size<=maximum and not s.st_mode&0o077 and not any(x.is_symlink()for x in(p,*p.parents)),'STREAM_FILE_CUSTODY')
+ h=hashlib.sha256();n=0;fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW)
+ with os.fdopen(fd,'rb')as f:
+  t=os.fstat(f.fileno());need((s.st_ino,s.st_size,s.st_mtime_ns)==(t.st_ino,t.st_size,t.st_mtime_ns),'STREAM_FILE_CHANGED')
+  while block:=f.read(1048576):h.update(block);n+=len(block)
+  t=os.fstat(f.fileno());need((s.st_ino,s.st_size,s.st_mtime_ns)==(t.st_ino,t.st_size,t.st_mtime_ns),'STREAM_FILE_CHANGED')
+ need(n==s.st_size,'STREAM_SHORT_FILE');return {'bytes':n,'sha256':h.hexdigest(),'mode':stat.S_IMODE(s.st_mode)}
+
+def exclusive_copy(p,source):
+ p=Path(p);private(p.parent);pin=file_pin(source);fd=os.open(p,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+ with Path(source).open('rb')as inp,os.fdopen(fd,'wb')as out:shutil.copyfileobj(inp,out,1048576);out.flush();os.fsync(out.fileno())
+ need(file_pin(p)==pin,'COPY_POSTIMAGE_UNKNOWN');fd=os.open(p.parent,os.O_RDONLY|os.O_DIRECTORY)
+ try:os.fsync(fd)
+ finally:os.close(fd)
+
+def validate_focus(v,now):
+ need(type(v)is dict and v.get('state')=='ACTUAL_FOCUS115_PREFLIGHT'and bool(v.get('canonical_source')),'ACTUAL_FOCUS115_RECEIPT_REQUIRED')
+ need(type(v.get('at'))in(int,float)and 0<=now-v['at']<=120,'FRESH_FOCUS115_BEFORE_TIMERS')
+ need(all(v.get(k)is True for k in('active','window_focused','visible','document_focused','activation_succeeded')),'FOCUS115_INACTIVE_NO_ISSUE')
+ need(type(v.get('tab_id'))is int and type(v.get('window_id'))is int and v['tab_id']>0 and v['window_id']>0,'FOCUS115_EXACT_TAB_WINDOW')
+ need(v.get('url')=='https://traceharbor.onrender.com/recovery004f/focus'and v.get('title')=='TraceHarbor · Pregătire captură004f','FOCUS115_HARMLESS_SAME_ORIGIN_REQUIRED')
+ need(type(v.get('sampled_at'))in(int,float)and 0<=v['at']-v['sampled_at']/1000<=2,'FOCUS115_LIVE_DOM_SAMPLE');return v
