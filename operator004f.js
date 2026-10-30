@@ -45,6 +45,37 @@
   if(e.data.type==='CAPTURE_FAILED')line.textContent='CAPTURĂ OPRITĂ CU EROARE. Dovezile sunt păstrate. Revino la ChatGPT; nu apăsa Share din nou.';
  }
  if(e.data?.type==='FULL_ACK'&&e.data?.id==='TRACEHARBOR-RECOVERY004F')begin().catch(()=>{channel.postMessage({type:'FLOW_FAILED',id:'TRACEHARBOR-RECOVERY004F'});});};
- // Arming is non-media and not an AI call; only one target can arm this route.
- TraceHarborFocus115.wait().then(()=>request('/recovery004f/status')).then(async s=>{if(s.target_epoch!=='004f'||s.armed!==false||s.armed_id!==null)throw Error('DISTINCT_TARGET67_ALREADY_ARMED');for(const id of ['evolution','runtime-analyze','result'])if(!document.getElementById(id))throw Error('APP_TARGET_MISSING');TraceHarborFocus115.require();await request('/recovery004f/arm004f',{client_id:clientId});document.documentElement.dataset.targetArmed004f='yes';document.dispatchEvent(new Event('traceharbor-target-ready004f'));line.textContent='Pregatit pentru Share: selecteaza aceasta fila TraceHarbor · Recording target004f si ramai aici pana la mesajul final. Filmarea dureaza aproximativ4minute; marja6minute.';}).catch(()=>{line.textContent='This view cannot arm another recording. Preserve the current attempt.';channel.close();});
+ // Only initialization gets a bounded transport. Existing recorded flow is unchanged.
+ let initPhase416='FOREGROUND';
+ async function initRequest416(path,body){
+  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),8000);
+  try{
+   const response=await fetch(path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',redirect:'error',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:abort.signal});
+   if(!response.ok)throw Object.assign(Error('INIT_HTTP'),{initCode416:initPhase416+'_HTTP_'+response.status});
+   return await response.json();
+  }catch(e){
+   if(e.initCode416)throw e;
+   throw Object.assign(Error('INIT_TRANSPORT'),{initCode416:initPhase416==='ARM'?'ARM_TRANSPORT_UNKNOWN':e.name==='AbortError'?'STATUS_TIMEOUT':'STATUS_TRANSPORT_ERROR'});
+  }finally{clearTimeout(timer);}
+ }
+ function failInit416(e){
+  const codes=new Set(['INIT_FOREGROUND_FAILED','TARGET_ALREADY_ARMED','APP_TARGET_MISSING','PROVIDER_NOT_ADMITTED','FRESH_STANDARD89_METADATA','METADATA_GUARD_REFUSED','STATUS_TIMEOUT','STATUS_TRANSPORT_ERROR','ARM_TRANSPORT_UNKNOWN','ARM_ACK_UNCONFIRMED','INIT_WINDOW_TOO_SHORT']);
+  let code=e.initCode416||'INIT_FOREGROUND_FAILED';if(!codes.has(code)&&!/^(STATUS|ARM)_HTTP_[45][0-9]{2}$/.test(code))code='METADATA_GUARD_REFUSED';
+  const detail={code,phase:initPhase416,uncertain:initPhase416==='ARM'};
+  document.documentElement.dataset.targetInitError416=code;
+  document.documentElement.dataset.targetInitPhase416=initPhase416;
+  document.documentElement.dataset.targetInitUncertain416=String(detail.uncertain);
+  line.textContent='Pregătire oprită / '+initPhase416+' / '+code+'. Dovezile sunt păstrate; fără reluare automată.';
+  document.dispatchEvent(new CustomEvent('traceharbor-target-failed004f',{detail}));channel.close();
+ }
+ TraceHarborFocus115.wait().then(()=>{initPhase416='STATUS';return initRequest416('/recovery004f/status');}).then(async s=>{
+  if(s.target_epoch!=='004f'||s.armed!==false||s.armed_id!==null)throw Object.assign(Error('INIT'),{initCode416:'TARGET_ALREADY_ARMED'});
+  for(const id of ['evolution','runtime-analyze','result'])if(!document.getElementById(id))throw Object.assign(Error('INIT'),{initCode416:'APP_TARGET_MISSING'});
+  if(s.provider_readiness?.admitted_attempt!==true)throw Object.assign(Error('INIT'),{initCode416:s.provider_readiness?.admission_reason==='FRESH_STANDARD89_METADATA'?'FRESH_STANDARD89_METADATA':'PROVIDER_NOT_ADMITTED'});
+  if(!Number.isFinite(s.provider_readiness.prepare_window_remaining_ms)||s.provider_readiness.prepare_window_remaining_ms<40000)throw Object.assign(Error('INIT'),{initCode416:'INIT_WINDOW_TOO_SHORT'});
+  TraceHarborFocus115.require();initPhase416='ARM';const armed=await initRequest416('/recovery004f/arm004f',{client_id:clientId});
+  if(armed.armed!==true)throw Object.assign(Error('INIT'),{initCode416:'ARM_ACK_UNCONFIRMED'});
+  document.documentElement.dataset.targetArmed004f='yes';document.dispatchEvent(new Event('traceharbor-target-ready004f'));
+  line.textContent='Pregatit pentru Share: selecteaza aceasta fila TraceHarbor · Recording target004f si ramai aici pana la mesajul final. Filmarea dureaza aproximativ4minute; marja6minute.';
+ }).catch(failInit416);
 })();

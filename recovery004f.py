@@ -11,7 +11,7 @@ import credit_scope004f as scope
 from quota_ledger import read,exclusive,private_dir,Ledger
 from release_policy import canonical,digest,Refusal
 POLICY_SHA256='5a5b6f318e1b7e5049c1e9b75c402b11f63c0f7f17f65553f9096fb9928bc354'
-COOKIE='__Host-traceharbor-recovery004f'
+COOKIE='__Host-traceharbor-recovery126'
 PHASES=('vp8','vp9','select','native','full')
 NAMES={'TypeError','ReferenceError','EncodingError','NotSupportedError','NotReadableError','InvalidStateError','SecurityError','AbortError','UnknownError','OverconstrainedError','TimeoutError','NotAllowedError','NotFoundError'}
 
@@ -35,7 +35,7 @@ def witness(original):
 class Operator:
     def __init__(self,path,ttl,clock=time.time,*,scope_id='CREDIT67_ONLY'):self.path=path;self.ttl=ttl;self.clock=clock;self.lock=threading.Lock();self.scope_id=scope_id
     def consume(self,raw):
-        import session_continuity119 as continuity
+        import recovery126 as continuity
         return continuity.consume_operator(self,raw)
     def authorize(self,h):
         try:
@@ -228,9 +228,13 @@ class Handler(r.ReleaseHandler):
                 policy.peers=policy.peers|{key}
         return True
     def do_GET(self):
+        if self.path=='/recovery004f/access126.js':
+            if not self._tls_envelope():return self.error(403,'TLS Host/Origin required.')
+            import recovery126
+            return self.respond(200,recovery126.ACCESS_SCRIPT126,'text/javascript; charset=utf-8')
         if self.path in('/recovery004f/focus','/recovery004f/focus115.js'):
             if not self._tls_envelope():return self.error(403,'Qualified TLS required.')
-            return self.respond(200,FOCUS_PAGE115 if self.path.endswith('/focus')else FOCUS_SCRIPT115,'text/html; charset=utf-8'if self.path.endswith('/focus')else'text/javascript; charset=utf-8')
+            body=FOCUS_PAGE115+b'<output id="access126" role="status">Acces privat126 neverificat.</output><script src="/recovery004f/access126.js" defer></script>'if self.path.endswith('/focus')else FOCUS_SCRIPT115;return self.respond(200,body,'text/html; charset=utf-8'if self.path.endswith('/focus')else'text/javascript; charset=utf-8')
         if self.path=='/healthz':return self.respond(200,canonical({'phase':'RECOVERY004F','public_AI_enabled':False,'source_commit':self.server.source_commit}))
         if self.path=='/runtime/status':
             if not self.allowed():return self.error(403,'Qualified TLS edge required.')
@@ -246,7 +250,7 @@ class Handler(r.ReleaseHandler):
             return self.respond(200,(Path(__file__).parent/name).read_bytes(),'text/javascript; charset=utf-8')
         if self.path=='/recovery004f/session':
             if not self._tls_envelope():return self.error(403,'TLS Host/Origin required.')
-            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator</title><h1>Recovery004 operator</h1><form method="post" action="/recovery004f/session"><label>One-use recovery004f grant<input name="grant" type="password" required autocomplete="off" data-bwignore="true" data-1p-ignore="true" data-lpignore="true"></label><button type="submit">Open recovery session</button></form></html>'
+            body=b'<!doctype html><html lang="en"><meta charset="utf-8"><title>TraceHarbor recovery operator126</title><h1>Recovery004 operator</h1><form method="post" action="/recovery004f/session"><label>One-use recovery126 grant<input name="grant" type="password" required autocomplete="off" data-bwignore="true" data-1p-ignore="true" data-lpignore="true"></label><button type="submit">Open recovery session</button></form></html>'
             self.send_response(200)
             for k,v in [('Content-Type','text/html; charset=utf-8'),('Content-Length',str(len(body))),('Cache-Control','no-store'),('Referrer-Policy','same-origin'),('Content-Security-Policy',"default-src 'none'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")]:self.send_header(k,v)
             self.end_headers();self.wfile.write(body);return
@@ -259,6 +263,11 @@ class Handler(r.ReleaseHandler):
                 import app
                 body=(app.ROOT/'web/index.html').read_bytes().replace(b'/app.js',b'/recovery004f/app.js').replace(b'</head>',b'<link rel="stylesheet" href="/recovery004f/demo.css"></head>').replace(b'<body>',b'<body>'+b'<section id="capture-controls004f" style="position:sticky;top:0;z-index:50;background:#10232c;color:#fff;padding:10px;border-bottom:2px solid #74d7b3"><h2>Captura004</h2><p>\xc3\x8en selector alege exact fila TraceHarbor \xc2\xb7 Recording target004f, apoi Share. R\xc4\x83m\xc3\xa2i aici4minute, cu marj\xc4\x836minute. Nu re\xc3\xaenc\xc4\x83rca \xc8\x99i nu repeta Share.</p><button id="diagnose86" disabled>Diagnostice \xc3\xaenchise</button><button id="select86" disabled>Porne\xc8\x99te selectorul Share004</button><output id="focus115" role="status">Focus pending.</output><output id="phase112" role="status" data-stage="INITIALIZING">Se verific\xc4\x83 preg\xc4\x83tirea.</output><p id="status86" role="status"></p><video id="preview86" muted playsinline style="display:none"></video></section>').replace(b'</body>',b'<script src="/recovery004f/focus115.js" defer></script><script src="/recovery004f/selection004f.js" defer></script><script src="/recovery004f/controller.js" defer></script><script src="/recovery004f/operator004f.js" defer></script></body>');return self.respond(200,body,'text/html; charset=utf-8')
             if self.path=='/recovery004f/':return self.respond(200,html_page(),'text/html; charset=utf-8')
+            if self.path=='/recovery004f/preflight126':
+                try:
+                    import recovery126
+                    return self.respond(200,canonical(recovery126.admin_preflight(m)))
+                except Exception:return self.error(403,'Preflight126 guard refused; no effects.')
             if self.path=='/recovery004f/status':return self.respond(200,canonical(m.status()))
             if self.path=='/recovery004f/runtime/status':return self.respond(200,canonical(m.status()))
             if self.path=='/recovery004f/input':return self.respond(200,(Path(__file__).parent/'credit67_input.json').read_bytes())

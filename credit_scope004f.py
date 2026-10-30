@@ -11,7 +11,7 @@ ID='TRACEHARBOR-RECOVERY004F'
 ROOT=Path('/var/data/traceharbor-recovery004f')
 ORIGINAL=Path('/var/data/traceharbor-release68')
 PRIOR=Path('/var/data/traceharbor-recovery86')
-COOKIE='__Host-traceharbor-recovery004f'
+COOKIE='__Host-traceharbor-recovery126'
 DEADLINE=1793379600
 
 def contract():
@@ -53,7 +53,7 @@ def idle(m):
  if any((m.root/n).exists()for n in ('select/started.json','select/failure.json','native/reserved.json','full/reserved.json','e2e-reserved.json','demo-execution-reserved.json','av/render-reserved.json')):raise Refusal('NEW_SCOPE_ALREADY_CONSUMED')
 
 def credit(m,max_age=600):
- authority(m);files=list((m.root/'credit-observations').glob('*.json'))
+ authority(m);files=list((m.root/'credit-observations126').glob('*.json'))
  if len(files)!=1:raise Refusal('EXACT_ONE_NEW_OBSERVATION004')
  import standard_billing004f
  return standard_billing004f.validate_observation(m,read(files[0],65536),max_age)
@@ -81,7 +81,7 @@ def initialize(m):
  if(m.root/'setup-reserved.json').exists():raise Refusal('PARTIAL_SETUP_NO_RETRY')
  if shutil.disk_usage(m.root.parent).free<m.p['reserve_free_bytes']:raise Refusal('DISK_RESERVE')
  exclusive(m.root/'setup-reserved.json',{'scope':ID,'state':'UNKNOWN_NO_RETRY'})
- for n in ('select','native','full','exports','av','worker113','credit-observations'):(m.root/n).mkdir(mode=0o700)
+ for n in ('select','native','full','exports','av','worker113','credit-observations126'):(m.root/n).mkdir(mode=0o700)
  exclusive(m.root/'manifest.json',manifest);exclusive(m.root/'setup-complete.json',{'manifest_sha256':digest(manifest)})
 
 def codec(m):

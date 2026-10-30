@@ -34,12 +34,18 @@ def validate_observation(m,v,max_age):
   require((basis=='CONSERVATIVE_UPPER_BOUND_2_NOT_ACTUAL_INVOICE'and tax==2)or(basis=='ACTUAL_ACCOUNT_TAX_EVIDENCE'and re.fullmatch('[a-f0-9]{64}',v.get('tax_evidence_sha256',''))),'HONEST_STANDARD89_TAX_BASIS')
   cost=decimal.Decimal(m.p['certificate']['count']*60+1500*240)/1000000000*tax
   require(balance.is_finite()and tax.is_finite()and 1<=tax<=2 and cost<=bound<=balance,'STANDARD89_PRICE_TAX_BALANCE_BOUND')
+ except Refusal:
+  raise
  except (KeyError,ValueError,TypeError,decimal.InvalidOperation):raise Refusal('STANDARD89_PRICE_TAX_BALANCE_BOUND')from None
  return v
 
 def status(m):
  import credit_scope004f as scope
+ reason=None
  try:v=scope.credit(m,300);admitted=True;label=v['billing_status']
- except Exception:admitted=False;label='UNKNOWN'
+ except Refusal as e:
+  admitted=False;label='UNKNOWN';safe={'FRESH_STANDARD89_METADATA','ACTUAL_STANDARD89_BILLING_METADATA_REQUIRED','STANDARD89_ACTUAL_UI_BINDING','DECIMAL_STRINGS','HONEST_STANDARD89_TAX_BASIS','STANDARD89_PRICE_TAX_BALANCE_BOUND','EXACT_ONE_NEW_OBSERVATION004'};reason=str(e)if str(e)in safe else'METADATA_GUARD_REFUSED'
+ except Exception:admitted=False;label='UNKNOWN';reason='METADATA_VALIDATION_UNAVAILABLE'
+ age=m.clock()-datetime.datetime.fromisoformat(v['observed_at_utc'].replace('Z','+00:00')).timestamp()if admitted else None
  ready=m.ready()and admitted
- return {'schema':'traceharbor.runtime-status.v1','enabled':ready,'new_call_cap':1 if ready else 0,'reason':'ONE_FROM253HELD_OTHER252HELD','phases':{n:m.state(n)for n in('select','native','full')},'armed':(m.root/'target.json').exists(),'armed_id':read(m.root/'target.json')['client_id']if(m.root/'target.json').exists()else None,'target_epoch':'004f','full_elapsed':m.clock()-m.sinks['full'].started if'full'in m.sinks else None,'session_remaining':int(m.operator.remaining()),'e2e_reserved':(m.root/'e2e-reserved.json').exists(),'e2e_result':(m.root/'e2e-result.json').exists(),'retained_clip_qualification':{'state':'PASS_PRIOR_NATIVE146_LINEAGE','clip_bytes':71412,'new_native_sample_still_required':True},'provider_readiness':{'state':'STANDARD_PAID_ATTEMPT_ADMITTED'if admitted else'NOT_ADMITTED','admitted_attempt':admitted,'billing_mode':MODE,'billing_status':label,'paid_usage_enabled':True if admitted else None,'paid_continuation_disabled':False if admitted else None,'provider_global_hardcap':False,'credential_binding':'CONFIGURED_PROJECT_NOT_PROVIDER_ATTESTED','inference_success_proven':False},'retry':False}
+ return {'schema':'traceharbor.runtime-status.v1','enabled':ready,'new_call_cap':1 if ready else 0,'reason':'ONE_FROM253HELD_OTHER252HELD','phases':{n:m.state(n)for n in('select','native','full')},'armed':(m.root/'target.json').exists(),'armed_id':read(m.root/'target.json')['client_id']if(m.root/'target.json').exists()else None,'target_epoch':'004f','full_elapsed':m.clock()-m.sinks['full'].started if'full'in m.sinks else None,'session_remaining':int(m.operator.remaining()),'e2e_reserved':(m.root/'e2e-reserved.json').exists(),'e2e_result':(m.root/'e2e-result.json').exists(),'retained_clip_qualification':{'state':'PASS_PRIOR_NATIVE146_LINEAGE','clip_bytes':71412,'new_native_sample_still_required':True},'provider_readiness':{'prepare_window_remaining_ms':max(0,int((120-age)*1000))if admitted else 0,'admission_reason':reason,'state':'STANDARD_PAID_ATTEMPT_ADMITTED'if admitted else'NOT_ADMITTED','admitted_attempt':admitted,'billing_mode':MODE,'billing_status':label,'paid_usage_enabled':True if admitted else None,'paid_continuation_disabled':False if admitted else None,'provider_global_hardcap':False,'credential_binding':'CONFIGURED_PROJECT_NOT_PROVIDER_ATTESTED','inference_success_proven':False},'retry':False}
