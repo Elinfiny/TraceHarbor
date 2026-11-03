@@ -1,3 +1,24 @@
+# TraceHarbor — evaluator entry
+
+The current submitted presentation is [Devpost entry 1264455](https://devpost.com/software/traceharbor).
+Use the [reviewed delivery README at 1b2f0ee](https://github.com/Elinfiny/TraceHarbor/blob/1b2f0ee/README.md)
+and its immutable source tree for installation and recorded evidence. The
+[deployed executable baseline e6e8fed](https://github.com/Elinfiny/TraceHarbor/tree/e6e8fed27628d1da43973a311fad5ef9cea950a4)
+is distinct from documentation revisions and from this older main-branch code.
+
+- Public synthetic desk: https://traceharbor.onrender.com/
+- Current 2:56 recorded demonstration: https://youtu.be/x1DSpXFOWHo
+- Evidence evolution is synthetic and makes no inference or remediation call.
+- Historical nativeUNKNOWN results and consumed budgets remain unchanged.
+
+This main-branch change is a documentation redirect, not a promotion of older
+code to the deployed build and not a new deployment. Evaluate the exact linked
+source rather than assuming main matches the submitted executable.
+
+## Archived main-branch README — superseded delivery description
+
+<details><summary>Dated original notes, retained as historical evidence only</summary>
+
 # TraceHarbor
 
 An incident evidence desk for synthetic cases. Inspect a timeline, compare hypotheses,
@@ -159,3 +180,5 @@ Official sources inspected on 23 September 2026:
 - https://docs.tokenfactory.nebius.com/ai-models-inference/json
 - https://docs.tokenfactory.nebius.com/other-capabilities/billing-new
 - https://nebiusglobalaihackathon.devpost.com/rules
+
+</details>
