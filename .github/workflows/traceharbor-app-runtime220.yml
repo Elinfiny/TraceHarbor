@@ -1,0 +1,32 @@
+name: TraceHarbor one proposed output contract220
+on: create
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+permissions:
+  contents: read
+concurrency:
+  group: traceharbor-contract220-bc7553a62d02f0cc
+  cancel-in-progress: false
+jobs:
+  application:
+    if: >-
+      github.event_name == 'create' && github.event.ref_type == 'branch' &&
+      github.event.ref == 'traceharbor/contract220/v1/b56a6f4f406b7728-bc7553a62d02f0cc' &&
+      github.repository == 'Elinfiny/TraceHarbor' && github.repository_id == '1391430317' &&
+      github.repository_owner_id == '273768139' && github.actor_id == '273768139' &&
+      github.run_attempt == 1 && github.workflow_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Qualify only new contract220 without credentials or HTTP
+        run: python3 -B -m unittest discover -s tests -p test_app_runtime220.py
+      - name: One separately admitted future contract request
+        env:
+          TRACE220_APP_PROFILE: APP_RUNTIME_CONTRACT220
+          NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+        run: python3 -B tools/app_runtime220.py

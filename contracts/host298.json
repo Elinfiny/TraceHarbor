@@ -1,0 +1,53 @@
+{
+  "schema": "TRACE298_HOST_EXPECTATIONS_FROM_ACTUAL291",
+  "provenance": {
+    "run": "40374078395",
+    "job": "121752239425",
+    "raw_log_bytes": 40716,
+    "raw_log_sha256": "5906661189a529abbdd4ae997e98fcebe4a32188e4d60e1c421d3cd3f19a97fc"
+  },
+  "image": "20261012.334.1",
+  "os": "24.04",
+  "uid": 1001,
+  "gid": 1001,
+  "slots": {
+    "chrome": {
+      "path": "/usr/bin/google-chrome",
+      "realpath": "/opt/google/chrome/google-chrome",
+      "sha256": "aea09d69ce7f24d5901f6bfb15dd44d0c856e793e0a498f8d8393ec7d2c308ec",
+      "state": "BOUNDED_PROBE_FAILED_NOT_QUALIFIED"
+    },
+    "chromedriver": {
+      "path": "/usr/bin/chromedriver",
+      "realpath": "/usr/local/share/chromedriver-linux64/chromedriver",
+      "sha256": "84f66055394151e03ceb639da09a196e3f57117a802deb46eb95bf5d03ad58b5",
+      "state": "BOUNDED_PROBE_FAILED_NOT_QUALIFIED"
+    },
+    "node": {
+      "path": "/usr/local/bin/node",
+      "realpath": "/usr/local/bin/node",
+      "sha256": "fde6a4bf8d0562f7751d1a2d6cb9b417c4cfe107bbcb0aa3e9a24e125e348f48",
+      "state": "BOUNDED_PROBE_FAILED_NOT_QUALIFIED"
+    },
+    "python3": {
+      "path": "/usr/bin/python3",
+      "realpath": "/usr/bin/python3.12",
+      "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+      "state": "OBSERVED_NOT_ADOPTED"
+    },
+    "systemctl": {
+      "path": "/usr/bin/systemctl",
+      "realpath": "/usr/bin/systemctl",
+      "sha256": "e0d3d0e9444da1b2b58c792c3f5028b69f049b77d5ca17b3ec0d09f89117225b",
+      "state": "OBSERVED_NOT_ADOPTED"
+    },
+    "systemd-run": {
+      "path": "/usr/bin/systemd-run",
+      "realpath": "/usr/bin/systemd-run",
+      "sha256": "dbc8b988a849d5c9d7ef2de7068a6f107021bc6c11e0d7864c73f373eef726a7",
+      "state": "OBSERVED_NOT_ADOPTED"
+    }
+  },
+  "functional_qualification": false,
+  "sizes291": "NOT_EXPOSED; fresh streamed bytecount/fstat before any use required"
+}

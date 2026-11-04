@@ -1,0 +1,32 @@
+name: TraceHarbor one input-bound application runtime200
+on: create
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+permissions:
+  contents: read
+concurrency:
+  group: traceharbor-app200-v1-e4b08fa3937e4c83
+  cancel-in-progress: false
+jobs:
+  application:
+    if: >-
+      github.event_name == 'create' && github.event.ref_type == 'branch' &&
+      github.event.ref == 'traceharbor/app200/v1/e4b08fa3937e4c83' &&
+      github.repository == 'Elinfiny/TraceHarbor' && github.repository_id == '1391430317' &&
+      github.repository_owner_id == '273768139' && github.actor_id == '273768139' &&
+      github.run_attempt == 1 && github.workflow_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Qualify only new ordinary application wrapper without credentials
+        run: python3 -B -m unittest discover -s tests -p test_app_runtime200.py
+      - name: Exactly one application request using existing secret reference
+        env:
+          TRACE200_APP_PROFILE: APP_RUNTIME_INPUT_BOUND200
+          NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+        run: python3 -B tools/app_runtime190.py

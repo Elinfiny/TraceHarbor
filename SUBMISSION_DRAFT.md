@@ -1,42 +1,21 @@
-# TraceHarbor — evidence before conclusions
+# TraceHarbor — submission draft
 
-**Track:** Best Apps and Agents. **Status:** private preparation draft, not submitted.
+Proposed track: Best Apps and Agents, Nebius x NVIDIA Global AI Hackathon. This English draft describes the implemented offline product and separates future work. It is not a submission receipt or an eligibility declaration.
 
-When an incident is noisy, a confident explanation can arrive before the evidence does.
-TraceHarbor gives an investigator a small desk for slowing that moment down: a timeline,
-linked sources, competing hypotheses, missing evidence and a remediation proposal that
-cannot execute anything.
+## The problem
 
-The demonstration follows one synthetic incident in three forms. With the runtime
-sample present, the reference case points to a deadline configuration regression.
-Remove that sample and the answer becomes uncertain. Add a conflicting runtime audit
-and the conflict stays visible. A hostile instruction embedded in a log remains source
-text; it does not become an instruction to the application.
+An incident dossier can look persuasive while leaving important questions unanswered. TraceHarbor helps a reviewer inspect the evidence behind a claim, notice missing information and compare contradictory accounts. Citations connect the review to visible source material. Suggested remediation includes the checks a human should consider before acting.
 
-Every citation names its source and event, includes a source digest and must reproduce
-the complete event text exactly. The source inspector lets a reviewer follow that link.
-A JSON dossier keeps the evidence, analysis and verification results together and can
-be imported for independent structural and citation checks. These checks establish
-integrity, not causation: a perfectly copied quote can still support a poor hypothesis.
+## What works today
 
-The application is deliberately small: Python's standard library, a loopback HTTP server,
-plain browser JavaScript and bounded JSON inputs. There is no production connection,
-remediation executor or background agent. The project uses synthetic cases only.
+The offline evidence desk runs locally with Python and a browser. Synthetic complete, missing and contradictory cases can be reviewed, exported and reimported for integrity checking. The desk needs no provider key for that workflow and executes no remediation.
 
-The new Token Factory adapter is ready for a controlled NVIDIA-model trial. It requests
-structured JSON, checks citations locally, rejects incomplete or malformed responses,
-records model and usage metadata, and makes no automatic retries. A reserved three-case
-runner keeps attempts distinct and does not silently resume an unknown request.
+Hosted Chromium QA passed 27 checks across six synthetic journeys at widths 390 and 1440, including citation navigation, distinct exports, valid reimports and tamper rejection. [The evidence note](release/QA_EVIDENCE170.md) identifies the source commit, run, job and log hashes. This does not establish physical-device coverage, live AI performance or persistent hosting.
 
-**What is demonstrated today:** the deterministic evidence desk and local verification
-route, with twelve new integration-boundary tests using clearly simulated provider
-responses. Read-only account access and a model identifier were observed on 27 September
-2026; those historical observations do not authorize inference. **What is not yet
-demonstrated:** a live Nebius invocation, model-specific JSON/token-bound admission
-or an effective financial spending stop. Browser visual QA was blocked by the
-cloud browser's local-URL policy. No live-performance or model-quality result is claimed.
+## What remains before entry
 
-Before submission we need the controlled three-request run, supported visual verification,
-the final demo recording and reviewed publication. The project must not be submitted as
-Nebius-powered until real runtime evidence exists. NVIDIA/Token Factory feedback will be
-written from that run; no feedback or usage claim has been invented here.
+There is no verified genuine Nebius/NVIDIA runtime result in this delivery kit. A functioning demo or test-build URL, verified public source and license/setup, recorded public YouTube demonstration, final track selection and genuine platform feedback still need completion. Significant updates must be documented if the project predates the contest period. Personal eligibility, rights and conflict declarations must be confirmed from actual facts. Live form-specific fields have not been inspected through project creation.
+
+The proposed [storyboard](VIDEO_SCRIPT.md) lasts 160 seconds; no footage has been recorded. It must later show functioning behavior and keep synthetic inputs distinct from genuine execution. [The checklist](release/READINESS170.json) assigns acceptance conditions. Registration, a draft and a script are each different from a submitted entry.
+
+Official [rules](https://nebiusglobalaihackathon.devpost.com/rules) and [overview](https://nebiusglobalaihackathon.devpost.com/), reviewed 24 October 2026: deadline 30 October, 10:00 PDT = 17:00 UTC = 19:00 Europe/Bucharest; video under three minutes. Judges must have free access through 15 December at 12:00 PST = 20:00 UTC. An Owner-only private demo does not by itself provide judge access.

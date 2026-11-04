@@ -1,61 +1,33 @@
-# TraceHarbor — offline test build
+# TraceHarbor — start here
 
-This public source test build uses synthetic, handwritten fixtures. It makes no model calls.
-Fixture results are not real Nebius inference, visual QA or contest submission evidence.
+TraceHarbor is an offline evidence desk for reviewing synthetic incident dossiers. Follow source citations, compare complete, missing and contradictory evidence, and export a dossier for integrity checking. Remediation remains advice for a human reviewer; the desk does not execute it.
 
-## Start locally
+## Run locally
 
-1. Extract the separately published source archive. Open the extracted repository root.
-2. Use Python 3.12 or later. `python --version` must show a supported version.
-   No packages, SDKs, accounts, API keys or internet connection are needed for fixture mode.
-3. Open a terminal in the same directory as this guide and `app.py`, then run:
+Use Python 3.12 or later and the standard library, from a verified source checkout:
 
 ```sh
 python app.py serve --port 8787
 ```
 
-The working directory now contains `app.py`, `fixtures/`, `references/` and `web/`.
-Open `http://127.0.0.1:8787` in a separately permitted local browser. The server
-binds to loopback. Stop it with Ctrl+C. No server or browser was started to package this build.
-Do not use a tunnel or bypass a browser URL restriction.
+Open `http://127.0.0.1:8787/`. Use that exact loopback hostname and port because Host and Origin are validated. The offline synthetic workflow requires no API key. Do not enter production records or secrets.
 
-Select Full, Missing or Conflicting evidence. These labels correspond to
-`fixtures/complete.json`, `fixtures/missing.json` and `fixtures/contradictory.json`.
-Follow citations, export a dossier, then use Verify imported dossier.
-Use synthetic input only; never import secrets or production logs.
-
-## Optional offline command-line export
-
-From the same `TraceHarbor` working directory, with no server required:
+A create-only command-line example requires an output path that does not exist:
 
 ```sh
 python app.py analyze fixtures/missing.json --out missing-dossier.json
 ```
 
-The output path must not already exist: export is create-only. Preserve an existing
-output and choose a different absent filename for another export.
+## Source and browser evidence
 
-## Live integration remains inactive
+Canonical main: `dfd0639d8aec43cc13d4776a19138af3bd626598`, tree `f38d934627f809cd9ff747c0d09df746bd15c739`. Qualified PR45 head: `3445843b599032b3fe825f3647bd006ea7223f08`, tree `ab2ec6d56fd72dcf156001bf641c38a4b29f8da1`; the pull request remains unmerged at the last verified observation. The two versions have identical application, web and fixture bytes; the branch differs in its QA runner and workflow.
 
-Do not execute `live_probe.py` or populate `live-admission.example.json` as part of
-offline setup. Its null/empty admission fields remain unchanged and refuse live admission.
-No API key is included. No real approval, spending authorization or model result is supplied.
-Remaining live prerequisites: model-specific JSON-object capability, verified pre-inference
-token/template bounds (proposed maximum 3000 input/1500 output per case), effective credit
-exhaustion/spending-stop evidence, and separately reviewed exact three-case admission.
+Actual hosted Chromium passed 27 checks using synthetic inputs at widths 390 and 1440. See [browser evidence](release/QA_EVIDENCE170.md) for the run, hashes, tested behavior and limits. These proposed documentation changes do not establish a new published commit or release. README.md retains older source and QA wording outside this document update.
 
-## Release status
+A current GitHub Download ZIP has not been byte-verified. Historical offline archives are separate artifacts and do not prove a current public download. A persistent working demo URL, genuine Nebius/NVIDIA execution evidence and a recorded video are still missing.
 
-Public source is published at https://github.com/Elinfiny/TraceHarbor, with verified
-commit `18a98b4aa6c9264e56d18e77e107dacc92eb0aed`. The separately verified offline
-build has SHA-256 `92b740d86b1766547feaa086c956a2ce992d74af5b0248aa9db05dde8300af97`.
-The actual public GitHub Download ZIP remains unverified; it is distinct from that offline build.
-Downloadable source is not a hosted demo. Supported visual QA, actual admitted Nebius runtime
-evidence, a recorded public video under three minutes and final contest submission remain pending.
-`VIDEO_SCRIPT.md` is a 160-second script, not a video. `SUBMISSION_DRAFT.md` is a draft.
-Existing release materials do not establish completed live inference, visual QA, video publication or contest submission.
+## Delivery material
 
-Application, fixtures, adapters, probe, tests and LICENSE preserve the accepted offline
-candidate bytes. Only publication documentation and its derived manifest differ.
-This root-level guide uses the source-repository layout. The separately accepted private
-offline ZIP and its original guide remain unchanged. The existing public source URL is given above.
+The [readiness checklist](release/READINESS170.json), [submission draft](SUBMISSION_DRAFT.md) and [160-second storyboard](VIDEO_SCRIPT.md) describe completed evidence and remaining work. They are preparation material, not a submission receipt. A clearly labelled hosted offline desk can be delivered independently of later live-model integration.
+
+The [official contest rules](https://nebiusglobalaihackathon.devpost.com/rules) were reviewed on 24 October 2026: the submission deadline is 30 October, 10:00 PDT = 17:00 UTC = 19:00 Europe/Bucharest. The contest requires genuine Nebius execution with an NVIDIA open-source model; offline browser QA does not satisfy that requirement. Personal eligibility and entry declarations still require verification.

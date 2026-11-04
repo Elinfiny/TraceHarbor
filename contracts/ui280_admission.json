@@ -1,0 +1,64 @@
+{
+  "schema": "TRACE_UI282_CONFIGURATION_V1",
+  "status": "SOURCE_ONLY_NOT_ADOPTED",
+  "ui_workflow_enabled": false,
+  "external_native_admission_required": true,
+  "authority": "Only externalMasterCAS+independentAudit+authenticatednativeGitHubcommit/event rootpublication; no newcredential/MACkeyservice",
+  "parent": "d502e3b79735ff065b7d9d936c8330ff14bd21a0",
+  "full_ref": "refs/heads/review/traceharbor-v1-browser-qa-base180-162-20261023",
+  "new_effect": "NOT_ADMITTED; new distinct correctedUIeffect, never282rearm",
+  "runtime_sha256": {
+    "tools/ui280/owned_supervisor295.py": "e9e47850acd1e72b8892563ef185ca4485b9a13428dbe235c1c998f57d352373",
+    "tools/ui280/bootstrap295.py": "354cbdbba2ac247315be27adbad3f10b3cc2a4dfc7525f331d67f23ee66c06c5",
+    "tools/ui267/qualify.mjs": "a1d16a20c950f819cca16814fddd1df33f59f3ce765e23ecf27c22cf45c3e51a"
+  },
+  "required_executables": {
+    "node": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null
+    },
+    "python3": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null
+    },
+    "systemd-run": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null
+    },
+    "systemctl": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null
+    },
+    "chrome": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null
+    },
+    "chromedriver": {
+      "state": "NOT_QUALIFIED",
+      "path": null,
+      "sha256": null
+    }
+  },
+  "future_runtime_config": "Rootreadonlyruntime295.json fromverifiedexternaladmission; no mutation ofSOURCE_ONLYsourceconfig; actualnativepins/budget/manager/sandbox stillrequired",
+  "limits": {
+    "parent_AS": [
+      67108864,
+      100663296
+    ],
+    "Python_fixture_child_AS": 100663296,
+    "child_s": 5,
+    "overall_fixture_group_s": 60,
+    "manager_call_s": 5,
+    "runtime_s": 180,
+    "stop_s": 5,
+    "physical": 335544320,
+    "swap": 0,
+    "whole": 536870912
+  },
+  "default_activation": "No nativecommitadmission/no rootanchor => refuse; currentpublicUIliteralfalse unchanged"
+}
